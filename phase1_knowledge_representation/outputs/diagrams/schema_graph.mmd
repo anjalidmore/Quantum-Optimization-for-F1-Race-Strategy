@@ -1,0 +1,115 @@
+graph LR
+  subgraph Competition
+    Season["Season"]
+    Race["Race"]
+    GrandPrix["GrandPrix"]
+    Circuit["Circuit"]
+  end
+  subgraph Competitor
+    Driver["Driver"]
+    Constructor["Constructor"]
+    Team["Team"]
+    Car["Car"]
+  end
+  subgraph Session
+    Session["Session"]
+    PracticeSession["PracticeSession"]
+    Qualifying["Qualifying"]
+    Sprint["Sprint"]
+  end
+  subgraph Timing
+    Lap["Lap"]
+    Sector["Sector"]
+    SectorTime["SectorTime"]
+    LapTime["LapTime"]
+    FastestLap["FastestLap"]
+    Gap["Gap"]
+    Interval["Interval"]
+    Overtake["Overtake"]
+  end
+  subgraph PitStrategy
+    PitStop["PitStop"]
+    PitWindow["PitWindow"]
+    Stint["Stint"]
+  end
+  subgraph Tyre
+    TyreConcept["TyreConcept"]
+    TyreCompound["TyreCompound"]
+    TyreLife["TyreLife"]
+  end
+  subgraph Weather
+    Weather["Weather"]
+    TrackTemperature["TrackTemperature"]
+    AirTemperature["AirTemperature"]
+    Humidity["Humidity"]
+    WindSpeed["WindSpeed"]
+    RainProbability["RainProbability"]
+  end
+  subgraph CarState
+    FuelLoad["FuelLoad"]
+    EngineMode["EngineMode"]
+    ERS["ERS"]
+    DRS["DRS"]
+  end
+  subgraph Telemetry
+    Telemetry["Telemetry"]
+    Speed["Speed"]
+    Throttle["Throttle"]
+    Brake["Brake"]
+    RPM["RPM"]
+    Gear["Gear"]
+  end
+  subgraph RaceControl
+    TrackStatus["TrackStatus"]
+    SafetyCar["SafetyCar"]
+    VirtualSafetyCar["VirtualSafetyCar"]
+    YellowFlag["YellowFlag"]
+    RedFlag["RedFlag"]
+    BlueFlag["BlueFlag"]
+    RaceControlMessage["RaceControlMessage"]
+    Incident["Incident"]
+    Penalty["Penalty"]
+  end
+  subgraph Result
+    Result["Result"]
+    Position["Position"]
+    Points["Points"]
+    Championship["Championship"]
+    DriverStanding["DriverStanding"]
+    ConstructorStanding["ConstructorStanding"]
+  end
+  subgraph Decision
+    Strategy["Strategy"]
+    Prediction["Prediction"]
+    Recommendation["Recommendation"]
+    Optimization["Optimization"]
+  end
+  Race -->|held_at| Circuit
+  Race -->|belongs_to_season| Season
+  Race -->|instance_of_gp| GrandPrix
+  Race -->|contains_lap| Lap
+  Driver -->|drives_for| Constructor
+  Driver -->|participates_in| Race
+  Driver -->|performs_pitstop| PitStop
+  Driver -->|driver_has_result| Result
+  Driver -->|driver_has_standing| DriverStanding
+  Constructor -->|owns| Car
+  Constructor -->|constructor_has_standing| ConstructorStanding
+  Lap -->|lap_of_driver| Driver
+  Lap -->|lap_in_session| Session
+  Lap -->|lap_has_telemetry| Telemetry
+  Lap -->|lap_has_sector| Sector
+  Sector -->|sector_has_time| SectorTime
+  PitStop -->|pitstop_changes_tyre| TyreCompound
+  PitStop -->|pitstop_begins_stint| Stint
+  Stint -->|stint_uses_compound| TyreCompound
+  Weather -->|weather_affects_strategy| Strategy
+  Telemetry -->|telemetry_influences_prediction| Prediction
+  TrackStatus -->|trackstatus_affects_strategy| Strategy
+  SafetyCar -->|safetycar_affects_pitwindow| PitWindow
+  Result -->|result_in_race| Race
+  Strategy -->|strategy_recommends_pitstop| PitStop
+  Strategy -->|strategy_recommends_tyre| TyreCompound
+  Strategy -->|strategy_predicts_position| Position
+  Prediction -->|prediction_generates_recommendation| Recommendation
+  Optimization -->|optimization_yields_strategy| Strategy
