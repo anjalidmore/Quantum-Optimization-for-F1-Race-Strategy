@@ -1,0 +1,11 @@
+driverId,driverRef,code,forename,surname,nationality
+1,hamilton,HAM,Lewis,Hamilton,British
+2,verstappen,VER,Max,Verstappen,Dutch
+3,leclerc,LEC,Charles,Leclerc,Monegasque
+4,norris,NOR,Lando,Norris,British
+5,alonso,ALO,Fernando,Alonso,Spanish
+6,russell,RUS,George,Russell,British
+7,sainz,SAI,Carlos,Sainz,Spanish
+8,perez,PER,Sergio,Perez,Mexican
+9,piastri,PIA,Oscar,Piastri,Australian
+10,gasly,GAS,Pierre,Gasly,French
