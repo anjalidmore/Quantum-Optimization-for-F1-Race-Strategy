@@ -1,904 +1,178 @@
-# 🏎️ Quantum Optimization for Formula 1 Race Strategy
+# F1 Race Strategy Intelligence
 
-> A unified Computational Intelligence system for **Formula 1 race-strategy decision support**, combining knowledge representation, rule-based reasoning, state-space search, data engineering, feature engineering, classical machine learning, deep learning, explainable AI, and quantum optimization.
+A full-stack computational-intelligence platform that predicts Formula 1 lap times and pit-stop decisions from real race telemetry, and combines that with rule-based reasoning and search-based optimization to recommend a race strategy — end to end, from raw FastF1 data to a trained model served through a live API and dashboard.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
-![Machine Learning](https://img.shields.io/badge/ML-Classical%20%2B%20Deep%20Learning-orange)
-![Quantum](https://img.shields.io/badge/Quantum-QML%20%2F%20Optimization-purple)
-![Status](https://img.shields.io/badge/Status-Tasks%201--6%20Implemented-brightgreen)
+![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688)
+![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![scikit--learn](https://img.shields.io/badge/scikit--learn-ML-orange)
+![Tests](https://img.shields.io/badge/tests-120%20passing-brightgreen)
+![Status](https://img.shields.io/badge/status-active%20development-yellow)
 
-> **Dataset note:** the pipeline runs on either a reproducible **synthetic** session or a **real FastF1**
-> session, and always says which. The results currently committed in this repository are from a **real
-> session — the 2023 Bahrain Grand Prix (Race)** — fetched via `scripts/fetch_real_session.py`. They
-> reflect one real race, not a validated general-purpose F1 model — see [§13](#13-synthetic-vs-real-data).
+## Screenshots
 
----
+| Dashboard | Race Strategy Simulator |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Strategy Simulator](docs/screenshots/strategy-simulator.png) |
 
-## 1. Project Overview
+| Machine Learning | Data & Analysis |
+|---|---|
+| ![Machine Learning](docs/screenshots/machine-learning.png) | ![Data Analysis](docs/screenshots/data-analysis.png) |
 
-Formula 1 race strategy is a sequential decision problem influenced by:
+More in [`docs/screenshots/`](docs/screenshots/), including the [Project Evidence](docs/screenshots/project-evidence.png) page.
 
-- tyre compound and tyre age
-- degradation
-- fuel load and race progress
-- driver pace
-- team/car performance
-- field pace
-- weather and track conditions
-- pit-stop loss
-- safety-car / track status
-- remaining race distance
-- tactical constraints
+## Overview
 
-This project builds a **single end-to-end computational intelligence platform** that can analyse these factors and produce reproducible race-strategy recommendations.
+Formula 1 race strategy is a real sequential decision problem: when should a driver pit, and for which tyre compound, given tyre age, track temperature, fuel load, and the state of the race? This project builds one coherent system around that question, rather than a pile of separate lab exercises:
 
-The project is intentionally designed as **one integrated system**, rather than a collection of unrelated task folders. The individual computational-intelligence tasks remain identifiable through their modules, services, algorithms, reports, and UI sections, but they all operate on shared domain models, shared data, and shared generated artifacts.
+1. **Fetch real race data** — a genuine FastF1 session (2023 Bahrain Grand Prix), not a toy dataset, via a reproducible synthetic fallback when offline.
+2. **Clean and engineer features** — leakage-checked, causally-justified features selected by an automated funnel (variance filtering → correlation pruning → VIF → importance ranking).
+3. **Train and compare 10 models** — 5 regression + 5 classification algorithms, evaluated with a time-aware (lap-forward) cross-validation strategy that never trains on the future.
+4. **Serve real predictions** — a FastAPI backend that caches trained pipelines and combines the ML output with a rule-based expert system (Task 2) and an A\*/UCS search over pit strategies (Task 3).
+5. **Show it, honestly** — a Next.js dashboard where every number, chart, and prediction is read live from a generated artifact or a real model call. Nothing is hard-coded or fabricated; when a model can't answer something, the UI says so.
 
-### Core pipeline
+This started as a 10-part computational-intelligence coursework specification (knowledge representation → expert systems → search → data engineering → feature engineering → ML → deep learning → XAI → integration → evaluation). Tasks 1–6 are implemented as one integrated application; see [Project Status](#project-status) below for what's done vs. planned.
 
-```text
-Raw F1 / FastF1 Data
-        │
-        ▼
-Data Validation + Cleaning + EDA
-        │
-        ▼
-Feature Engineering + Feature Selection
-        │
-        ├──────────────► Knowledge Representation
-        │                       │
-        │                       ▼
-        │                Knowledge Graph / Ontology
-        │                       │
-        ├──────────────► Expert Rules ──────► Explainable Rule Decisions
-        │
-        ├──────────────► State-Space Search ─► Classical Optimal Baseline
-        │
-        └──────────────► ML / DL / XAI / QML
-                                │
-                                ▼
-                     Unified Strategy Engine
-                                │
-                                ▼
-                     Web Dashboard / Reports
+## Features
+
+- **Real ML pipeline, not a demo dataset** — fetches an actual FastF1 Grand Prix session and trains on it; a script exists to swap in any other session (`scripts/fetch_real_session.py`)
+- **10 trained models** compared honestly on cross-validated *and* held-out metrics (MAE/RMSE/R² for lap time; ROC-AUC/PR-AUC/F1 for pit decisions), with the winning model per task auto-selected and every model's artifact persisted
+- **Time-aware validation** — expanding-window, lap-forward CV; a random shuffle-split would leak future laps into training, so it's never used
+- **Data-leakage tests** that fail the build if a target-adjacent column (sector times, speed traps) ever reaches a training matrix
+- **Race Strategy Simulator** — real dropdowns sourced from the actual dataset (not free text), server + client-side validation, a model selector, quick scenario presets, and an **out-of-distribution warning** that flags when an input pushes a feature outside the range the model was ever trained on
+- **Explainability-lite** — feature importance / coefficients surfaced per model, with human-readable names and descriptions generated from the same metadata the models were trained on
+- **Project Evidence page** — every task's real generated reports/figures, scanned live off disk; a task that hasn't been built yet says "Upcoming," never a placeholder
+- **One-command setup** — `./run.sh` installs everything, trains if needed, starts both servers, runs three live predictions in your terminal, and opens the browser
+
+## Tech Stack
+
+**Backend:** Python, FastAPI, scikit-learn, XGBoost (optional, gracefully degrades if unavailable), pandas, joblib, pytest, ruff
+**Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS
+**Data:** FastF1 (real telemetry) with a deterministic synthetic fallback; a reproducible feature-engineering notebook (`nbclient`/`nbformat`)
+**Tooling:** GitHub Actions CI (lint + test on every push)
+
+## Architecture
+
+```
+┌─────────────┐      REST       ┌──────────────┐      cached      ┌───────────────┐
+│  Next.js UI │  ───────────►   │  FastAPI     │  ───────────►    │ Trained model │
+│ (dashboard, │  ◄───────────   │  backend     │  ◄───────────    │  pipelines    │
+│  simulator) │                 └──────┬───────┘                  │  (.joblib)    │
+└─────────────┘                        │
+                                        ▼
+                         Expert System (Task 2) + A* Search (Task 3)
+                                        │
+                                        ▼
+                    data/processed/  (Task 5 feature contract)
+                                        ▲
+                                        │
+                    Task 4 cleaning  ←  FastF1 session data
 ```
 
----
+Full technical write-up — module layout, the Task 5 feature contract, leakage prevention, validation strategy, and the real-vs-synthetic data path — is in [`docs/architecture.md`](docs/architecture.md).
 
-## 2. Computational Intelligence Tasks
+## Getting Started
 
-The implementation follows the 10-task journey represented in the project specification.
+### Prerequisites
 
-| Task | Capability | Role in the unified system |
-|---|---|---|
-| **1** | Knowledge Representation | Formal F1 entities, attributes, relationships, ontology and knowledge graph |
-| **2** | Rule-Based Expert System | Symbolic strategy reasoning using production rules |
-| **3** | State-Space Search | BFS, DFS, UCS, Greedy and A* strategy optimisation |
-| **4** | Data Preparation & EDA | Cleaning, validation, statistics and domain analytics |
-| **5** | Feature Engineering & Selection | Causal, model-ready feature matrix and target definitions |
-| **6** | Machine Learning Model Development | Train, compare, evaluate and persist classical ML models |
-| **7** | Deep Learning Model Development | Neural models for race-performance prediction |
-| **8** | Explainable AI | SHAP/LIME/counterfactual explanations and model trust information |
-| **9** | System Integration & Deployment | Unified strategy engine and application |
-| **10** | System Evaluation & Responsible AI | Performance, usability, explainability, robustness and documentation |
+- Python 3.10+
+- Node.js 18+
+- macOS/Linux (uses `lsof`/`nohup`; Windows works via WSL)
 
-**Important:** these are conceptual task boundaries, not mandatory directory boundaries.
-
----
-
-# 3. Current Implementation
-
-The supplied implementation already establishes a strong classical foundation.
-
-### Knowledge Representation
-
-The knowledge model contains F1 entities and relationships covering historical championship data and FastF1 concepts such as:
-
-- seasons
-- races
-- circuits
-- drivers
-- constructors
-- results
-- standings
-- pit stops
-- lap times
-- qualifying
-- sessions
-- stints
-- tyre compounds
-- weather
-- track status
-- race-control information
-- car data
-- telemetry
-
-The ontology is generated from a declarative schema and the knowledge graph is produced using NetworkX/RDF tooling.
-
-### Rule-Based Expert System
-
-The expert system contains a validated production-rule architecture with:
-
-- working memory
-- typed conditions/actions/rules
-- forward chaining
-- backward chaining
-- conflict resolution
-- rule validation
-- provenance
-- HOW/WHY explanations
-
-Rules are organised around strategic areas including:
-
-`weather`, `safety_car`, `pit`, `degradation`, `tyre`, `strategy`, `fuel`, `energy`, `tactics`, and `risk`.
-
-### State-Space Search
-
-Race strategy is represented as a shortest-path problem.
-
-A state contains:
-
-```text
-(lap, compound, tyre_age, stops_made, fuel_kg, compounds_used)
-```
-
-Actions include:
-
-```text
-RUN
-PIT(compound)
-```
-
-The system compares:
-
-- BFS
-- DFS
-- Uniform-Cost Search
-- Greedy Best-First Search
-- A*
-
-The current formulation uses UCS as the ground-truth optimal baseline and verifies that A* reaches the same optimal cost when the admissible heuristic is used.
-
-### Data Engineering & EDA
-
-The data pipeline follows:
-
-```text
-Load → Clean → Transform → Analyse → Visualise → Report
-```
-
-It supports the Ergast-derived/Kaggle F1 schema and FastF1 lap/session data.
-
-The pipeline handles:
-
-- schema validation
-- `\N` null conversion
-- duplicate removal
-- datatype coercion
-- lap-time parsing
-- categorical normalisation
-- missing-value imputation
-- outlier detection/capping
-- encoding
-- scaling
-- statistical summaries
-- correlation analysis
-- data-quality scoring
-- driver analysis
-- constructor analysis
-- circuit analysis
-- pit-stop analysis
-- tyre analysis
-- lap-time analysis
-- weather analysis
-- season analysis
-- safety-car / track-status analysis
-- visual dashboards
-
-### Feature Engineering & Feature Selection
-
-Task 5 produces the model-ready feature matrix from the cleaned FastF1 lap dataset.
-
-The current exported feature matrix contains **520 rows and 19 columns**, including identifiers, selected predictors, and targets.
-
-Primary regression features:
-
-```text
-tyre_life
-gap_roll3_mean
-gap_expanding
-field_median_lag1
-driver_sai
-race_progress
-```
-
-Pit-decision features:
-
-```text
-tyre_life
-race_progress
-form_vs_baseline
-field_median_lag1
-team_aston_martin
-field_pace_trend
-tyrelife_x_medium
-tracktemp_dev_x_tyrelife
-```
-
-Targets:
-
-```text
-target_laptime
-target_pit_next_lap
-target_laptime_fuel_corrected
-```
-
-The feature-selection metadata also records:
-
-- feature provenance
-- scaling requirements
-- validation strategy
-- leakage exclusions
-- selection funnel
-- stability information
-
-### Critical modelling contract
-
-Task 5 deliberately exports **unscaled** features.
-
-Task 6 and all downstream modelling tasks must fit preprocessing/scalers **inside the training folds**.
-
-The dataset is a time-ordered driver × lap panel, so random K-fold cross-validation must **not** be used.
-
-The intended validation strategy is:
-
-```text
-Expanding-window / lap-forward validation
-```
-
-with whole laps kept together.
-
----
-
-# 4. Machine Learning — Task 6
-
-Task 6 converts the selected feature matrix into trained classical ML models.
-
-The system should support two complementary modelling problems.
-
-### A. Lap-time regression
-
-Predict:
-
-```text
-target_laptime
-```
-
-This answers:
-
-> "Given everything known before the lap begins, what lap time should we expect?"
-
-Candidate models:
-
-- Linear Regression
-- Decision Tree Regressor
-- Random Forest Regressor
-- Support Vector Regression
-- XGBoost Regressor when available
-
-Primary metrics:
-
-- MAE
-- RMSE
-- R²
-- optionally MAPE where numerically appropriate
-
-### B. Pit-decision classification
-
-Predict:
-
-```text
-target_pit_next_lap
-```
-
-This answers:
-
-> "Given the current race state, should the driver pit at the end of this lap?"
-
-Candidate models:
-
-- Logistic Regression
-- Decision Tree Classifier
-- Random Forest Classifier
-- SVM
-- XGBoost Classifier when available
-
-Primary metrics:
-
-- ROC-AUC
-- PR-AUC
-- accuracy
-- precision
-- recall
-- F1
-- confusion matrix
-- calibration where appropriate
-
-Because pit events are relatively rare, accuracy must never be the only metric.
-
-The current synthetic dataset has a near-deterministic stint schedule, so its pit-decision AUC can be artificially high. Results must clearly disclose this limitation and should not be presented as real-world performance.
-
-### Task 6 status: implemented
-
-All five regression models, four classification models (plus XGBoost when available), chronological
-holdout, expanding-window CV, bounded hyperparameter search, leakage checks, persisted pipelines, figures,
-reports and the model registry are implemented in `app/intelligence/ml/` and exercised by
-`tests/test_ml_*.py`. Run `python scripts/build_all.py --force` to reproduce the numbers below from scratch.
-
-Latest run in this repository — **real FastF1 data** (2023 Bahrain GP, Race; see [§13](#13-synthetic-vs-real-data)),
-10 models trained, 0 fabricated:
-
-| | Best model | CV metric | Test metric |
-|---|---|---|---|
-| Lap-time regression | `decision_tree` | MAE 1.19s | MAE 0.87s, R² −0.17 |
-| Pit-decision classification | `random_forest` | ROC-AUC 0.85 | ROC-AUC 0.98 |
-
-The synthetic demo path still works identically (`linear_regression` / MAE ~0.27s CV, `random_forest` /
-ROC-AUC ~1.0 CV but undefined on test — see [§13](#13-synthetic-vs-real-data) for why real data behaves
-so differently, notably that the regression test R² being negative here is an honest result, not a bug: a
-single real race, a small feature-selected model, and a fuel/tyre state very different from the training
-laps in the final stint is a genuinely hard extrapolation.
-
-Full tables, per-fold metrics, and the full discussion of both datasets' caveats live in
-`artifacts/reports/*.md` and are served live by `GET /api/ml/comparison` / the Machine Learning dashboard.
-
----
-
-# 5. Leakage Prevention
-
-This project treats leakage prevention as a first-class engineering requirement.
-
-The following same-lap/post-lap fields were explicitly excluded by Task 5:
-
-```text
-Sector1Time
-Sector2Time
-Sector3Time
-SpeedFL
-SpeedST
-IsPersonalBest
-```
-
-They must not re-enter Task 6 through an alternate preprocessing path.
-
-The following principles must remain true:
-
-1. Only information available before the prediction point may be used.
-2. Historical features must be causal.
-3. Scalers and preprocessing objects must be fitted only on training data.
-4. Validation must respect race/lap chronology.
-5. Hyperparameter selection must not use the final test set.
-6. Test data must remain untouched until final evaluation.
-7. All transformations used by a trained model must be serialised with the model/pipeline.
-
----
-
-# 6. Unified System Architecture
-
-This is the actual, as-built repository layout — the old `phase1_taskN/` / `phase2_taskN/` folders have been
-removed; every module now lives under one shared `app/` package:
-
-```text
-f1-quantum-strategy/
-│
-├── README.md
-├── pyproject.toml
-├── requirements.txt
-├── .gitignore
-│
-├── app/
-│   ├── api/
-│   │   ├── main.py                 # FastAPI app, CORS, static /artifacts mount
-│   │   ├── schemas.py              # Pydantic request/response models
-│   │   └── routers/
-│   │       ├── health.py           # GET  /api/health
-│   │       ├── ml.py               # GET  /api/ml/{models,metrics,comparison,artifacts,feature-importance}
-│   │       │                       # POST /api/ml/predict/{laptime,pit}
-│   │       └── strategy.py         # POST /api/strategy/predict
-│   │
-│   ├── core/
-│   │   └── paths.py                # single source of truth for every data/artifact path
-│   │
-│   ├── services/
-│   │   ├── model_cache.py          # loads + caches trained pipelines (no retraining per request)
-│   │   ├── feature_approximation.py# builds ML feature rows from a strategy-simulator snapshot
-│   │   └── strategy_service.py     # wires ML + Expert System + Search into one recommendation
-│   │
-│   └── intelligence/
-│       ├── knowledge_representation/  # Task 1 (formerly f1kr)
-│       ├── expert_system/             # Task 2 (formerly f1es)
-│       ├── search/                    # Task 3 (formerly f1search)
-│       ├── data/                      # Task 4 (formerly f1data)
-│       ├── features/                  # Task 5 contract reader (contract.py)
-│       └── ml/                        # Task 6 — data_contract, splits, preprocessing,
-│                                       # regression, classification, tuning, evaluation,
-│                                       # selection, persistence, registry, visualize,
-│                                       # reports, pipeline (orchestrator)
-│
-├── frontend/                        # Next.js 14 + TypeScript + Tailwind
-│   ├── app/
-│   │   ├── page.tsx                 # Overview
-│   │   ├── machine-learning/page.tsx
-│   │   └── strategy/page.tsx        # Race Strategy Simulator
-│   ├── components/
-│   └── lib/api.ts                   # typed fetch client (no hard-coded data)
-│
-├── data/
-│   ├── raw/                         # Kaggle/Ergast-style + FastF1-like CSVs
-│   └── processed/                   # fastf1_laps_clean.csv, f1_features_selected.csv,
-│                                     # feature_metadata.json — the Task 5 contract
-│
-├── artifacts/                       # everything scripts/build_all.py generates
-│   ├── knowledge_representation/    # Task 1 reports/diagrams
-│   ├── expert_system/               # Task 2 reports/rules
-│   ├── search/                      # Task 3 reports/figures
-│   ├── data_engineering/            # Task 4 reports/figures
-│   ├── models/{laptime,pit_decision}/  # Task 6 persisted pipelines (.joblib)
-│   ├── metrics/                     # Task 6 metrics JSON
-│   ├── figures/                     # Task 6 PNGs
-│   ├── reports/                     # Task 6 markdown reports
-│   ├── metadata/model_registry.json
-│   └── manifest.json                # artifact-driven frontend manifest
-│
-├── docs/
-│   ├── notebooks/task5_feature_engineering.ipynb
-│   └── task{1,2,3,4}_*.md           # per-task documentation (traceability)
-│
-├── tests/                           # one flat suite — data contract, splits, leakage,
-│                                     # training, persistence, API, plus the original
-│                                     # Task 1-4 suites, all passing against the new layout
-│
-├── scripts/
-│   ├── build_all.py                 # top-level build: Tasks 1-6 end to end
-│   ├── build_knowledge_base.py      # Task 1
-│   ├── run_expert_system.py         # Task 2
-│   ├── run_search.py                # Task 3
-│   ├── run_eda.py                   # Task 4
-│   ├── fetch_real_session.py        # replaces synthetic laps with a real FastF1 session
-│   └── demo_predict.py              # used by run.sh to prove the trained models respond
-│
-└── run.sh                           # one-command setup + demo (see §11)
-```
-
-> **One application, one domain, one shared data/artifact layer, multiple computational-intelligence engines.**
-
----
-
-# 7. Frontend
-
-The frontend is not just a landing page — it renders real artifacts and calls the real backend. Built with
-Next.js 14 (App Router) + TypeScript + Tailwind, in `frontend/`.
-
-**Implemented today:** Overview, Machine Learning (Task 6 dashboard), Race Strategy Simulator.
-**Not yet built** (shown as disabled nav items, not fake pages): Data & EDA, Knowledge, Expert System, Search
-Optimisation, Deep Learning, Explainability — their backend modules exist (Tasks 1-4), but no dedicated UI
-page reads them yet. Ready for Tasks 7-10 to slot into the same nav/API pattern.
-
-### Overview (implemented)
-
-- current dataset status
-- number of races/laps/drivers
-- model status
-- latest model metrics
-- strategy-engine status
-- pipeline health
-- recent generated artifacts
-
-### Machine Learning (implemented)
-
-Header cards (dataset source, model count, best regression/classification model, last training timestamp),
-a lap-time regression section (best-model cards, model-comparison / predicted-vs-actual / residual /
-feature-importance figures, full comparison table, a live "try a prediction" form), and a mirrored
-pit-decision classification section — all reading `GET /api/ml/{comparison,artifacts,models,feature-importance}`
-and rendering `artifacts/figures/*.png` served by the backend. The synthetic-data caveat is shown as a
-banner, not buried in a footnote.
-
-### Race Strategy Simulator (implemented)
-
-A form for driver, team, current/total laps, tyre compound, tyre age, track temperature, weather, fuel
-state, track status and current position. **RUN STRATEGY ANALYSIS** calls `POST /api/strategy/predict`,
-which runs the real pipeline:
-
-```text
-Race State
-    ↓
-Feature Construction   (app/services/feature_approximation.py — see the honesty note below)
-    ↓
-ML Prediction           (Task 6 cached pipelines)
-    ↓
-Expert Rules            (Task 2 forward-chaining inference engine)
-    ↓
-Search / Optimisation   (Task 3 A* over the remaining stint)
-    ↓
-Unified Recommendation
-```
-
-and displays predicted lap time, probability of pit, recommended action, expected cost, the A* plan,
-triggered expert rules, and the expert system's evidence — nothing pre-scripted.
-
-**Honesty note:** Task 6's ML models require Task 5's engineered features (rolling gap, field-median lag,
-form-vs-baseline, ...), which need multi-lap race history a single form snapshot can't supply. Two
-interaction features (`tyrelife_x_medium`, `tracktemp_dev_x_tyrelife`) and tyre/team/driver features are
-computed exactly from the form input and real Task 4/5 statistics; the remaining history-dependent features
-fall back to the training data's median value. The response's `approximated_features` field names exactly
-which ones, every time — this is a stated engineering approximation, not a fabricated prediction.
-
-### Not yet built
-
-Data & EDA, Knowledge, Expert System, and Search Optimisation dashboard pages — Tasks 1-4's artifacts and
-reports already exist under `artifacts/` and can be wired to new pages the same way the ML page is, without
-touching the backend.
-
----
-
-# 8. "No AI-Generated Fake Results" Requirement
-
-The frontend must **never fabricate model outputs**.
-
-Do not hard-code:
-
-- fake accuracy
-- fake ROC-AUC
-- fake feature importance
-- fake predictions
-- fake strategy recommendations
-- fake graph data
-- fake search results
-- fake EDA values
-
-The UI must consume artifacts and API responses generated by the actual Python pipeline.
-
-For example:
-
-```text
-Training code
-    ↓
-trained model
-    ↓
-evaluation code
-    ↓
-metrics.json / reports / figures
-    ↓
-FastAPI
-    ↓
-Frontend
-```
-
-If a model has not been trained, the frontend must show:
-
-```text
-Model not trained
-```
-
-rather than inventing a result.
-
----
-
-# 9. Reproducibility
-
-Every experiment should record:
-
-- random seed
-- dataset version
-- feature metadata version
-- model type
-- hyperparameters
-- training timestamp
-- validation strategy
-- feature list
-- target
-- metrics
-- software environment
-- model artifact path
-
-Use deterministic seeds where the algorithm permits it.
-
----
-
-# 10. Testing
-
-The integrated project should include:
-
-### Unit tests
-
-- feature generation
-- leakage checks
-- target construction
-- model wrappers
-- metric calculation
-- expert rules
-- search transitions
-- API schemas
-
-### Integration tests
-
-Verify:
-
-```text
-Task 4 data
-    ↓
-Task 5 features
-    ↓
-Task 6 model
-    ↓
-API
-    ↓
-frontend-consumable JSON
-```
-
-### Regression tests
-
-Known invariants include:
-
-- A* and UCS agree on the optimal search cost.
-- no search algorithm returns a path cheaper than UCS.
-- leakage columns never enter the model feature matrix.
-- selected Task-5 feature lists remain compatible with the training pipeline.
-- saved model can be loaded and used for inference.
-
----
-
-# 11. Running the Project
-
-**Quickest path:** `./run.sh` — sets up the Python env, trains models if needed, starts the backend and
-frontend, runs three real sample predictions in your terminal (lap-time, pit-decision, full strategy
-simulation), and opens the dashboard in your browser. `./run.sh --force-retrain` retrains first. It's
-idempotent — safe to re-run any time — and always builds its sample requests from whatever the live model
-registry says the current features are, so it works unchanged on synthetic or real data.
-
-Manual steps, if you want them individually:
+### Quickest path
 
 ```bash
-# 1. Python environment
+git clone https://github.com/anjalidmore/f1-quantum-strategy.git
+cd f1-quantum-strategy
+./run.sh
+```
+
+This sets up the Python virtual environment, trains the models if they aren't already (they're checked into the repo, so first run is instant), starts the backend and frontend, runs three real predictions in your terminal, and opens `http://localhost:3000` in your browser.
+
+### Manual setup
+
+```bash
+# Backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 pip install -e .                      # makes `app` importable everywhere
+uvicorn app.api.main:app --reload     # http://localhost:8000  (docs at /docs)
 
-# 2. Build everything (Tasks 1-6). Skips a stage if its artifacts already
-#    exist; --force regenerates, --skip-ml skips the slow Task 6 stage.
-python scripts/build_all.py
-python scripts/build_all.py --force
-python scripts/build_all.py --skip-ml
-
-# 3. Run the test suite (105 tests: Tasks 1-4 originals + Task 6 + API)
-pytest tests/
-
-# 4. Backend API (http://localhost:8000, docs at /docs)
-uvicorn app.api.main:app --reload
-
-# 5. Frontend (http://localhost:3000) — point it at the backend
+# Frontend (separate terminal)
 cd frontend
+cp .env.example .env.local            # points the UI at the backend above
 npm install
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 npm run dev
+npm run dev                           # http://localhost:3000
 ```
 
-XGBoost is optional. If it's installed but its native OpenMP runtime is missing (common on macOS), Task 6
-reports "XGBoost unavailable — skipped" rather than failing — installing it is one line:
-`brew install libomp` (macOS) or the equivalent OpenMP package on Linux.
-
----
-
-# 12. Data Sources
-
-The system is designed around two complementary sources.
-
-### Historical F1 data
-
-The current data engineering layer supports Ergast-derived/Kaggle-style CSV tables such as:
-
-```text
-races.csv
-drivers.csv
-constructors.csv
-circuits.csv
-results.csv
-pit_stops.csv
-lap_times.csv
-fastf1_laps.csv
-```
-
-### FastF1
-
-FastF1 can provide session-level information such as:
-
-- lap timing
-- stint information
-- tyre compounds
-- weather
-- telemetry
-- track status
-- race-control context
-
-The pipeline should be capable of working with the current reproducible sample/synthetic data while allowing real data to be supplied without changing downstream model code.
-
----
-
-# 13. Synthetic vs. Real Data
-
-The Task 4 → Task 5 → Task 6 pipeline runs unchanged on either a reproducible **synthetic** session or a
-**real FastF1** session — the data source is recorded as a first-class fact
-(`data/processed/data_source.json`, exposed as `dataset_source` in `feature_metadata.json`, the model
-registry, every API response, and the frontend badge) rather than assumed. Nothing downstream hard-codes
-"synthetic" or "real" — the dashboard, reports, and predictions all read this field and describe themselves
-accordingly.
-
-### Using real data
+### Rebuilding everything from scratch
 
 ```bash
-# 1. Fetch a real session's lap data (needs network access; ~3-5s once cached)
+python scripts/build_all.py --force   # Tasks 1-6: knowledge base, expert system,
+                                       # search, EDA, and model training, in order
+```
+
+### Using real (different) race data instead of the checked-in session
+
+```bash
 python scripts/fetch_real_session.py --year 2023 --event Bahrain --session R
-
-# 2. Re-clean Task 4 on the new raw data (does NOT touch the other synthetic
-#    Kaggle-style tables, and does NOT regenerate synthetic laps — see the
-#    --regenerate-synthetic guard in scripts/build_all.py)
-python scripts/build_all.py --force
-
-# 3. Re-run Task 5's feature-engineering notebook against the new clean data.
-#    It is fully parameterised (paths + TOTAL_LAPS are derived from the data,
-#    not hard-coded), so re-running it end to end is enough:
-jupyter nbconvert --to notebook --execute --inplace \
-  docs/notebooks/task5_feature_engineering.ipynb
-# (or open it in Jupyter/VS Code and "Run All")
-
-# 4. Retrain Task 6 on the new, real feature matrix
 python scripts/build_all.py --force
 ```
 
-**This has been done in this repository** — the committed `artifacts/`, `data/processed/`, and model
-registry currently reflect the **2023 Bahrain Grand Prix (Race)**, 995 modelling rows across 20 drivers,
-not the synthetic demo. `data/processed/data_source.json` and every report say so explicitly.
+See [`docs/architecture.md`](docs/architecture.md#synthetic-vs-real-data) for why this matters and what changes when you do it.
 
-What changed once real strategic variation entered the data (worth reading before trusting any number):
+## Testing
 
-- **Regression got harder, honestly.** CV MAE went from 0.27s (synthetic) to ~1.2s (real); the best model
-  changed from `linear_regression` to `decision_tree`. Real lap times have far more structure a 6-feature
-  linear model can't capture — see `artifacts/reports/regression_report.md`.
-- **Classification stopped being trivially easy.** Real pit stops are spread across 21 distinct laps
-  instead of clustered at 2-3 laps, so — for the first time — the chronological holdout test set actually
-  contains pit events, and test-set ROC-AUC/PR-AUC are defined (not `undefined*`) for every model.
-- **Feature selection picked 45 regression features**, not 6 — with 20 real drivers and 10 real teams,
-  one-hot driver/team identity dummies survived the automated selection funnel. With only ~800 development
-  rows, this is a real overfitting risk the funnel doesn't itself guard against; treat the regression
-  numbers on this single race with appropriate skepticism (this is exactly the kind of judgment call the
-  Task 5 notebook's automated "K\* within 2% of best CV MAE" rule can't make for you).
-
-### Remaining next steps for going further on real data
-
-1. **More races.** One session is not a generalisable model. Fetch several real sessions
-   (`scripts/fetch_real_session.py` per race) and concatenate them before Task 5, so `race_progress` and
-   the field-pace features aren't fit to one track/weather combination. This needs a small change to Task
-   4/5 to accept multiple sessions and add a `RaceId`-like grouping key (currently assumes one session).
-2. **Revisit the 45-feature regression set.** Either tighten the near-zero-variance/correlation thresholds
-   in the notebook for many-driver real data, or cap the one-hot driver/team dummies, before trusting the
-   regression numbers.
-3. **Replace the other Kaggle-style tables** (`races/drivers/constructors/circuits/results/pit_stops/lap_times.csv`)
-   with real Ergast/Kaggle data too — they're still synthetic. They don't feed Task 5/6 (which reads only
-   `fastf1_laps_clean.csv`), but Task 4's driver/constructor/season EDA analyses do, and the frontend's
-   planned Data & EDA page would inherit that.
-4. **Cache real sessions in CI** or accept that `fetch_real_session.py` requires network access; the
-   synthetic path remains the default for fast, offline, deterministic testing.
-
----
-
-# 14. Research Direction
-
-The long-term objective is not merely to predict lap times.
-
-The system should progress from:
-
-```text
-Prediction
+```bash
+pytest tests/          # 120 tests: data contracts, leakage checks, chronological
+                        # splits, model training/persistence, API, and the
+                        # original Task 1-4 suites
+ruff check app/ scripts/ tests/    # lint
+cd frontend && npm run lint && npm run build   # frontend lint + type-check
 ```
 
-to:
+## Project Status
 
-```text
-Prediction + Reasoning + Optimisation
-```
+🟡 **Active development** — Tasks 1–6 of a 10-part computational-intelligence roadmap are implemented as one working application.
 
-and ultimately:
+### Completed
+- ✓ Knowledge representation (ontology + knowledge graph)
+- ✓ Rule-based expert system (forward/backward chaining, explanations)
+- ✓ State-space search (BFS/DFS/UCS/Greedy/A\* strategy optimization)
+- ✓ Data preparation & EDA (real + synthetic FastF1 pipelines)
+- ✓ Feature engineering & automated feature selection
+- ✓ Machine learning (10 models, time-aware validation, persisted pipelines)
+- ✓ FastAPI backend with cached model serving
+- ✓ Race Strategy Simulator, Machine Learning dashboard, Data & Analysis, and Project Evidence pages
 
-```text
-Classical Intelligence
-        +
-Machine Learning
-        +
-Deep Learning
-        +
-Explainability
-        +
-Quantum Optimisation
-        ↓
-Race Strategy Decision Support
-```
+### In Progress
+- → Broadening real-data training beyond a single race session
 
-The classical search implementation provides an optimisation baseline for later quantum approaches such as QAOA/hybrid optimisation.
+### Planned
+- ○ Deep learning models (Task 7)
+- ○ SHAP/LIME explainability and trust scores (Task 8)
+- ○ Full system integration polish (Task 9)
+- ○ Formal responsible-AI evaluation (Task 10)
 
-Task 5 deliberately keeps the selected feature count compact because model width is especially important for downstream quantum models.
+## Known Limitations
 
----
+- **Single-session training data.** Models are trained on one real Grand Prix (2023 Bahrain). Results are honest for that race but shouldn't be read as a general-purpose F1 model — see [`docs/architecture.md`](docs/architecture.md#synthetic-vs-real-data).
+- **Frontend dependency vulnerabilities.** `npm audit` flags high-severity CVEs in Next.js 14.2.35 and its transitive deps; fixing them requires a major-version bump (Next 14→16) that hasn't been validated against this app yet. Not exploitable in a local/demo context, but worth knowing before deploying this publicly.
+- **XGBoost is optional.** If the native OpenMP runtime (`libomp` on macOS) isn't installed, XGBoost is skipped with an explicit status rather than failing — this is by design, not a bug, but it means "10 models" can be 8 on a machine without `libomp`.
 
-# 15. Design Principles
+## What I Learned
 
-1. **One integrated application**
-2. **Clear computational-intelligence boundaries without artificial folder boundaries**
-3. **Single source of truth for domain concepts**
-4. **No duplicated datasets**
-5. **No duplicated feature engineering**
-6. **No data leakage**
-7. **Chronology-aware validation**
-8. **Reproducible experiments**
-9. **Actual generated artifacts only**
-10. **Explainability by design**
-11. **Frontend consumes backend-generated results**
-12. **Classical methods establish baselines before quantum methods**
-13. **Synthetic results are explicitly labelled**
-14. **Every important recommendation should have traceable evidence**
+- **A "correct-looking" ML pipeline can still be silently wrong.** The race-strategy simulator's driver/team dropdowns had *zero* effect on real-data predictions for a while — the feature-construction code special-cased two feature names from the synthetic dataset and didn't recognize the real dataset's one-hot driver/team columns, so they always fell back to a training-data median. Fixed by classifying every feature generically against the live contract instead of a fixed name list, and added regression tests that assert changing a dropdown actually changes at least one feature value.
+- **A demo preset can quietly ask a model to extrapolate.** A "high tyre degradation" scenario used a hard-coded 48°C track temperature; the real session it was trained on never exceeded 31°C, so the resulting feature value was ~34x outside the model's training range — an arbitrary, meaningless prediction that looked plausible. Fixed by deriving demo presets from the real data's actual range, and by adding a general out-of-range detector that flags any prediction extrapolating beyond training data, surfaced directly in the UI.
+- **Time-aware validation isn't optional for panel/time-series data.** A random K-fold here would train on lap 40 and validate on lap 10 — a leak that would make classification metrics look far better than they are. Every model is validated with expanding-window, lap-forward folds instead.
 
----
+## Future Improvements
 
-# 16. Project Status
+- Train across multiple real sessions instead of one, with a proper race/season grouping key
+- Add SHAP-based explanations per prediction (Task 8)
+- Deploy a live demo (currently local-only)
+- Revisit the ~45-feature regression set the automated selection funnel picked for real data — a real overfitting risk on ~800 training rows worth tightening
 
-| Capability | Status |
-|---|---|
-| Knowledge Representation | ✅ Implemented |
-| Rule-Based Expert System | ✅ Implemented |
-| State-Space Search | ✅ Implemented |
-| Data Preparation & EDA | ✅ Implemented |
-| Feature Engineering & Selection | ✅ Implemented |
-| Classical ML (Task 6) | ✅ Implemented — 10 models trained, backend API, dashboard, strategy simulator |
-| Deep Learning | ⏳ Planned (Task 7) |
-| Explainable AI | ⏳ Planned (Task 8) |
-| Unified Deployment | 🚧 Backend + partial frontend done; remaining dashboard pages planned (Task 9) |
-| Responsible AI Evaluation | ⏳ Planned (Task 10) |
-| Quantum Optimisation | ⏳ Planned |
+## License
 
----
-
-## 17. Final Goal
-
-The finished application should feel like **one Formula 1 race-strategy intelligence platform**, not ten laboratory submissions placed beside each other.
-
-A user should be able to open the application, inspect the data, understand the domain, compare reasoning engines, evaluate ML models, run a race scenario, see the evidence behind the recommendation, and eventually compare classical optimisation against quantum optimisation — all from one coherent interface.
-
----
-
-## Academic / Laboratory Context
-
-This project implements the Computational Intelligence workflow represented by the supplied **10-task Intelligent Clinical Decision Support System summary**, adapted to the Formula 1 race-strategy domain.
-
-The mapping is:
-
-```text
-Knowledge Representation
-        ↓
-Rule-Based Expert System
-        ↓
-State-Space Search
-        ↓
-Data Preparation & EDA
-        ↓
-Feature Engineering & Selection
-        ↓
-Machine Learning
-        ↓
-Deep Learning
-        ↓
-Explainable AI
-        ↓
-System Integration & Deployment
-        ↓
-System Evaluation / Responsible AI
-```
-
-The healthcare/CDSS example is therefore used as the **computational-intelligence task structure**, while the actual domain, data, models and outputs of this project remain Formula 1 race strategy.
+[MIT](LICENSE)
