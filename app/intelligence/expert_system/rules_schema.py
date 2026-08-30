@@ -32,9 +32,9 @@ symbolic system.
 from __future__ import annotations
 
 import operator as _op
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Mapping, Sequence, Tuple
+from typing import Any, Callable, Dict, Mapping, Sequence, Tuple
 
 
 class Operator(str, Enum):

@@ -22,13 +22,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 import networkx as nx
+from rdflib import RDF, RDFS, Literal, Namespace, URIRef
 from rdflib import Graph as RDFGraph
-from rdflib import Literal, Namespace, RDF, RDFS, URIRef
 
-from .schema import ENTITIES, RELATIONSHIPS, entities_by_name
+from .schema import ENTITIES, RELATIONSHIPS
 
 F1 = Namespace("http://f1kr.org/resource/")
 F1O = Namespace("http://f1kr.org/ontology/formula1#")

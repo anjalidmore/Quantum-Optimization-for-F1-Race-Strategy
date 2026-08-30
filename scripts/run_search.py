@@ -33,12 +33,12 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
 
+from app.core.paths import SEARCH_ARTIFACTS_DIR  # noqa: E402
 from app.intelligence.search import reports as rep  # noqa: E402
 from app.intelligence.search import visualize as viz  # noqa: E402
 from app.intelligence.search.algorithms import run_all  # noqa: E402
 from app.intelligence.search.comparison import compare, summarise  # noqa: E402
 from app.intelligence.search.problem import Compound, RaceProblem  # noqa: E402
-from app.core.paths import SEARCH_ARTIFACTS_DIR  # noqa: E402
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s | %(levelname)-7s | %(message)s",

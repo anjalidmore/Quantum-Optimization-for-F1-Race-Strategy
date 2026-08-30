@@ -445,7 +445,7 @@ function ResultPanel({
               </pre>
               {p.approximated_features["target_laptime"]?.length > 0 && (
                 <p className="text-white/40 mt-1">
-                  Auto-filled from training-data medians (require multi-lap history this snapshot can't
+                  Auto-filled from training-data medians (require multi-lap history this snapshot can&apos;t
                   supply): {p.approximated_features["target_laptime"].join(", ")}
                 </p>
               )}

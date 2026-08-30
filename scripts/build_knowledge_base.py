@@ -35,12 +35,12 @@ import networkx as nx
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
 
-from app.intelligence.knowledge_representation import ontology as onto_mod  # noqa: E402
+from app.core.paths import KNOWLEDGE_REPRESENTATION_ARTIFACTS_DIR  # noqa: E402
 from app.intelligence.knowledge_representation import knowledge_graph as kg  # noqa: E402
+from app.intelligence.knowledge_representation import ontology as onto_mod  # noqa: E402
 from app.intelligence.knowledge_representation import reports as rep  # noqa: E402
 from app.intelligence.knowledge_representation import validation as val  # noqa: E402
 from app.intelligence.knowledge_representation import visualize as viz  # noqa: E402
-from app.core.paths import KNOWLEDGE_REPRESENTATION_ARTIFACTS_DIR  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,

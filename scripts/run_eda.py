@@ -37,9 +37,6 @@ import pandas as pd
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
 
-from app.intelligence.data import eda, reports as rep, synthetic, visualize as viz  # noqa: E402
-from app.intelligence.data.pipeline import clean_table, encode_and_scale, load_csv  # noqa: E402
-from app.intelligence.data.schemas import ALL_SCHEMAS  # noqa: E402
 from app.core.paths import (  # noqa: E402
     DATA_ENGINEERING_ARTIFACTS_DIR,
     DATA_PROCESSED_DIR,
@@ -48,6 +45,11 @@ from app.core.paths import (  # noqa: E402
     PROCESSED_DATA_SOURCE_JSON,
     RAW_DATA_SOURCE_MARKER,
 )
+from app.intelligence.data import eda, synthetic  # noqa: E402
+from app.intelligence.data import reports as rep
+from app.intelligence.data import visualize as viz
+from app.intelligence.data.pipeline import clean_table, encode_and_scale, load_csv  # noqa: E402
+from app.intelligence.data.schemas import ALL_SCHEMAS  # noqa: E402
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s | %(levelname)-7s | %(message)s",

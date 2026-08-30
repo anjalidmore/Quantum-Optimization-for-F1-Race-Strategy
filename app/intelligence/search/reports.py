@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Sequence
+from typing import Dict, List
 
 from .algorithms import SearchResult
 from .comparison import ComparisonRow, summarise

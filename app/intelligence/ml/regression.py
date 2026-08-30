@@ -18,10 +18,10 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
 
 from app.intelligence.features.contract import FeatureContract
 from app.intelligence.ml.preprocessing import build_model_pipeline
