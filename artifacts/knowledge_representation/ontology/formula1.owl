@@ -1,0 +1,1094 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xml:base="http://f1kr.org/ontology/formula1"
+         xmlns="http://f1kr.org/ontology/formula1#">
+
+<owl:Ontology rdf:about="http://f1kr.org/ontology/formula1"/>
+
+<owl:ObjectProperty rdf:about="#drives_for">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="#Constructor"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A driver competes on behalf of a constructor.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#owns">
+  <rdfs:domain rdf:resource="#Constructor"/>
+  <rdfs:range rdf:resource="#Car"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A constructor owns / fields cars.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#participates_in">
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="#Race"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A driver takes part in a race.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#held_at">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Race"/>
+  <rdfs:range rdf:resource="#Circuit"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A race is held at a circuit.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#belongs_to_season">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Race"/>
+  <rdfs:range rdf:resource="#Season"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A race belongs to a season.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#instance_of_gp">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Race"/>
+  <rdfs:range rdf:resource="#GrandPrix"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A race is an instance of a recurring Grand Prix.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#contains_lap">
+  <rdfs:domain rdf:resource="#Race"/>
+  <rdfs:range rdf:resource="#Lap"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A race contains laps.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#lap_of_driver">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Lap"/>
+  <rdfs:range rdf:resource="#Driver"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A lap is driven by a driver.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#lap_in_session">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Lap"/>
+  <rdfs:range rdf:resource="#Session"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A lap belongs to a session.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#lap_has_telemetry">
+  <rdfs:domain rdf:resource="#Lap"/>
+  <rdfs:range rdf:resource="#Telemetry"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A lap carries telemetry samples.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#lap_has_sector">
+  <rdfs:domain rdf:resource="#Lap"/>
+  <rdfs:range rdf:resource="#Sector"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A lap is divided into sectors.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#sector_has_time">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Sector"/>
+  <rdfs:range rdf:resource="#SectorTime"/>
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#InverseFunctionalProperty"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A sector has a measured sector time.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#performs_pitstop">
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="#PitStop"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A driver performs pit stops.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#pitstop_changes_tyre">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#PitStop"/>
+  <rdfs:range rdf:resource="#TyreCompound"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A pit stop changes to a tyre compound.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#pitstop_begins_stint">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#PitStop"/>
+  <rdfs:range rdf:resource="#Stint"/>
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#InverseFunctionalProperty"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A pit stop begins a new stint.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#stint_uses_compound">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Stint"/>
+  <rdfs:range rdf:resource="#TyreCompound"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A stint runs on a tyre compound.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#weather_affects_strategy">
+  <rdfs:domain rdf:resource="#Weather"/>
+  <rdfs:range rdf:resource="#Strategy"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Weather conditions influence strategy.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#safetycar_affects_pitwindow">
+  <rdfs:domain rdf:resource="#SafetyCar"/>
+  <rdfs:range rdf:resource="#PitWindow"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Safety-car deployment shifts the optimal pit window.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#trackstatus_affects_strategy">
+  <rdfs:domain rdf:resource="#TrackStatus"/>
+  <rdfs:range rdf:resource="#Strategy"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Track status influences strategy.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#telemetry_influences_prediction">
+  <rdfs:domain rdf:resource="#Telemetry"/>
+  <rdfs:range rdf:resource="#Prediction"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Telemetry features feed predictions.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#strategy_recommends_pitstop">
+  <rdfs:domain rdf:resource="#Strategy"/>
+  <rdfs:range rdf:resource="#PitStop"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A strategy recommends pit stops.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#strategy_recommends_tyre">
+  <rdfs:domain rdf:resource="#Strategy"/>
+  <rdfs:range rdf:resource="#TyreCompound"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A strategy recommends tyre compounds.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#strategy_predicts_position">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Strategy"/>
+  <rdfs:range rdf:resource="#Position"/>
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#InverseFunctionalProperty"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A strategy predicts a finish position.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#prediction_generates_recommendation">
+  <rdfs:domain rdf:resource="#Prediction"/>
+  <rdfs:range rdf:resource="#Recommendation"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A prediction yields recommendations.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#driver_has_result">
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="#Result"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A driver has classified results.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#result_in_race">
+  <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+  <rdfs:domain rdf:resource="#Result"/>
+  <rdfs:range rdf:resource="#Race"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A result is recorded for a race.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#driver_has_standing">
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="#DriverStanding"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A driver has championship standings.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#constructor_has_standing">
+  <rdfs:domain rdf:resource="#Constructor"/>
+  <rdfs:range rdf:resource="#ConstructorStanding"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A constructor has championship standings.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:ObjectProperty rdf:about="#optimization_yields_strategy">
+  <rdfs:domain rdf:resource="#Optimization"/>
+  <rdfs:range rdf:resource="#Strategy"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Optimisation produces candidate strategies.</rdfs:comment>
+</owl:ObjectProperty>
+
+<owl:DatatypeProperty rdf:about="#Season_year">
+  <rdfs:domain rdf:resource="#Season"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Calendar year of the championship.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Season_url">
+  <rdfs:domain rdf:resource="#Season"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Reference URL for the season.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Race_round">
+  <rdfs:domain rdf:resource="#Race"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Round number within the season.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Race_name">
+  <rdfs:domain rdf:resource="#Race"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Official race name.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Race_date">
+  <rdfs:domain rdf:resource="#Race"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Race date.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#GrandPrix_name">
+  <rdfs:domain rdf:resource="#GrandPrix"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Grand Prix name.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Circuit_name">
+  <rdfs:domain rdf:resource="#Circuit"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Circuit name.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Circuit_location">
+  <rdfs:domain rdf:resource="#Circuit"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">City / locality.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Circuit_country">
+  <rdfs:domain rdf:resource="#Circuit"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Country.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Circuit_length_km">
+  <rdfs:domain rdf:resource="#Circuit"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Track length. [km]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Circuit_lat">
+  <rdfs:domain rdf:resource="#Circuit"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Latitude. [deg]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Circuit_lng">
+  <rdfs:domain rdf:resource="#Circuit"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Longitude. [deg]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Driver_driver_ref">
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Stable identifier / reference.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Driver_code">
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Three-letter driver code (e.g. VER).</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Driver_number">
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Permanent car number.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Driver_forename">
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">First name.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Driver_surname">
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Last name.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Driver_nationality">
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Nationality.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Driver_dob">
+  <rdfs:domain rdf:resource="#Driver"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Date of birth.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Constructor_constructor_ref">
+  <rdfs:domain rdf:resource="#Constructor"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Stable identifier.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Constructor_name">
+  <rdfs:domain rdf:resource="#Constructor"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Constructor name.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Constructor_nationality">
+  <rdfs:domain rdf:resource="#Constructor"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Nationality.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Team_name">
+  <rdfs:domain rdf:resource="#Team"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Team name as reported by timing.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Car_chassis">
+  <rdfs:domain rdf:resource="#Car"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Chassis designation.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Car_power_unit">
+  <rdfs:domain rdf:resource="#Car"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Power unit manufacturer.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Session_session_type">
+  <rdfs:domain rdf:resource="#Session"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">FP/Q/S/R type code.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Session_start_time">
+  <rdfs:domain rdf:resource="#Session"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Session start.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Qualifying_q1">
+  <rdfs:domain rdf:resource="#Qualifying"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Q1 time. [s]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Qualifying_q2">
+  <rdfs:domain rdf:resource="#Qualifying"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Q2 time. [s]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Qualifying_q3">
+  <rdfs:domain rdf:resource="#Qualifying"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Q3 time. [s]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Lap_lap_number">
+  <rdfs:domain rdf:resource="#Lap"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Lap index within the session.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Lap_lap_time">
+  <rdfs:domain rdf:resource="#Lap"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Total lap time. [s]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Lap_is_personal_best">
+  <rdfs:domain rdf:resource="#Lap"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Whether this is the driver PB.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Sector_sector_number">
+  <rdfs:domain rdf:resource="#Sector"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Sector index 1-3.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#SectorTime_time">
+  <rdfs:domain rdf:resource="#SectorTime"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Sector time. [s]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#LapTime_milliseconds">
+  <rdfs:domain rdf:resource="#LapTime"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Lap time. [ms]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#FastestLap_rank">
+  <rdfs:domain rdf:resource="#FastestLap"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Rank of the fastest lap.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#FastestLap_time">
+  <rdfs:domain rdf:resource="#FastestLap"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Fastest lap time. [s]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Gap_seconds">
+  <rdfs:domain rdf:resource="#Gap"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Gap. [s]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Interval_seconds">
+  <rdfs:domain rdf:resource="#Interval"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Interval. [s]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Overtake_lap">
+  <rdfs:domain rdf:resource="#Overtake"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Lap on which it occurred.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#PitStop_lap">
+  <rdfs:domain rdf:resource="#PitStop"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Lap on which the stop occurred.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#PitStop_duration">
+  <rdfs:domain rdf:resource="#PitStop"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Stationary + pit-lane time. [s]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#PitStop_stop_number">
+  <rdfs:domain rdf:resource="#PitStop"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ordinal stop for the driver.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#PitWindow_open_lap">
+  <rdfs:domain rdf:resource="#PitWindow"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">First viable lap.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#PitWindow_close_lap">
+  <rdfs:domain rdf:resource="#PitWindow"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Last viable lap.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Stint_stint_number">
+  <rdfs:domain rdf:resource="#Stint"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ordinal stint.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Stint_start_lap">
+  <rdfs:domain rdf:resource="#Stint"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">First lap of the stint.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Stint_end_lap">
+  <rdfs:domain rdf:resource="#Stint"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Last lap of the stint.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#TyreCompound_compound">
+  <rdfs:domain rdf:resource="#TyreCompound"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Compound name.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#TyreCompound_colour">
+  <rdfs:domain rdf:resource="#TyreCompound"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Marking colour.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#TyreLife_laps">
+  <rdfs:domain rdf:resource="#TyreLife"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Laps completed on the set.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#TyreLife_wear_pct">
+  <rdfs:domain rdf:resource="#TyreLife"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Estimated wear. [%]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#TrackTemperature_value">
+  <rdfs:domain rdf:resource="#TrackTemperature"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Temp. [C]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#AirTemperature_value">
+  <rdfs:domain rdf:resource="#AirTemperature"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Temp. [C]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Humidity_value">
+  <rdfs:domain rdf:resource="#Humidity"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Humidity. [%]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#WindSpeed_value">
+  <rdfs:domain rdf:resource="#WindSpeed"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Speed. [m/s]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#RainProbability_value">
+  <rdfs:domain rdf:resource="#RainProbability"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Probability. [%]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#FuelLoad_kg">
+  <rdfs:domain rdf:resource="#FuelLoad"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Fuel mass. [kg]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#EngineMode_mode">
+  <rdfs:domain rdf:resource="#EngineMode"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Mode label.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#ERS_charge_pct">
+  <rdfs:domain rdf:resource="#ERS"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">State of charge. [%]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#DRS_active">
+  <rdfs:domain rdf:resource="#DRS"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Whether DRS is open.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Speed_value">
+  <rdfs:domain rdf:resource="#Speed"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Speed. [km/h]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Throttle_value">
+  <rdfs:domain rdf:resource="#Throttle"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Throttle. [%]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Brake_value">
+  <rdfs:domain rdf:resource="#Brake"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Brake on/off.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#RPM_value">
+  <rdfs:domain rdf:resource="#RPM"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">RPM.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Gear_value">
+  <rdfs:domain rdf:resource="#Gear"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Gear index.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#RaceControlMessage_message">
+  <rdfs:domain rdf:resource="#RaceControlMessage"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Message text.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#RaceControlMessage_lap">
+  <rdfs:domain rdf:resource="#RaceControlMessage"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Lap of issue.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Incident_description">
+  <rdfs:domain rdf:resource="#Incident"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Incident detail.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Penalty_seconds">
+  <rdfs:domain rdf:resource="#Penalty"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Time penalty. [s]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Penalty_reason">
+  <rdfs:domain rdf:resource="#Penalty"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Reason.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Result_position">
+  <rdfs:domain rdf:resource="#Result"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Finishing position.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Result_points">
+  <rdfs:domain rdf:resource="#Result"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Points scored.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Result_status">
+  <rdfs:domain rdf:resource="#Result"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Finish status.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Position_value">
+  <rdfs:domain rdf:resource="#Position"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Position number.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Points_value">
+  <rdfs:domain rdf:resource="#Points"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Points.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#DriverStanding_points">
+  <rdfs:domain rdf:resource="#DriverStanding"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Cumulative points.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#DriverStanding_position">
+  <rdfs:domain rdf:resource="#DriverStanding"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Standing position.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#DriverStanding_wins">
+  <rdfs:domain rdf:resource="#DriverStanding"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Wins to date.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#ConstructorStanding_points">
+  <rdfs:domain rdf:resource="#ConstructorStanding"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Cumulative points.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#ConstructorStanding_position">
+  <rdfs:domain rdf:resource="#ConstructorStanding"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Standing position.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#ConstructorStanding_wins">
+  <rdfs:domain rdf:resource="#ConstructorStanding"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Wins to date.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Strategy_name">
+  <rdfs:domain rdf:resource="#Strategy"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Strategy label.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Strategy_n_stops">
+  <rdfs:domain rdf:resource="#Strategy"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Planned pit stops.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Prediction_target">
+  <rdfs:domain rdf:resource="#Prediction"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Predicted quantity.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Prediction_confidence">
+  <rdfs:domain rdf:resource="#Prediction"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Confidence. [%]</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Recommendation_text">
+  <rdfs:domain rdf:resource="#Recommendation"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Recommendation text.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Optimization_objective">
+  <rdfs:domain rdf:resource="#Optimization"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Objective optimised.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="#Optimization_value">
+  <rdfs:domain rdf:resource="#Optimization"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Objective value.</rdfs:comment>
+</owl:DatatypeProperty>
+
+<owl:Class rdf:about="#CarStateCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#CompetitionCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#CompetitorCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#DecisionCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#PitStrategyCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#RaceControlCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#ResultCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#SessionCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#TelemetryCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#TimingCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#TyreCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#WeatherCategory">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Season">
+  <rdfs:subClassOf rdf:resource="#CompetitionCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A Formula One championship year.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Race">
+  <rdfs:subClassOf rdf:resource="#CompetitionCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A single championship round / event weekend.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#GrandPrix">
+  <rdfs:subClassOf rdf:resource="#CompetitionCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">The recurring named event (e.g. 'Monaco Grand Prix') across seasons.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Circuit">
+  <rdfs:subClassOf rdf:resource="#CompetitionCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A racing venue / track.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Driver">
+  <rdfs:subClassOf rdf:resource="#CompetitorCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A racing driver.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Constructor">
+  <rdfs:subClassOf rdf:resource="#CompetitorCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A constructor / entrant team.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Team">
+  <rdfs:subClassOf rdf:resource="#CompetitorCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">The operational team entity that fields cars for a constructor.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Car">
+  <rdfs:subClassOf rdf:resource="#CompetitorCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">The chassis + power unit fielded by a team.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Session">
+  <rdfs:subClassOf rdf:resource="#SessionCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">An on-track session within a race weekend.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Lap">
+  <rdfs:subClassOf rdf:resource="#TimingCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A single completed lap by a driver in a session.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Sector">
+  <rdfs:subClassOf rdf:resource="#TimingCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">One of the three timing sectors of a lap.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#SectorTime">
+  <rdfs:subClassOf rdf:resource="#TimingCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">The measured time for a sector.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#LapTime">
+  <rdfs:subClassOf rdf:resource="#TimingCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A recorded lap-time measurement.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#FastestLap">
+  <rdfs:subClassOf rdf:resource="#TimingCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">The fastest lap of a driver in a race.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Gap">
+  <rdfs:subClassOf rdf:resource="#TimingCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Time gap to a reference car.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Interval">
+  <rdfs:subClassOf rdf:resource="#TimingCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Interval to the car directly ahead.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Overtake">
+  <rdfs:subClassOf rdf:resource="#TimingCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">An on-track position change event.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#PitStop">
+  <rdfs:subClassOf rdf:resource="#PitStrategyCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A pit-lane stop performed by a driver.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#PitWindow">
+  <rdfs:subClassOf rdf:resource="#PitStrategyCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">The lap range within which a pit stop is strategically optimal.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Stint">
+  <rdfs:subClassOf rdf:resource="#PitStrategyCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A continuous run on one set of tyres between pit stops.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#TyreConcept">
+  <rdfs:subClassOf rdf:resource="#TyreCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Abstract root for tyre-related concepts.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Weather">
+  <rdfs:subClassOf rdf:resource="#WeatherCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Weather conditions during a session.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#FuelLoad">
+  <rdfs:subClassOf rdf:resource="#CarStateCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Estimated fuel mass on board.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#EngineMode">
+  <rdfs:subClassOf rdf:resource="#CarStateCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Power-unit deployment mode.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#ERS">
+  <rdfs:subClassOf rdf:resource="#CarStateCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Energy Recovery System state.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#DRS">
+  <rdfs:subClassOf rdf:resource="#CarStateCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Drag Reduction System state.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Telemetry">
+  <rdfs:subClassOf rdf:resource="#TelemetryCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A telemetry sample stream for a lap.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#TrackStatus">
+  <rdfs:subClassOf rdf:resource="#RaceControlCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Overall track status flag state.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#RaceControlMessage">
+  <rdfs:subClassOf rdf:resource="#RaceControlCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">An official race-control message.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Incident">
+  <rdfs:subClassOf rdf:resource="#RaceControlCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">An on-track incident under investigation.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Penalty">
+  <rdfs:subClassOf rdf:resource="#RaceControlCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A sporting penalty applied to a driver.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Result">
+  <rdfs:subClassOf rdf:resource="#ResultCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A driver's classified result in a race.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Position">
+  <rdfs:subClassOf rdf:resource="#ResultCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A position/order value.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Points">
+  <rdfs:subClassOf rdf:resource="#ResultCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Championship points value.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Championship">
+  <rdfs:subClassOf rdf:resource="#ResultCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A championship classification context.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Strategy">
+  <rdfs:subClassOf rdf:resource="#DecisionCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A recommended race-strategy plan (pit/tyre/fuel decisions).</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Prediction">
+  <rdfs:subClassOf rdf:resource="#DecisionCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A model prediction over race outcomes.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Recommendation">
+  <rdfs:subClassOf rdf:resource="#DecisionCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">An actionable recommendation surfaced to the race engineer.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Optimization">
+  <rdfs:subClassOf rdf:resource="#DecisionCategory"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">An optimisation result over the strategy search space.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#PracticeSession">
+  <rdfs:subClassOf rdf:resource="#Session"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A free-practice session.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Qualifying">
+  <rdfs:subClassOf rdf:resource="#Session"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A qualifying session.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Sprint">
+  <rdfs:subClassOf rdf:resource="#Session"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A sprint race session.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#TyreCompound">
+  <rdfs:subClassOf rdf:resource="#TyreConcept"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A tyre compound (Soft/Medium/Hard/Inter/Wet).</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#TyreLife">
+  <rdfs:subClassOf rdf:resource="#TyreConcept"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Accumulated age/wear of a tyre set.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#TrackTemperature">
+  <rdfs:subClassOf rdf:resource="#Weather"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Track surface temperature.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#AirTemperature">
+  <rdfs:subClassOf rdf:resource="#Weather"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Ambient air temperature.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Humidity">
+  <rdfs:subClassOf rdf:resource="#Weather"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Relative humidity.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#WindSpeed">
+  <rdfs:subClassOf rdf:resource="#Weather"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Wind speed.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#RainProbability">
+  <rdfs:subClassOf rdf:resource="#Weather"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Probability of rain.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Speed">
+  <rdfs:subClassOf rdf:resource="#Telemetry"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Instantaneous car speed.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Throttle">
+  <rdfs:subClassOf rdf:resource="#Telemetry"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Throttle application.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Brake">
+  <rdfs:subClassOf rdf:resource="#Telemetry"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Brake application.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#RPM">
+  <rdfs:subClassOf rdf:resource="#Telemetry"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Engine revolutions per minute.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#Gear">
+  <rdfs:subClassOf rdf:resource="#Telemetry"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Selected gear.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#SafetyCar">
+  <rdfs:subClassOf rdf:resource="#TrackStatus"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Full safety-car deployment.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#VirtualSafetyCar">
+  <rdfs:subClassOf rdf:resource="#TrackStatus"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Virtual safety-car period.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#YellowFlag">
+  <rdfs:subClassOf rdf:resource="#TrackStatus"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Yellow-flag caution.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#RedFlag">
+  <rdfs:subClassOf rdf:resource="#TrackStatus"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Session-stopping red flag.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#BlueFlag">
+  <rdfs:subClassOf rdf:resource="#TrackStatus"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Blue flag (yield to leaders).</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#DriverStanding">
+  <rdfs:subClassOf rdf:resource="#Championship"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A driver's championship standing snapshot.</rdfs:comment>
+</owl:Class>
+
+<owl:Class rdf:about="#ConstructorStanding">
+  <rdfs:subClassOf rdf:resource="#Championship"/>
+  <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A constructor's championship standing snapshot.</rdfs:comment>
+</owl:Class>
+
+
+</rdf:RDF>

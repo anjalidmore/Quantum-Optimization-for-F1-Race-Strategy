@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-08-30T16:15:40.145031+00:00",
+  "dataset": "data/processed/f1_features_selected.csv",
+  "dataset_source": {
+    "source": "real_fastf1",
+    "year": 2023,
+    "event": "Bahrain",
+    "session": "R",
+    "fetched_at": "2026-08-30T12:34:08.172714+00:00",
+    "n_laps": 1055,
+    "n_drivers": 20
+  },
+  "synthetic_data_warning": false,
+  "best_regression_model": "decision_tree",
+  "best_classification_model": "random_forest",
+  "models": [
+    "artifacts/models/laptime/decision_tree.joblib",
+    "artifacts/models/laptime/linear_regression.joblib",
+    "artifacts/models/laptime/random_forest.joblib",
+    "artifacts/models/laptime/svr.joblib",
+    "artifacts/models/laptime/xgboost.joblib",
+    "artifacts/models/pit_decision/decision_tree.joblib",
+    "artifacts/models/pit_decision/logistic_regression.joblib",
+    "artifacts/models/pit_decision/random_forest.joblib",
+    "artifacts/models/pit_decision/svm.joblib",
+    "artifacts/models/pit_decision/xgboost.joblib"
+  ],
+  "metrics": [
+    "artifacts/metrics/classification_metrics.json",
+    "artifacts/metrics/cv_fold_metrics.json",
+    "artifacts/metrics/model_comparison.json",
+    "artifacts/metrics/regression_metrics.json"
+  ],
+  "figures": [
+    "artifacts/figures/regression_model_comparison.png",
+    "artifacts/figures/prediction_vs_actual.png",
+    "artifacts/figures/residuals.png",
+    "artifacts/figures/residuals_vs_predictions.png",
+    "artifacts/figures/feature_importance.png",
+    "artifacts/figures/classification_model_comparison.png",
+    "artifacts/figures/roc_curves.png",
+    "artifacts/figures/precision_recall_curves.png",
+    "artifacts/figures/confusion_matrix.png",
+    "artifacts/figures/classification_feature_importance.png",
+    "artifacts/figures/probability_distribution.png"
+  ],
+  "reports": [
+    "artifacts/reports/regression_report.md",
+    "artifacts/reports/classification_report.md",
+    "artifacts/reports/model_selection_report.md",
+    "artifacts/reports/ml_evaluation_report.md"
+  ]
+}

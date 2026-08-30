@@ -1,0 +1,115 @@
+@prefix f1: <http://f1kr.org/resource/> .
+@prefix f1o: <http://f1kr.org/ontology/formula1#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+f1:driver_alonso a f1o:Driver ;
+    rdfs:label "driver_alonso" ;
+    f1o:Driver_code "ALO" ;
+    f1o:Driver_forename "Fernando" ;
+    f1o:Driver_nationality "Spanish" ;
+    f1o:Driver_number 14 ;
+    f1o:Driver_surname "Alonso" ;
+    f1o:drives_for f1:constructor_aston ;
+    f1o:participates_in f1:race_monaco_2023 .
+
+f1:weather_dry a f1o:Weather ;
+    rdfs:label "weather_dry" ;
+    f1o:weather_affects_strategy f1:strategy_onestop .
+
+f1:circuit_monaco a f1o:Circuit ;
+    rdfs:label "circuit_monaco" ;
+    f1o:Circuit_country "Monaco" ;
+    f1o:Circuit_length_km 3.337e+00 ;
+    f1o:Circuit_name "Circuit de Monaco" .
+
+f1:constructor_aston a f1o:Constructor ;
+    rdfs:label "constructor_aston" ;
+    f1o:Constructor_name "Aston Martin" ;
+    f1o:Constructor_nationality "British" .
+
+f1:constructor_redbull a f1o:Constructor ;
+    rdfs:label "constructor_redbull" ;
+    f1o:Constructor_name "Red Bull" ;
+    f1o:Constructor_nationality "Austrian" .
+
+f1:driver_verstappen a f1o:Driver ;
+    rdfs:label "driver_verstappen" ;
+    f1o:Driver_code "VER" ;
+    f1o:Driver_forename "Max" ;
+    f1o:Driver_nationality "Dutch" ;
+    f1o:Driver_number 1 ;
+    f1o:Driver_surname "Verstappen" ;
+    f1o:driver_has_result f1:result_ver_monaco ;
+    f1o:drives_for f1:constructor_redbull ;
+    f1o:participates_in f1:race_monaco_2023 ;
+    f1o:performs_pitstop f1:pitstop_ver_1 .
+
+f1:gp_monaco a f1o:GrandPrix ;
+    rdfs:label "gp_monaco" ;
+    f1o:GrandPrix_name "Monaco Grand Prix" .
+
+f1:lap_ver_1 a f1o:Lap ;
+    rdfs:label "lap_ver_1" ;
+    f1o:Lap_lap_number 1 ;
+    f1o:Lap_lap_time 7.8421e+01 ;
+    f1o:lap_in_session f1:session_race ;
+    f1o:lap_of_driver f1:driver_verstappen .
+
+f1:position_p1 a f1o:Position ;
+    rdfs:label "position_p1" ;
+    f1o:Position_value 1 .
+
+f1:result_ver_monaco a f1o:Result ;
+    rdfs:label "result_ver_monaco" ;
+    f1o:Result_points 2.5e+01 ;
+    f1o:Result_position 1 ;
+    f1o:Result_status "Finished" ;
+    f1o:result_in_race f1:race_monaco_2023 .
+
+f1:season_2023 a f1o:Season ;
+    rdfs:label "season_2023" ;
+    f1o:Season_year 2023 .
+
+f1:session_race a f1o:Session ;
+    rdfs:label "session_race" ;
+    f1o:Session_session_type "R" .
+
+f1:stint_ver_1 a f1o:Stint ;
+    rdfs:label "stint_ver_1" ;
+    f1o:Stint_end_lap 54 ;
+    f1o:Stint_start_lap 1 ;
+    f1o:Stint_stint_number 1 ;
+    f1o:stint_uses_compound f1:compound_medium .
+
+f1:strategy_onestop a f1o:Strategy ;
+    rdfs:label "strategy_onestop" ;
+    f1o:Strategy_n_stops 1 ;
+    f1o:Strategy_name "One-stop (M->H)" ;
+    f1o:strategy_predicts_position f1:position_p1 ;
+    f1o:strategy_recommends_pitstop f1:pitstop_ver_1 ;
+    f1o:strategy_recommends_tyre f1:compound_medium .
+
+f1:pitstop_ver_1 a f1o:PitStop ;
+    rdfs:label "pitstop_ver_1" ;
+    f1o:PitStop_duration 2.29e+01 ;
+    f1o:PitStop_lap 54 ;
+    f1o:PitStop_stop_number 1 ;
+    f1o:pitstop_begins_stint f1:stint_ver_1 ;
+    f1o:pitstop_changes_tyre f1:compound_medium .
+
+f1:compound_medium a f1o:TyreCompound ;
+    rdfs:label "compound_medium" ;
+    f1o:TyreCompound_colour "yellow" ;
+    f1o:TyreCompound_compound "MEDIUM" .
+
+f1:race_monaco_2023 a f1o:Race ;
+    rdfs:label "race_monaco_2023" ;
+    f1o:Race_date "2023-05-28" ;
+    f1o:Race_name "Monaco Grand Prix" ;
+    f1o:Race_round 7 ;
+    f1o:belongs_to_season f1:season_2023 ;
+    f1o:contains_lap f1:lap_ver_1 ;
+    f1o:held_at f1:circuit_monaco ;
+    f1o:instance_of_gp f1:gp_monaco .
+
