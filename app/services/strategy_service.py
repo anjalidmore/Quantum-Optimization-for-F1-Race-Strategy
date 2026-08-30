@@ -50,6 +50,7 @@ def _run_ml(race_state, laptime_model: str | None, pit_model: str | None) -> dic
         "pit_probability": None,
         "feature_rows": {},
         "approximated_features": {},
+        "out_of_range": {},
         "context_only": {},
         "errors": [],
     }
@@ -62,6 +63,7 @@ def _run_ml(race_state, laptime_model: str | None, pit_model: str | None) -> dic
             result = build_feature_row(target, race_state)
             out["feature_rows"][target] = result.row
             out["approximated_features"][target] = result.approximated
+            out["out_of_range"][target] = result.out_of_range
             out["context_only"][target] = {
                 field: relevant == []
                 for field, relevant in relevance_for_target(target).items()
@@ -157,6 +159,7 @@ def run_strategy_analysis(race_state, laptime_model: str | None = None, pit_mode
             "pit_model": ml["pit_probability"]["model"] if ml["pit_probability"] else None,
             "feature_rows": ml["feature_rows"],
             "approximated_features": ml["approximated_features"],
+            "out_of_range": ml["out_of_range"],
             "context_only": ml["context_only"],
             "errors": ml["errors"],
         },

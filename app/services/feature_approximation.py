@@ -181,4 +181,23 @@ def build_feature_row(target: str, race_state) -> FeatureRowResult:
         result.row[feature] = float(df[feature].median())
         result.approximated.append(feature)
 
+    _flag_out_of_range(result, df, binary_set)
     return result
+
+
+def _flag_out_of_range(result: FeatureRowResult, df: pd.DataFrame, binary_set: set[str]) -> None:
+    """Flag any exactly-derived feature value that falls outside the range
+    the model was actually trained on. One-hot (binary) features are always
+    0/1 by construction and skipped; approximated (median-filled) features
+    are trivially in range and skipped. A flagged feature means the
+    prediction is extrapolating beyond validated model behaviour — most
+    often because a form/preset input (e.g. track temperature) doesn't
+    match the real conditions of the session the model was trained on."""
+    for feature, value in result.row.items():
+        if feature in result.approximated or feature in binary_set or feature not in df.columns:
+            continue
+        col_min, col_max = float(df[feature].min()), float(df[feature].max())
+        if value < col_min or value > col_max:
+            result.out_of_range.append(
+                {"feature": feature, "value": value, "training_min": col_min, "training_max": col_max}
+            )

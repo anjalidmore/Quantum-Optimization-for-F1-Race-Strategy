@@ -27,31 +27,41 @@ function buildScenarios(options: DataOptions): Scenario[] {
   const laps = options.total_laps_hint;
   const mid = Math.max(1, Math.round(laps * 0.4));
   const late = Math.max(1, Math.round(laps * 0.85));
+  // Track temperature presets are pinned to the REAL range this model was
+  // trained on (never a hard-coded "hot track" guess) — using a value the
+  // model never saw during training (e.g. 48°C for a session that only
+  // ever reached 31°C) makes it extrapolate wildly and produce a
+  // meaningless/arbitrary prediction rather than a genuine "hotter track"
+  // answer. "High Tyre Degradation" uses the hottest track temperature
+  // actually observed in this session, not an exaggerated fabricated one.
+  const { mean: tMean, max: tMax } = options.track_temperature_range;
+  const tNormal = Math.round(tMean);
+  const tHot = Math.round(tMax);
   return [
     {
       name: "Normal Race",
-      description: `Lap ${mid}/${laps} · Medium · 8 laps old · Dry, Green`,
-      values: { current_lap: mid, total_laps: laps, tyre_compound: "MEDIUM", tyre_age: 8, track_temperature: 35, weather: "dry", track_status: "GREEN" },
+      description: `Lap ${mid}/${laps} · Medium · 8 laps old · ${tNormal}°C, Dry, Green`,
+      values: { current_lap: mid, total_laps: laps, tyre_compound: "MEDIUM", tyre_age: 8, track_temperature: tNormal, weather: "dry", track_status: "GREEN" },
     },
     {
       name: "High Tyre Degradation",
-      description: `Lap ${mid}/${laps} · Soft · ${Math.min(mid, 22)} laps old · Hot track`,
-      values: { current_lap: mid, total_laps: laps, tyre_compound: "SOFT", tyre_age: Math.min(mid, 22), track_temperature: 48, weather: "dry", track_status: "GREEN" },
+      description: `Lap ${mid}/${laps} · Soft · ${Math.min(mid, 22)} laps old · ${tHot}°C (hottest this session saw)`,
+      values: { current_lap: mid, total_laps: laps, tyre_compound: "SOFT", tyre_age: Math.min(mid, 22), track_temperature: tHot, weather: "dry", track_status: "GREEN" },
     },
     {
       name: "Late-Race Pit Decision",
-      description: `Lap ${late}/${laps} · Hard · 25 laps old`,
-      values: { current_lap: late, total_laps: laps, tyre_compound: "HARD", tyre_age: Math.min(late, 25), track_temperature: 38, weather: "dry", track_status: "GREEN" },
+      description: `Lap ${late}/${laps} · Hard · 25 laps old · ${tNormal}°C`,
+      values: { current_lap: late, total_laps: laps, tyre_compound: "HARD", tyre_age: Math.min(late, 25), track_temperature: tNormal, weather: "dry", track_status: "GREEN" },
     },
     {
       name: "Safety-Car Scenario",
       description: `Lap ${mid}/${laps} · Medium · Safety Car out`,
-      values: { current_lap: mid, total_laps: laps, tyre_compound: "MEDIUM", tyre_age: 12, track_status: "SC" },
+      values: { current_lap: mid, total_laps: laps, tyre_compound: "MEDIUM", tyre_age: 12, track_temperature: tNormal, track_status: "SC" },
     },
     {
       name: "Fresh Tyres",
-      description: `Lap ${Math.min(mid + 1, laps)}/${laps} · Soft · 1 lap old (just pitted)`,
-      values: { current_lap: Math.min(mid + 1, laps), total_laps: laps, tyre_compound: "SOFT", tyre_age: 1 },
+      description: `Lap ${Math.min(mid + 1, laps)}/${laps} · Soft · 1 lap old (just pitted) · ${tNormal}°C`,
+      values: { current_lap: Math.min(mid + 1, laps), total_laps: laps, tyre_compound: "SOFT", tyre_age: 1, track_temperature: tNormal },
     },
   ];
 }
@@ -74,7 +84,7 @@ export function FullScenarioTab({ options, registry }: { options: DataOptions; r
       total_laps: options.total_laps_hint,
       tyre_compound: options.compounds[0],
       tyre_age: 8,
-      track_temperature: 35,
+      track_temperature: Math.round(options.track_temperature_range.mean),
       weather: "dry",
       fuel_kg: 70,
       track_status: "GREEN",
@@ -325,9 +335,30 @@ function ResultPanel({
   const p = result.prediction;
   const regContextOnly = p.context_only["target_laptime"] ?? {};
   const clfContextOnly = p.context_only["target_pit_next_lap"] ?? {};
+  const regOutOfRange = p.out_of_range["target_laptime"] ?? [];
+  const clfOutOfRange = p.out_of_range["target_pit_next_lap"] ?? [];
 
   return (
     <div className="space-y-4">
+      {(regOutOfRange.length > 0 || clfOutOfRange.length > 0) && (
+        <div className="card border-amber-500/30 bg-amber-500/5">
+          <div className="badge badge-warning mb-2">Extrapolating beyond training data</div>
+          <p className="text-sm text-white/70">
+            These inputs push at least one model feature outside the range the model was actually trained
+            on. Its behaviour out there is unvalidated and can be arbitrary — treat this prediction with
+            caution, not as a reliable answer.
+          </p>
+          <ul className="text-xs text-white/50 mt-2 space-y-1">
+            {Array.from(new Map([...regOutOfRange, ...clfOutOfRange].map((o) => [o.feature, o])).values()).map((o) => (
+              <li key={o.feature}>
+                <span className="text-white/70 font-mono">{o.feature}</span> = {o.value.toFixed(2)} (trained on{" "}
+                {o.training_min.toFixed(2)} – {o.training_max.toFixed(2)})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* ML Prediction */}
       <div>
         <div className="text-xs uppercase tracking-wider text-white/40 mb-2">

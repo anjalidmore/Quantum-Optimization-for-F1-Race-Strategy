@@ -90,6 +90,7 @@ export type DataOptions = {
   teams: string[];
   compounds: string[];
   total_laps_hint: number;
+  track_temperature_range: { min: number; mean: number; max: number };
   dataset_source: DatasetSource;
 };
 
@@ -153,6 +154,7 @@ export type StrategyResponse = {
     pit_model: string | null;
     feature_rows: Record<string, Record<string, number>>;
     approximated_features: Record<string, string[]>;
+    out_of_range: Record<string, { feature: string; value: number; training_min: number; training_max: number }[]>;
     context_only: Record<string, Record<string, boolean>>;
     errors: string[];
   };

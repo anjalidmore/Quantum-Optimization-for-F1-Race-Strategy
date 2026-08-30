@@ -80,4 +80,5 @@ class DataOptionsResponse(BaseModel):
     teams: list[str]
     compounds: list[str]
     total_laps_hint: int
+    track_temperature_range: dict  # {min, mean, max} — the real range this session's model was trained on
     dataset_source: dict

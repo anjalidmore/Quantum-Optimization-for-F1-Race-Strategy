@@ -89,6 +89,20 @@ def test_different_drivers_change_at_least_one_feature_value_when_driver_feature
     assert row_a != row_b, "changing the driver must change at least one feature value"
 
 
+def test_out_of_range_input_is_flagged_not_silently_extrapolated():
+    # A track temperature far outside anything the model was trained on
+    # (see data/processed/fastf1_laps_clean.csv's real TrackTemp range)
+    # must be flagged, not silently fed to the model as if it were normal.
+    result = build_feature_row("target_laptime", _race_state(track_temperature=200.0, tyre_age=20, current_lap=20))
+    flagged_features = {o["feature"] for o in result.out_of_range}
+    assert "tracktemp_dev_x_tyrelife" in flagged_features
+
+
+def test_in_range_input_is_not_flagged():
+    result = build_feature_row("target_laptime", _race_state(track_temperature=30.0, tyre_age=5, current_lap=20))
+    assert result.out_of_range == [] or all(o["feature"] != "tyre_life" for o in result.out_of_range)
+
+
 def test_relevance_correctly_flags_context_only_fields():
     # The real classification contract (target_pit_next_lap) has no driver or
     # team features at all in the current selection - this must be reported
