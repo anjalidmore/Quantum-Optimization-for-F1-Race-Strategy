@@ -1,4 +1,0 @@
-# Phase 1 / Task 2 — Rule-Based Expert System
-# The expert system is pure-Python with no third-party runtime dependencies.
-# pytest is required only to run the test suite.
-pytest>=7.4
