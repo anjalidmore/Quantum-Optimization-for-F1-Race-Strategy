@@ -2,8 +2,12 @@
 __pycache__/
 *.pyc
 .venv/
+venv/
 *.egg-info/
 .pytest_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
 build/
 dist/
 
@@ -13,5 +17,17 @@ frontend/.next/
 frontend/out/
 frontend/.env*.local
 
-# OS
+# Environment / secrets
+.env
+.env.local
+*.env
+
+# FastF1 telemetry cache (large, regenerable — see scripts/fetch_real_session.py)
+fastf1_cache/
+.fastf1_cache/
+
+# Editors / OS
 .DS_Store
+.idea/
+.vscode/
+*.swp
