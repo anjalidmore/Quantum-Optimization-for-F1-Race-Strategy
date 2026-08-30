@@ -1,0 +1,12 @@
+# Phase 1 / Task 4 — Data Engineering & EDA
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3
+matplotlib>=3.7
+seaborn>=0.12
+tabulate>=0.9
+pytest>=7.4
+
+# Optional: install FastF1 to fetch real live-timing/telemetry sessions.
+# fastf1>=3.0

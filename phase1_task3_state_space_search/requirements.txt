@@ -1,0 +1,4 @@
+# Phase 1 / Task 3 — State-Space Search
+networkx>=3.0
+matplotlib>=3.7
+pytest>=7.4
