@@ -404,7 +404,9 @@ f1-quantum-strategy/
 │   │       ├── health.py           # GET  /api/health
 │   │       ├── ml.py               # GET  /api/ml/{models,metrics,comparison,artifacts,feature-importance}
 │   │       │                       # POST /api/ml/predict/{laptime,pit}
-│   │       └── strategy.py         # POST /api/strategy/predict
+│   │       ├── strategy.py         # POST /api/strategy/predict
+│   │       ├── data.py             # GET  /api/data/* — dataset options for the simulator
+│   │       └── tasks.py            # GET  /api/tasks/evidence — per-task artifact index (Tasks 1-9)
 │   │
 │   ├── core/
 │   │   └── paths.py                # single source of truth for every data/artifact path
@@ -426,11 +428,14 @@ f1-quantum-strategy/
 │                                       # reports, pipeline (orchestrator)
 │
 ├── frontend/                        # Next.js 14 + TypeScript + Tailwind
-│   ├── app/
-│   │   ├── page.tsx                 # Overview
-│   │   ├── machine-learning/page.tsx
-│   │   └── strategy/page.tsx        # Race Strategy Simulator
-│   ├── components/
+│   ├── app/                         # 5 routes, all wired into the nav
+│   │   ├── page.tsx                 # Dashboard / Overview
+│   │   ├── strategy/page.tsx        # Race Strategy Simulator
+│   │   ├── machine-learning/page.tsx# Model metrics, comparison, live prediction
+│   │   ├── data-analysis/page.tsx   # Task 4 figures + reports, served from artifacts/
+│   │   └── evidence/page.tsx        # Per-task evidence index (Tasks 1-9)
+│   ├── components/                  # Nav, ArtifactImage, PredictPanel, DatasetBadge,
+│   │   └── strategy/                # TaskEvidence, Modal, Tooltip, strategy tabs
 │   └── lib/api.ts                   # typed fetch client (no hard-coded data)
 │
 ├── data/
@@ -533,11 +538,18 @@ computed exactly from the form input and real Task 4/5 statistics; the remaining
 fall back to the training data's median value. The response's `approximated_features` field names exactly
 which ones, every time — this is a stated engineering approximation, not a fabricated prediction.
 
+### Also implemented
+
+**Data & Analysis** (`/data-analysis`) renders Task 4's figures and reports directly from `artifacts/`,
+and **Project Evidence** (`/evidence`) indexes the artifacts of Tasks 1-9 via `GET /api/tasks/evidence`.
+Both are wired into the nav and were verified building and rendering in this audit.
+
 ### Not yet built
 
-Data & EDA, Knowledge, Expert System, and Search Optimisation dashboard pages — Tasks 1-4's artifacts and
-reports already exist under `artifacts/` and can be wired to new pages the same way the ML page is, without
-touching the backend.
+Dedicated per-engine dashboard pages for Knowledge Representation, the Expert System and Search
+Optimisation. Their artifacts are already reachable through the Project Evidence page, but none of the
+three has a purpose-built page with the depth the Machine Learning page has. The backend needs no changes
+to add them.
 
 ---
 
@@ -650,6 +662,16 @@ Known invariants include:
 
 # 11. Running the Project
 
+### Prerequisites
+
+| | Version | Needed for |
+|---|---|---|
+| Python | 3.10+ (verified on 3.14.6) | everything |
+| Node.js + npm | 18+ (verified on 24.15.0 / npm 11.12.1) | the frontend and `./run.sh` |
+
+`./run.sh` also needs ports **8000** and **3000** free — it will `kill` whatever is listening on them
+before it starts, so close anything you care about on those ports first.
+
 **Quickest path:** `./run.sh` — sets up the Python env, trains models if needed, starts the backend and
 frontend, runs three real sample predictions in your terminal (lap-time, pit-decision, full strategy
 simulation), and opens the dashboard in your browser. `./run.sh --force-retrain` retrains first. It's
@@ -670,8 +692,13 @@ python scripts/build_all.py
 python scripts/build_all.py --force
 python scripts/build_all.py --skip-ml
 
-# 3. Run the test suite (105 tests: Tasks 1-4 originals + Task 6 + API)
+# 3. Run the test suite (120 tests: Tasks 1-4 originals + Task 6 + API)
 pytest tests/
+#    NOTE: the ML tests retrain models and rewrite 10 committed files under
+#    artifacts/ (metrics, reports, manifest, model_registry). A clean clone goes
+#    dirty just from running the tests. The values are reproducible to ~1e-14 —
+#    only timestamps and float noise move — so `git checkout -- artifacts/`
+#    afterwards is safe.
 
 # 4. Backend API (http://localhost:8000, docs at /docs)
 uvicorn app.api.main:app --reload
@@ -859,7 +886,7 @@ Task 5 deliberately keeps the selected feature count compact because model width
 | Classical ML (Task 6) | ✅ Implemented — 10 models trained, backend API, dashboard, strategy simulator |
 | Deep Learning | ⏳ Planned (Task 7) |
 | Explainable AI | ⏳ Planned (Task 8) |
-| Unified Deployment | 🚧 Backend + partial frontend done; remaining dashboard pages planned (Task 9) |
+| Unified Deployment | 🚧 Backend + 5 frontend pages done; dedicated Task 1-3 engine pages still planned (Task 9) |
 | Responsible AI Evaluation | ⏳ Planned (Task 10) |
 | Quantum Optimisation | ⏳ Planned |
 
@@ -870,6 +897,12 @@ Task 5 deliberately keeps the selected feature count compact because model width
 The finished application should feel like **one Formula 1 race-strategy intelligence platform**, not ten laboratory submissions placed beside each other.
 
 A user should be able to open the application, inspect the data, understand the domain, compare reasoning engines, evaluate ML models, run a race scenario, see the evidence behind the recommendation, and eventually compare classical optimisation against quantum optimisation — all from one coherent interface.
+
+---
+
+## Licence
+
+MIT — see [LICENSE](LICENSE).
 
 ---
 
