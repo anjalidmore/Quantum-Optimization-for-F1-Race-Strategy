@@ -23,7 +23,6 @@ from app.intelligence.knowledge_representation import validation as val
 from app.intelligence.knowledge_representation import visualize as viz
 from app.intelligence.knowledge_representation.schema import ENTITIES, RELATIONSHIPS, entities_by_name
 
-
 # --------------------------------------------------------------------------- #
 # Schema
 # --------------------------------------------------------------------------- #

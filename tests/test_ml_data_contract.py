@@ -67,7 +67,7 @@ def test_data_contract_error_on_missing_leakage_free_guarantee():
     dataset = load_and_validate()
     corrupted = dataset.frame.copy()
     corrupted["Sector1Time"] = 0.0
-    from app.intelligence.ml.data_contract import MLDataset, _validate_no_leakage
+    from app.intelligence.ml.data_contract import _validate_no_leakage
 
     with pytest.raises(DataContractError):
         _validate_no_leakage(corrupted, dataset.contract)

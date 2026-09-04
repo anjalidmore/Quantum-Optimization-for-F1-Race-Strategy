@@ -36,7 +36,8 @@ from __future__ import annotations
 
 from typing import List
 
-from .rules_schema import Connective, Operator as Op, Rule, act, cond, rule
+from .rules_schema import Connective, Rule, act, cond, rule
+from .rules_schema import Operator as Op
 
 # Local aliases to keep rule definitions readable.
 _ALL = Connective.ALL

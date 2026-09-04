@@ -32,7 +32,6 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
 
-import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from app.core.paths import DATA_RAW_DIR  # noqa: E402

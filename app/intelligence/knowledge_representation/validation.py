@@ -27,7 +27,6 @@ from typing import Dict, List, Set
 from .schema import (
     ENTITIES,
     RELATIONSHIPS,
-    Entity,
     Relationship,
     entities_by_name,
 )

@@ -33,8 +33,8 @@ from app.core.paths import (  # noqa: E402
     KNOWLEDGE_REPRESENTATION_ARTIFACTS_DIR,
     ML_MODEL_REGISTRY_JSON,
     SEARCH_ARTIFACTS_DIR,
-    TASK5_FEATURES_CSV,
     TASK5_FEATURE_METADATA_JSON,
+    TASK5_FEATURES_CSV,
     ensure_dirs,
 )
 
@@ -62,7 +62,12 @@ def _stage(name: str):
 def validate_environment() -> bool:
     ok = True
     try:
-        import pandas, numpy, sklearn, matplotlib, fastapi, joblib  # noqa: F401
+        import fastapi  # noqa: F401
+        import joblib  # noqa: F401
+        import matplotlib  # noqa: F401
+        import numpy  # noqa: F401
+        import pandas  # noqa: F401
+        import sklearn  # noqa: F401
     except ImportError as exc:
         log.error("Missing required dependency: %s", exc)
         ok = False

@@ -19,17 +19,14 @@ from app.intelligence.expert_system.explanation import Explainer
 from app.intelligence.expert_system.inference import ConflictResolution, InferenceEngine
 from app.intelligence.expert_system.rule_base import build_rule_base
 from app.intelligence.expert_system.rules_schema import (
-    Action,
     Condition,
     Connective,
     Operator,
-    Rule,
     act,
     cond,
     rule,
 )
 from app.intelligence.expert_system.working_memory import Provenance, WorkingMemory, all_fact_keys
-
 
 # --------------------------------------------------------------------------- #
 # Schema-level: conditions & operators

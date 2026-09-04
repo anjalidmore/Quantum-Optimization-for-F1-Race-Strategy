@@ -15,15 +15,15 @@ import json
 import pandas as pd
 from fastapi import APIRouter, HTTPException
 
-from app.core.paths import (
-    ML_METRICS_DIR,
-    ARTIFACT_MANIFEST_JSON,
-)
 from app.api.schemas import (
     LapTimePredictionRequest,
     LapTimePredictionResponse,
     PitPredictionRequest,
     PitPredictionResponse,
+)
+from app.core.paths import (
+    ARTIFACT_MANIFEST_JSON,
+    ML_METRICS_DIR,
 )
 from app.intelligence.features.contract import load_feature_contract, load_feature_matrix
 from app.intelligence.features.display import describe_features, feature_stats

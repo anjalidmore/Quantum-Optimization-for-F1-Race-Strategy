@@ -24,7 +24,6 @@ Usage
 from __future__ import annotations
 
 import argparse
-import dataclasses
 import json
 import logging
 import sys
@@ -33,12 +32,12 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
 
+from app.core.paths import EXPERT_SYSTEM_ARTIFACTS_DIR  # noqa: E402
 from app.intelligence.expert_system import reports as rep  # noqa: E402
 from app.intelligence.expert_system import rule_validation as rv  # noqa: E402
 from app.intelligence.expert_system.inference import ConflictResolution, InferenceEngine  # noqa: E402
 from app.intelligence.expert_system.rule_base import build_rule_base  # noqa: E402
 from app.intelligence.expert_system.rules_schema import Rule  # noqa: E402
-from app.core.paths import EXPERT_SYSTEM_ARTIFACTS_DIR  # noqa: E402
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s | %(levelname)-7s | %(message)s",
