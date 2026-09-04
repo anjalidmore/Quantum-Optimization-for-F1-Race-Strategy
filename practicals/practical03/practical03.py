@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-run_search.py
-=============
+practical03.py
+==============
 
 End-to-end driver for Phase 1 / Task 3 (State-Space Search).
 
@@ -20,7 +20,7 @@ it doubles as a CI correctness gate.
 
 Usage
 -----
-    python run_search.py [--laps N] [--output-dir OUTPUTS]
+    python practical03.py [--laps N] [--output-dir OUTPUTS]
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ from f1search.problem import Compound, RaceProblem  # noqa: E402
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s | %(levelname)-7s | %(message)s",
                     datefmt="%H:%M:%S")
-log = logging.getLogger("run_search")
+log = logging.getLogger("practical03")
 
 
 def main(laps: int, output_dir: Path) -> int:

@@ -85,10 +85,10 @@ the problem instance and machine.)
 Requires **Python 3.10+**.
 
 ```bash
-cd phase1_task3_state_space_search
+cd practical03
 pip install -r requirements.txt
-python run_search.py                 # defaults to a 24-lap race
-python run_search.py --laps 30       # larger instance
+python practical03.py                 # defaults to a 24-lap race
+python practical03.py --laps 30       # larger instance
 ```
 
 The driver runs all algorithms, builds the comparison, renders the three
@@ -118,8 +118,8 @@ costs equal recomputed path costs.
 ## 7. Folder structure
 
 ```
-phase1_task3_state_space_search/
-├── run_search.py               # driver / CI correctness gate
+practical03/
+├── practical03.py               # driver / CI correctness gate
 ├── requirements.txt
 ├── pytest.ini
 ├── README.md

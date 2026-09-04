@@ -5,6 +5,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
+.ipynb_checkpoints/
 
 # macOS
 .DS_Store
@@ -15,3 +16,15 @@ node_modules/
 
 # Archives
 *.zip
+
+# Generated practical outputs.
+# Every practical regenerates its own outputs/ by running its entry-point
+# script, so they are not committed. The two exceptions below ARE committed,
+# because practical05 consumes practical04's cleaned dataset and downstream
+# work consumes practical05's feature matrix:
+#   practicals/practical04/outputs/clean/fastf1_laps_clean.csv
+#   practicals/practical05/outputs/
+# Files already tracked in git are unaffected by these rules.
+practicals/practical0*/outputs/
+!practicals/practical04/outputs/clean/fastf1_laps_clean.csv
+!practicals/practical05/outputs/

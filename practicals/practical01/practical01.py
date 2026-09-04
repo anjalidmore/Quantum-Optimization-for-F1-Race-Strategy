@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-build_knowledge_base.py
-=======================
+practical01.py
+==============
 
 End-to-end driver for Phase 1 / Task 1 (Knowledge Representation).
 
@@ -19,7 +19,7 @@ check fails, so it doubles as a CI gate.
 
 Usage
 -----
-    python build_knowledge_base.py [--output-dir OUTPUTS]
+    python practical01.py [--output-dir OUTPUTS]
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)-7s | %(message)s",
     datefmt="%H:%M:%S",
 )
-log = logging.getLogger("build_knowledge_base")
+log = logging.getLogger("practical01")
 
 
 def main(output_dir: Path) -> int:

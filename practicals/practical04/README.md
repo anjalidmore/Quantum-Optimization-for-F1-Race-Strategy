@@ -53,7 +53,7 @@ physics, so the EDA reveals SOFT < MEDIUM < HARD degradation.
    filenames: `races.csv`, `drivers.csv`, `results.csv`, …).
 2. Optionally `pip install fastf1` and export a session's laps to
    `data/raw/fastf1_laps.csv` with the columns in `FASTF1_LAPS`.
-3. Run `python run_eda.py` **without** `--regenerate`. Because the schemas
+3. Run `python practical04.py` **without** `--regenerate`. Because the schemas
    match, every stage runs identically on the real data.
 
 ---
@@ -63,11 +63,11 @@ physics, so the EDA reveals SOFT < MEDIUM < HARD degradation.
 Requires **Python 3.10+**.
 
 ```bash
-cd phase1_task4_data_engineering
+cd practical04
 pip install -r requirements.txt
-python run_eda.py                 # generates synthetic data on first run
-python run_eda.py --regenerate    # force fresh synthetic data
-python run_eda.py --data-dir /path/to/real/csvs   # use the real dataset
+python practical04.py                 # generates synthetic data on first run
+python practical04.py --regenerate    # force fresh synthetic data
+python practical04.py --data-dir /path/to/real/csvs   # use the real dataset
 ```
 
 Expected tail:
@@ -116,8 +116,8 @@ holds in the analysis).
 ## 6. Folder structure
 
 ```
-phase1_task4_data_engineering/
-├── run_eda.py                  # end-to-end driver
+practical04/
+├── practical04.py                  # end-to-end driver
 ├── requirements.txt
 ├── pytest.ini
 ├── README.md

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-run_expert_system.py
-====================
+practical02.py
+==============
 
 End-to-end driver for Phase 1 / Task 2 (Rule-Based Expert System).
 
@@ -18,7 +18,7 @@ Exits non-zero if rule-base validation fails, so it doubles as a CI gate.
 
 Usage
 -----
-    python run_expert_system.py [--output-dir OUTPUTS]
+    python practical02.py [--output-dir OUTPUTS]
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ from f1es.rules_schema import Rule  # noqa: E402
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s | %(levelname)-7s | %(message)s",
                     datefmt="%H:%M:%S")
-log = logging.getLogger("run_expert_system")
+log = logging.getLogger("practical02")
 
 
 # Representative scenarios exercising different rule families.

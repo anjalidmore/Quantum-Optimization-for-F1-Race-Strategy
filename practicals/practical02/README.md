@@ -91,7 +91,7 @@ race-state inputs
 Requires **Python 3.10+**. The runtime has **no third-party dependencies**.
 
 ```bash
-cd phase1_task2_expert_system
+cd practical02
 pip3 install -r requirements.txt   # only pytest, for the tests
 ```
 
@@ -100,7 +100,7 @@ pip3 install -r requirements.txt   # only pytest, for the tests
 ## 5. Execution — one command
 
 ```bash
-python3 run_expert_system.py
+python3 practical02.py
 ```
 
 This validates the rule base, serialises it to JSON, runs five representative
@@ -161,8 +161,8 @@ ordering, backward-chaining success/failure, and explanation generation.
 ## 8. Folder structure
 
 ```
-phase1_task2_expert_system/
-├── run_expert_system.py        # end-to-end driver / CI gate
+practical02/
+├── practical02.py        # end-to-end driver / CI gate
 ├── requirements.txt
 ├── pytest.ini
 ├── README.md

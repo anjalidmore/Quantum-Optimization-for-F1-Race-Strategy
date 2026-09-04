@@ -43,7 +43,7 @@ schema.py  ──►  ontology.py       ──►  formula1.owl        (OWL 2 cl
     │      ──►  visualize.py       ──►  PNG + Mermaid diagrams
     └──────►  reports.py           ──►  Markdown tables + reports
 
-build_knowledge_base.py orchestrates all of the above end-to-end.
+practical01.py orchestrates all of the above end-to-end.
 ```
 
 * **`schema.py`** — declarative model: `Entity`, `Attribute`, `Relationship`
@@ -69,7 +69,7 @@ build_knowledge_base.py orchestrates all of the above end-to-end.
 Requires **Python 3.10+**.
 
 ```bash
-cd phase1_knowledge_representation
+cd practical01
 python -m venv .venv && source .venv/bin/activate   # optional but recommended
 pip install -r requirements.txt
 ```
@@ -79,7 +79,7 @@ pip install -r requirements.txt
 ## 4. Execution — one command
 
 ```bash
-python build_knowledge_base.py
+python practical01.py
 ```
 
 This regenerates every deliverable into `outputs/` and **exits non-zero if any
@@ -87,7 +87,7 @@ validation check fails**, so it doubles as a CI gate. Optional custom output
 directory:
 
 ```bash
-python build_knowledge_base.py --output-dir /path/to/outputs
+python practical01.py --output-dir /path/to/outputs
 ```
 
 Expected tail of the log:
@@ -119,8 +119,8 @@ the validation suite (including a negative test that a malformed edge is
 ## 6. Folder structure
 
 ```
-phase1_knowledge_representation/
-├── build_knowledge_base.py     # end-to-end driver / CI gate
+practical01/
+├── practical01.py     # end-to-end driver / CI gate
 ├── requirements.txt
 ├── pytest.ini
 ├── README.md

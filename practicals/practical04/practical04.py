@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-run_eda.py
-==========
+practical04.py
+==============
 
 End-to-end driver for Phase 1 / Task 4 (Data Engineering & EDA).
 
@@ -21,7 +21,7 @@ It:
 
 Usage
 -----
-    python run_eda.py [--data-dir DIR] [--output-dir OUT] [--regenerate]
+    python practical04.py [--data-dir DIR] [--output-dir OUT] [--regenerate]
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ from f1data.schemas import ALL_SCHEMAS  # noqa: E402
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s | %(levelname)-7s | %(message)s",
                     datefmt="%H:%M:%S")
-log = logging.getLogger("run_eda")
+log = logging.getLogger("practical04")
 
 _TABLES = ["races", "drivers", "constructors", "circuits", "results",
            "pit_stops", "lap_times", "fastf1_laps"]
