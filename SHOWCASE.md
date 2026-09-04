@@ -172,4 +172,5 @@ open http://localhost:8000/docs
 * **The test suite is not hermetic** — it rewrites 10 committed artifact files.
   Reproducibly, but it does dirty a clean clone.
 
-Known gaps are tracked in [TODO.md](TODO.md).
+Known gaps are tracked in `TODO.md`, which lives on the **`proj-mode`** branch only —
+it is a working backlog, deliberately kept off `main`.
