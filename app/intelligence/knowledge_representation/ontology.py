@@ -24,6 +24,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict
 
+import owlready2
 from owlready2 import (
     DataProperty,
     FunctionalProperty,
@@ -38,7 +39,6 @@ from .schema import (
     RELATIONSHIPS,
     Cardinality,
     DataType,
-    Entity,
     categories,
 )
 

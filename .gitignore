@@ -5,25 +5,34 @@ __pycache__/
 venv/
 *.egg-info/
 .pytest_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
 build/
 dist/
-.ipynb_checkpoints/
-
-# Environment / secrets — never commit these
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-credentials.json
 
 # Frontend
 frontend/node_modules/
 frontend/.next/
 frontend/out/
 frontend/.env*.local
+!frontend/.env.example
 
-# OS / editor
+# Environment / secrets — never commit these
+.env
+.env.*
+*.env
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# FastF1 telemetry cache (large, regenerable — see scripts/fetch_real_session.py)
+fastf1_cache/
+.fastf1_cache/
+
+# Editors / OS
 .DS_Store
 .idea/
 .vscode/
+*.swp

@@ -23,7 +23,6 @@ import time
 from dataclasses import dataclass, field
 from typing import Callable
 
-import numpy as np
 from sklearn.base import clone
 
 from app.intelligence.ml.splits import Fold

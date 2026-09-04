@@ -79,7 +79,6 @@ def test_compound_feature_is_exact_and_matches_selected_compound():
 
 
 def test_different_drivers_change_at_least_one_feature_value_when_driver_features_exist():
-    contract = load_feature_contract()
     relevance = relevance_for_target("target_laptime")
     if not relevance["driver"]:
         return  # this target's contract has no driver-derived features at all

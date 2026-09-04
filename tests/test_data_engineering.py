@@ -23,7 +23,7 @@ from app.intelligence.data.pipeline import (
     load_csv,
     parse_laptime_to_seconds,
 )
-from app.intelligence.data.schemas import ALL_SCHEMAS, ColKind
+from app.intelligence.data.schemas import ALL_SCHEMAS
 
 
 @pytest.fixture(scope="module")

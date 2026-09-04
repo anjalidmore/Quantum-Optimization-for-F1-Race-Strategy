@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -31,11 +30,9 @@ import pandas as pd
 from app.core.paths import (
     ARTIFACT_MANIFEST_JSON,
     ML_FIGURES_DIR,
-    ML_METADATA_DIR,
     ML_METRICS_DIR,
     ML_MODELS_LAPTIME_DIR,
     ML_MODELS_PIT_DIR,
-    ML_REPORTS_DIR,
     REPO_ROOT,
     TASK5_FEATURES_CSV,
     ensure_dirs,

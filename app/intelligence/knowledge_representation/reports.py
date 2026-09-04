@@ -99,7 +99,7 @@ def ontology_documentation_md(stats: Dict[str, int]) -> str:
         "racing domain as classes (entities), object properties (relationships) "
         "and data properties (attributes).",
         "",
-        f"* **Base IRI:** `http://f1kr.org/ontology/formula1#`",
+        "* **Base IRI:** `http://f1kr.org/ontology/formula1#`",
         f"* **Classes:** {stats.get('classes', 'n/a')}",
         f"* **Object properties:** {stats.get('object_properties', 'n/a')}",
         f"* **Data properties:** {stats.get('data_properties', 'n/a')}",
