@@ -1,0 +1,116 @@
+{
+  "task": "Phase 2 / Task 5 - Feature Engineering & Feature Selection",
+  "source_dataset": "practical04/outputs/clean/fastf1_laps_clean.csv",
+  "rows": 520,
+  "random_state": 42,
+  "identifier_columns": [
+    "Driver",
+    "LapNumber",
+    "Stint",
+    "Compound",
+    "Team"
+  ],
+  "targets": {
+    "target_laptime": "Lap time in seconds - primary regression target (Task 6).",
+    "target_pit_next_lap": "1 if the driver pits at the end of this lap - classification.",
+    "target_laptime_fuel_corrected": "Lap time with the fuel-burn trend (-0.0036 s/lap) removed, isolating tyre degradation."
+  },
+  "selected_features": {
+    "target_laptime": [
+      "tyre_life",
+      "gap_roll3_mean",
+      "gap_expanding",
+      "field_median_lag1",
+      "driver_sai",
+      "race_progress"
+    ],
+    "target_pit_next_lap": [
+      "tyre_life",
+      "race_progress",
+      "field_median_lag1",
+      "form_vs_baseline",
+      "team_aston_martin",
+      "field_pace_trend",
+      "tyrelife_x_medium",
+      "tracktemp_dev_x_tyrelife"
+    ],
+    "union_exported": [
+      "driver_sai",
+      "field_median_lag1",
+      "field_pace_trend",
+      "form_vs_baseline",
+      "gap_expanding",
+      "gap_roll3_mean",
+      "race_progress",
+      "team_aston_martin",
+      "tracktemp_dev_x_tyrelife",
+      "tyre_life",
+      "tyrelife_x_medium"
+    ]
+  },
+  "feature_provenance": {
+    "driver_sai": "Driver identity (skill / style).",
+    "field_median_lag1": "Field median lap time on the previous lap - the ambient pace level (absorbs track evolution, safety cars, fuel effects common to everyone).",
+    "field_pace_trend": "Change in field median between the last two laps - is the track speeding up or slowing?",
+    "form_vs_baseline": "Last lap's gap relative to the driver's own baseline: are they gaining or losing form?",
+    "gap_expanding": "Running mean gap over all previous laps - the driver's baseline competitiveness.",
+    "gap_roll3_mean": "Mean gap to the field over the previous 3 laps - short-run pace.",
+    "race_progress": "Fraction of the race completed; proxies fuel burn-off and race phase. Canonical axis - lap number / fuel load / laps remaining are affine transforms of it.",
+    "team_aston_martin": "Team identity (car performance).",
+    "tracktemp_dev_x_tyrelife": "Interaction: degradation accelerates on a hotter-than-average surface. Track temp is mean-centred so this is not a rescaled tyre_life.",
+    "tyre_life": "Laps completed on the current tyre set - the primary degradation driver.",
+    "tyrelife_x_medium": "Interaction: MEDIUM degradation slope relative to the HARD baseline."
+  },
+  "numeric_features_requiring_scaling": [
+    "field_median_lag1",
+    "field_pace_trend",
+    "form_vs_baseline",
+    "gap_expanding",
+    "gap_roll3_mean",
+    "race_progress",
+    "tracktemp_dev_x_tyrelife",
+    "tyre_life",
+    "tyrelife_x_medium"
+  ],
+  "binary_features_no_scaling_needed": [
+    "driver_sai",
+    "team_aston_martin"
+  ],
+  "preprocessing_contract": {
+    "scaling": "NOT applied here. Fit the scaler inside each CV fold to avoid leakage.",
+    "validation": "Expanding-window lap-forward split; keep whole laps in one fold. Do not use random K-fold - this is a time-ordered panel.",
+    "warmup_rows_dropped": 30,
+    "first_usable_lap": 4
+  },
+  "selection_funnel": {
+    "1_near_zero_variance_dropped": [
+      "track_status",
+      "is_rainfall"
+    ],
+    "2_correlation_dropped": [
+      "tyre_life_sq"
+    ],
+    "3_vif_dropped": [
+      "stint_number",
+      "tyrelife_x_soft"
+    ],
+    "4_importance_and_stability": "ranked by mutual information + tree importance + L1 coefficient; K*=6 chosen within 2% of best CV MAE"
+  },
+  "excluded_as_leakage": {
+    "columns": [
+      "Sector1Time",
+      "Sector2Time",
+      "Sector3Time",
+      "SpeedFL",
+      "SpeedST",
+      "IsPersonalBest"
+    ],
+    "reason": "Sector times sum exactly to LapTime; speed traps and IsPersonalBest are only knowable during or after the lap being predicted."
+  },
+  "validation_scores": {
+    "regression_cv_MAE_s": 0.2417,
+    "regression_cv_R2": 0.5343,
+    "classification_cv_AUC": 1.0,
+    "caveat": "Classification AUC is inflated by the near-deterministic stint schedule of the synthetic session; expect lower values on real FastF1 data."
+  }
+}
