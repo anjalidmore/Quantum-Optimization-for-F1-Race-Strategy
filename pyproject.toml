@@ -8,6 +8,13 @@ requires-python = ">=3.10"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-q"
+# A SettingWithCopyWarning means an assignment may or may not have propagated —
+# pandas cannot tell you which. That is a correctness question, not style, and
+# it becomes an error in pandas 3.x under copy-on-write. Failing the build on
+# it stops the 69 occurrences this project used to emit from creeping back.
+filterwarnings = [
+    "error::pandas.errors.SettingWithCopyWarning",
+]
 
 [build-system]
 requires = ["setuptools>=68"]

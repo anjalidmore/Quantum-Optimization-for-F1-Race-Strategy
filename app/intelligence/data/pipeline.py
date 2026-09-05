@@ -114,6 +114,20 @@ def clean_table(df: pd.DataFrame, schema: TableSchema,
     report = CleaningReport(table=schema.name)
     kinds = {c.name: c.kind for c in schema.columns}
 
+    # Own the frame outright before mutating it. Callers pass slices of larger
+    # tables, and assigning into a slice raises SettingWithCopyWarning because
+    # pandas cannot promise the write propagates - behaviour that changes again
+    # under pandas 3.x copy-on-write. This function's contract is to *return* a
+    # cleaned frame, so it must not write through to the caller's data anyway.
+    #
+    # NOTE: the column assignments below deliberately stay as `df[col] = ...`
+    # rather than `df.loc[:, col] = ...`. The .loc form assigns *in place* and
+    # preserves the column's existing dtype, which silently turns the numeric,
+    # time and date coercions into no-ops (it broke three data-engineering
+    # tests when tried). Whole-column replacement is the correct operation
+    # here; owning the frame is what removes the warning.
+    df = df.copy()
+
     # --- 1. Deduplicate ---------------------------------------------------
     before = len(df)
     df = df.drop_duplicates(ignore_index=True)
