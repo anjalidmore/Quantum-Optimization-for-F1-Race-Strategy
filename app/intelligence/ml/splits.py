@@ -134,3 +134,105 @@ def expanding_window_folds(
             )
         )
     return folds
+
+
+@dataclass(frozen=True)
+class RaceHoldoutSplit:
+    """A holdout that reserves whole *races*, not the tail of one race."""
+
+    dev_index: np.ndarray
+    test_index: np.ndarray
+    dev_races: list
+    test_races: list
+    race_column: str
+
+    def to_metadata(self) -> dict:
+        return {
+            "strategy": "race-level holdout",
+            "race_column": self.race_column,
+            "dev_races": [str(r) for r in self.dev_races],
+            "test_races": [str(r) for r in self.test_races],
+            "dev_rows": int(len(self.dev_index)),
+            "test_rows": int(len(self.test_index)),
+        }
+
+
+def available_race_column(df: pd.DataFrame) -> str | None:
+    """The column identifying which race a row came from, if the data has one.
+
+    The single-session matrix this project currently trains on has no such
+    column — every row is the same Grand Prix. Returns ``None`` in that case so
+    callers can say so explicitly rather than inventing a grouping.
+    """
+    for candidate in ("raceId", "race_id", "RaceId", "Event", "event", "session_id"):
+        if candidate in df.columns and df[candidate].nunique() > 1:
+            return candidate
+    return None
+
+
+def race_level_holdout(
+    df: pd.DataFrame,
+    race_col: str | None = None,
+    test_fraction: float = 0.2,
+    lap_col: str = "LapNumber",
+) -> RaceHoldoutSplit:
+    """Hold out whole races, keeping every lap of a race on one side.
+
+    **Why this exists.** The current ``chronological_holdout`` reserves the last
+    20% of *laps within one race*. That answers "can the model extrapolate to
+    the end of a race it has already seen most of?" — which is why Task 6's
+    regression scored a negative test R² there: the closing laps are a different
+    fuel and tyre regime from the laps it trained on.
+
+    The question that actually matters for deployment is different: "can the
+    model predict a race it has never seen?" Only a race-level holdout answers
+    that, because a lap-level split leaks race-specific conditions (track,
+    weather, tyre allocation) across the boundary.
+
+    **Status: infrastructure, not yet exercised.** The committed dataset is a
+    single session, so there is nothing to hold out at race level — this raises
+    ``ValueError`` rather than silently degrading to something else. Fetching
+    several sessions with ``scripts/fetch_real_session.py`` is what makes it
+    usable, and is tracked separately in ``TODO.md``.
+
+    Races are ordered by their earliest lap so the split stays chronological
+    between races as well as within them.
+    """
+    if not 0.0 < test_fraction < 1.0:
+        raise ValueError("test_fraction must be in (0, 1)")
+
+    race_col = race_col or available_race_column(df)
+    if race_col is None:
+        raise ValueError(
+            "No race identifier column with more than one distinct value was found, so a "
+            "race-level holdout cannot be built — this dataset is a single session. Fetch "
+            "additional sessions with scripts/fetch_real_session.py first. Use "
+            "chronological_holdout() for single-session data, and read its test R² knowing "
+            "it measures within-race extrapolation rather than transfer to a new race."
+        )
+
+    # Order races chronologically by their first lap, so the held-out races are
+    # the later ones rather than an arbitrary subset.
+    if lap_col in df.columns:
+        order = df.groupby(race_col)[lap_col].min().sort_values().index.tolist()
+    else:
+        order = sorted(df[race_col].unique())
+
+    n_test = max(1, round(len(order) * test_fraction))
+    if n_test >= len(order):
+        raise ValueError(
+            f"test_fraction={test_fraction} would hold out every one of the {len(order)} "
+            f"races, leaving nothing to train on."
+        )
+
+    dev_races, test_races = order[:-n_test], order[-n_test:]
+    dev_index = df.index[df[race_col].isin(dev_races)].to_numpy()
+    test_index = df.index[df[race_col].isin(test_races)].to_numpy()
+
+    return RaceHoldoutSplit(
+        dev_index=dev_index,
+        test_index=test_index,
+        dev_races=dev_races,
+        test_races=test_races,
+        race_column=race_col,
+    )
