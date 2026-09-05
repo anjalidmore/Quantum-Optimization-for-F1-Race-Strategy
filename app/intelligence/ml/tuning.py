@@ -34,6 +34,12 @@ class ParamCandidateResult:
     fold_metrics: list[dict]
     cv_summary: dict
     primary_score: float | None  # None if unusable on every fold
+    # Pooled out-of-fold predictions, kept only for classification. These are
+    # what the decision threshold is tuned on: every value here was produced by
+    # a model that had not seen that row, so the resulting cut-off is honest in
+    # the same way a CV score is.
+    oof_y_true: list = field(default_factory=list)
+    oof_y_proba: list = field(default_factory=list)
 
 
 @dataclass
@@ -46,6 +52,10 @@ class CVSearchResult:
     all_candidates: list[ParamCandidateResult]
     fit_seconds: float
     final_pipeline: object = field(repr=False)
+    # Out-of-fold predictions for the winning parameter combination, so the
+    # caller can tune a decision threshold without refitting anything.
+    oof_y_true: list = field(default_factory=list)
+    oof_y_proba: list = field(default_factory=list)
 
 
 def _expand_grid(param_grid: dict[str, list]) -> list[dict]:
@@ -81,6 +91,8 @@ def run_expanding_window_search(
 
     for params in _expand_grid(param_grid):
         fold_metrics = []
+        oof_true: list = []
+        oof_proba: list = []
         for fold in folds:
             X_train, y_train = X_dev.iloc[fold.train_index], y_dev.iloc[fold.train_index]
             X_val, y_val = X_dev.iloc[fold.val_index], y_dev.iloc[fold.val_index]
@@ -110,11 +122,16 @@ def run_expanding_window_search(
             record.update(metrics)
             fold_metrics.append(record)
 
+            if needs_proba and y_proba is not None:
+                oof_true.extend(list(y_val))
+                oof_proba.extend(list(y_proba))
+
         cv_summary = aggregate_fn(fold_metrics, metric_keys)
         primary = cv_summary.get(primary_metric, {}).get("mean")
         candidates.append(
             ParamCandidateResult(
-                params=params, fold_metrics=fold_metrics, cv_summary=cv_summary, primary_score=primary
+                params=params, fold_metrics=fold_metrics, cv_summary=cv_summary,
+                primary_score=primary, oof_y_true=oof_true, oof_y_proba=oof_proba,
             )
         )
 
@@ -143,4 +160,6 @@ def run_expanding_window_search(
         all_candidates=candidates,
         fit_seconds=fit_seconds,
         final_pipeline=final_pipeline,
+        oof_y_true=best.oof_y_true,
+        oof_y_proba=best.oof_y_proba,
     )

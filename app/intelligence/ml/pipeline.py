@@ -43,6 +43,8 @@ from app.intelligence.ml.persistence import save_pipeline
 from app.intelligence.ml.registry import ModelRegistryEntry, write_registry
 from app.intelligence.ml.selection import ModelResult, rank_classification_models, rank_regression_models
 from app.intelligence.ml.splits import chronological_holdout, expanding_window_folds
+from app.intelligence.ml.threshold import DEFAULT_THRESHOLD, tune_threshold
+from app.intelligence.ml.threshold import apply as apply_threshold
 from app.intelligence.ml.tuning import run_expanding_window_search
 
 log = logging.getLogger("ml.pipeline")
@@ -178,18 +180,41 @@ def _run_classification(dataset, out: ArtifactPaths) -> dict:
             folds=folds,
             metrics_fn=classification_metrics,
             metric_keys=CLASSIFICATION_METRIC_KEYS,
-            primary_metric="roc_auc",
+            # PR-AUC, not ROC-AUC. At a 4.8% positive rate ROC-AUC is dominated
+            # by the majority class and stays high for a model that is useless
+            # as a decision rule; PR-AUC answers the question that matters here
+            # — of the laps this model flags, how many are real pit windows?
+            primary_metric="pr_auc",
             higher_is_better=True,
             needs_proba=True,
             aggregate_fn=aggregate_metrics,
         )
 
-        y_pred_test = search.final_pipeline.predict(X_test)
+        # Choose the decision threshold on pooled out-of-fold predictions. 0.5 is
+        # sklearn's default, not a considered choice, and at this prevalence it
+        # left every model either firing on nothing or firing on everything.
+        choice = tune_threshold(search.oof_y_true, search.oof_y_proba, objective="f1")
+
         try:
             y_proba_test = search.final_pipeline.predict_proba(X_test)[:, 1]
         except Exception:
             y_proba_test = None
+
+        if y_proba_test is not None:
+            y_pred_test = apply_threshold(y_proba_test, choice.threshold)
+        else:
+            y_pred_test = search.final_pipeline.predict(X_test)
+
         test_metrics = classification_metrics(y_test, y_pred_test, y_proba_test)
+        test_metrics["decision_threshold"] = round(float(choice.threshold), 4)
+        # Metrics the default would have given, so the change is always visible
+        # and never has to be taken on trust.
+        if y_proba_test is not None:
+            default_pred = apply_threshold(y_proba_test, DEFAULT_THRESHOLD)
+            test_metrics["at_default_threshold"] = {
+                k: v for k, v in classification_metrics(y_test, default_pred, y_proba_test).items()
+                if k in ("precision", "recall", "f1", "accuracy")
+            }
 
         artifact_path = out.models_pit / f"{spec.name}.joblib"
         save_pipeline(search.final_pipeline, artifact_path)
@@ -204,11 +229,13 @@ def _run_classification(dataset, out: ArtifactPaths) -> dict:
                 test_metrics=test_metrics,
                 fit_seconds=search.fit_seconds,
                 best_params=search.best_params,
+                threshold=choice.to_metadata(),
             )
         )
         per_model_artifacts[spec.name] = {
             "artifact_path": str(artifact_path),
             "fold_metrics": search.best_fold_metrics,
+            "threshold": choice.to_metadata(),
             "all_candidates": [
                 {"params": c.params, "cv_summary": c.cv_summary} for c in search.all_candidates
             ],
@@ -439,7 +466,7 @@ def train_all(output_root: Path | None = None) -> dict:
             "target": clf["target"],
             "features": clf["features"],
             "holdout": clf["holdout"],
-            "models": {r.model_name: {"cv_summary": r.cv_summary, "test_metrics": r.test_metrics, "best_params": r.best_params, "status": r.status} for r in clf["results"]},
+            "models": {r.model_name: {"cv_summary": r.cv_summary, "test_metrics": r.test_metrics, "best_params": r.best_params, "status": r.status, "threshold": r.threshold} for r in clf["results"]},
             "comparison": clf["comparison"],
             "best_model": clf["best_model"],
         },

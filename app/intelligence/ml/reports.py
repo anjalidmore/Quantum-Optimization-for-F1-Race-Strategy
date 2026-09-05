@@ -202,6 +202,41 @@ truth contained only one class.
     return path
 
 
+def _selection_warning(comparison: list[dict]) -> str:
+    """Surface a generalisation-guard override as a named warning rather than
+    leaving the reader to notice that row 2 was selected over row 1."""
+    for row in comparison:
+        if row.get("selected") and row.get("selection_warning"):
+            return f"\n> ⚠ **Selection warning.** {row['selection_warning']}\n"
+    return ""
+
+
+def _threshold_notes(comparison: list[dict]) -> str:
+    rows = [r for r in comparison if r.get("decision_threshold") is not None]
+    if not rows:
+        return ""
+    lines = [
+        "",
+        "### Decision thresholds",
+        "",
+        "Chosen on pooled out-of-fold CV predictions by maximising F1, never on the",
+        "test set. 0.5 is sklearn's default, not a considered choice.",
+        "",
+        "| Model | Threshold | Objective | Test F1 | Test precision | Test recall |",
+        "|---|---:|---|---:|---:|---:|",
+    ]
+    def fmt(row: dict, key: str) -> str:
+        return "—" if row.get(key) is None else f"{row[key]:.4f}"
+
+    for r in rows:
+        lines.append(
+            f"| {r['model']} | {r['decision_threshold']:.4f} | {r.get('threshold_objective', '—')} | "
+            f"{fmt(r, 'test_f1')} | {fmt(r, 'test_precision')} | {fmt(r, 'test_recall')} |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
 def write_model_selection_report(reg: dict, clf: dict, path: Path) -> Path:
     content = f"""# Task 6 — Model Selection Report
 
@@ -211,24 +246,42 @@ Generated: {datetime.now(timezone.utc).isoformat()}
 
 | Task | Primary | Secondary |
 |---|---|---|
-| Lap-time regression | CV MAE (lower better) | CV RMSE, CV R², train/test gap |
-| Pit-decision classification | CV ROC-AUC (higher better) | CV PR-AUC, CV F1, precision/recall |
+| Lap-time regression | CV MAE (lower better), **subject to a generalisation guard** | CV RMSE, CV R², test R² |
+| Pit-decision classification | **CV PR-AUC** (higher better) | CV ROC-AUC, CV F1, precision/recall |
 
 Selection uses cross-validated metrics, not a single holdout number, and a
 model is only preferred over another when it wins on the primary metric
 computed identically across the same lap-forward folds.
+
+**Why PR-AUC and not ROC-AUC for classification.** Pit events are 4.8% of laps.
+At that prevalence ROC-AUC is dominated by the majority class and stays near
+0.98 for a model that never fires — it measures ranking, not usefulness.
+PR-AUC asks the question that matters: of the laps this model flags, how many
+are real pit windows?
+
+**The generalisation guard.** Selecting purely on CV MAE once shipped a model
+with a negative test R² — worse than predicting the training mean — while a
+candidate with positive test R² sat unselected. The guard refuses to select a
+negative-R² model when a positive-R² candidate exists, and states plainly when
+it has overridden the CV ranking.
+
+**Decision thresholds are tuned, not assumed.** Each classifier's cut-off is
+chosen on pooled out-of-fold CV predictions rather than left at sklearn's
+default 0.5, which is only optimal for balanced classes with equal error costs.
+Neither holds here. Per-model thresholds appear in the table below.
 
 ## Regression
 
 {_regression_table(reg['comparison'])}
 
 Selected: **{reg['best_model']}**
-
+{_selection_warning(reg['comparison'])}
 ## Classification
 
 {_classification_table(clf['comparison'])}
 
 Selected: **{clf['best_model']}**
+{_threshold_notes(clf['comparison'])}
 
 ## Notes on skipped models
 
