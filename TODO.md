@@ -9,7 +9,11 @@ running the documented setup in a clean clone, rebuilding all artifacts, executi
 building the frontend, exercising the live API, and scanning dependencies and git history. Nothing here
 is speculative.
 
-**Priority counts:** 28 entries — 7 High · 10 Medium · 11 Low
+**Priority counts:** 33 entries — 9 High · 14 Medium · 10 Low
+
+**Updated 2026-09-05 (second pass):** Tasks 7 and 8 are now implemented, so their "not started"
+entries are gone and are replaced by what building them actually surfaced. Two earlier entries are
+also closed by work done since: CI now exists (`.github/workflows/ci.yml`) and so does `LICENSE`.
 
 ---
 
@@ -141,6 +145,19 @@ next commit from introducing one, and `pip-audit`/`npm audit` are run only when 
 
 ## Testing
 
+### [Priority: High] A non-hermetic test run silently deleted Task 7's registry rows
+
+**Why:** Because `pytest` retrains Task 6, and Task 6's `write_registry` overwrote the shared registry
+wholesale, running the test suite deleted the Task 7 entries — leaving `/api/dl/models` returning 404
+while the `.keras` files sat on disk. `write_registry` now preserves foreign-family entries and
+`dl.pipeline.restore_registry_entries()` rebuilds them from artifacts, so the immediate failure is fixed.
+The underlying cause — tests that mutate committed state — is not.
+
+**How (short):**
+1. Fix the hermeticity entry below; it is the root cause.
+2. Add a test asserting the registry still contains both families after a Task 6 retrain, so a future
+   whole-file writer cannot reintroduce this silently.
+
 ### [Priority: High] The test suite is not hermetic — it rewrites committed artifacts
 
 **Why:** Running `pytest` retrains models and overwrites 10 tracked files under `artifacts/`
@@ -154,18 +171,29 @@ artifacts/` reflexively, which is exactly how a real artifact change gets discar
    `tests/test_ml_training.py` pass a fixture-scoped temp dir.
 2. Add a CI step that fails if `git status --porcelain` is non-empty after `pytest`.
 
-### [Priority: High] No continuous integration exists
+### [Priority: Medium] CI does not cover Tasks 7 and 8
 
-**Why:** There is no `.github/` directory on any branch. The 120 tests, the `build_all.py --force`
+**Why:** `.github/workflows/ci.yml` now exists and runs ruff, pytest and the frontend build — but it was
+written before Tasks 7 and 8, so it does not install `keras`/`torch`/`shap`/`lime`/`dice-ml` explicitly
+nor run `scripts/build_all.py --force`. The 193-test suite would still pass there (the DL tests skip
+when artifacts are absent), which means CI would go green while never exercising the deep-learning or
+explainability paths at all.
+
+**How (short):**
+1. Confirm the workflow installs from `requirements.txt` so the new dependencies come in.
+2. Add a `python scripts/build_all.py --force` step, or at minimum `--skip-dl` plus a separate job that
+   builds Tasks 7-8, so the skipif-guarded tests actually run.
+3. Add the artifact-cleanliness check from the hermeticity entry above.
+
+### [Priority: High] ~~No continuous integration exists~~ — RESOLVED
+
+**Why it mattered:** There was no `.github/` directory on any branch. The 120 tests, the `build_all.py --force`
 reproducibility check and the frontend build all pass — but only because they were run by hand. Nothing
 stops a commit that breaks them, and the README's "120 passing" badge is static and will silently go
 stale.
 
-**How (short):**
-1. Add `.github/workflows/ci.yml` running, on push and PR: `pip install -r requirements.txt && pip install
-   -e .`, `pytest`, `python scripts/build_all.py --force`, and `cd frontend && npm ci && npm run build`.
-2. Add the artifact-cleanliness check from the entry above.
-3. Replace the static badge in `README.md` with the real workflow status badge.
+**Resolved by** commit `73de6d8` on `main`, which added `.github/workflows/ci.yml` running ruff, pytest,
+npm lint and npm build. See the Testing entry above for what it still does not cover.
 
 ### [Priority: Medium] Zero frontend tests
 
@@ -272,6 +300,22 @@ exactly this way, so the prior probability of staleness is not low.
    `phase1_taskN/` layout or `src/f1kr`-style package names.
 2. Cross-link them from `docs/PROJECT_REPORT.md` so they are visited when it is updated.
 
+### [Priority: Medium] Two OpenMP runtimes coexist in one process
+
+**Why:** Adding `torch` for Task 7 put a third `libomp.dylib` in the process alongside sklearn's and
+XGBoost's. XGBoost segfaults outright if it initialises against PyTorch's copy — the full test suite
+crashed with `Fatal Python error: Segmentation fault` until import order was forced.
+`app/core/runtime.py` fixes it by claiming OpenMP for XGBoost first, and every entry point goes through
+`prepare_dl_runtime()`. That works, but it is a discipline the codebase has to keep rather than a
+structural guarantee: a new module importing `keras` directly reintroduces the crash.
+
+**How (short):**
+1. Add a test that imports `keras` without `prepare_dl_runtime()` in a subprocess and asserts the
+   guarded path is the one used — or add an import hook that fails loudly on the unguarded order.
+2. Consider running the DL stage in its own process from `build_all.py`, which removes the constraint
+   entirely.
+3. Note that `KMP_DUPLICATE_LIB_OK=TRUE` does **not** help here (verified) — do not reach for it.
+
 ### [Priority: Low] Stray untracked `refernce.png` in the repository root
 
 **Why:** A 1.2 MB screenshot, misspelled, untracked, sitting at the root across every branch. It shows up
@@ -334,30 +378,56 @@ anyone browsing the dashboard.
    everything required.
 3. Add each to `LINKS` in `frontend/components/Nav.tsx`.
 
-### [Priority: Low] Task 7 — Deep Learning not started
+### [Priority: High] The Task 7 pit classifier is degenerate at its operating point
 
-**Why:** Listed as planned in the status table. Sequence models (LSTM/GRU or a temporal transformer over
-stint history) are the natural next step for lap-time prediction and would directly address the weak
-generalisation flagged in Model Quality.
-
-**How (short):**
-1. Add `app/intelligence/deep_learning/` mirroring the `ml/` package interface so the registry, API and
-   dashboard pick it up unchanged.
-2. Reuse the existing lap-forward splits from `app/intelligence/ml/splits.py` — do not invent a new
-   splitting scheme.
-3. Register the models in `artifacts/metadata/model_registry.json` alongside the classical ones.
-
-### [Priority: Low] Task 8 — Explainable AI not started
-
-**Why:** The expert system already explains itself with HOW/WHY traces; the ML models are opaque. A
-strategy recommendation that mixes both currently has an auditable symbolic half and an unauditable
-statistical half.
+**Why:** The deep classifier scores test ROC-AUC 0.9218 and accuracy 0.9944, but **F1, precision and
+recall are all exactly 0.0** — at the 0.5 threshold it predicts "never pit" for every test lap and rides
+the 4.8% class imbalance. Its PR-AUC is 0.0667. This is the same defect Task 6's classifier has, so the
+platform now has *two* pit-decision models that rank acceptably and decide uselessly. Anything consuming
+`predicted_class` from either is consuming a constant.
 
 **How (short):**
-1. Add SHAP explanations for the selected regressor and classifier in a new
-   `app/intelligence/xai/` package.
-2. Extend `POST /api/strategy/predict` to return per-feature attributions next to
-   `triggered_expert_rules`, so both halves of the recommendation are explained the same way.
+1. Tune the decision threshold on the validation folds in `app/intelligence/dl/tuning.py`, maximising F1
+   or expected cost rather than defaulting to 0.5, and persist it into the model spec.
+2. Make PR-AUC the primary selection metric for this task in both `ml/selection.py` and `dl/tuning.py` —
+   ROC-AUC is the wrong headline at this prevalence.
+3. Surface precision/recall/F1 next to ROC-AUC on `/deep-learning` and `/machine-learning`.
+
+### [Priority: Medium] Task 8 is not wired into the strategy recommendation
+
+**Why:** `POST /api/strategy/predict` returns `triggered_expert_rules` — an auditable symbolic
+explanation — but no statistical explanation. Task 8 can now produce SHAP attributions and a trust score
+for exactly that prediction, so the recommendation has an explainable half and an unexplained half for no
+reason other than that they have not been connected.
+
+**How (short):**
+1. Add an optional `explain: bool` field to `RaceStateRequest` in `app/api/schemas.py`, defaulting to
+   `false` so the existing response shape is unchanged for current callers.
+2. When true, call `app.intelligence.xai.pipeline.explain_target`'s per-row path for the constructed
+   feature row and attach `shap_factors`, `trust_score` and `narrative`.
+3. Show them in `frontend/components/strategy/` next to the triggered rules.
+
+### [Priority: Medium] Deep learning is only ever compared on one race
+
+**Why:** Task 7's headline result — the network beating every classical model on lap time (MAE 0.5154 vs
+0.7815, R² +0.48 vs −0.17) — comes from a single session's 180-row holdout. It is the strongest ML result
+in the project and the one most in need of replication before it is relied on.
+
+**How (short):**
+1. Fetch several more 2023 sessions with `scripts/fetch_real_session.py`.
+2. Extend `app/intelligence/ml/splits.py` with a race-level holdout and re-run
+   `scripts/build_all.py --force`.
+3. Check whether the deep network's advantage survives across sessions.
+
+### [Priority: Low] Task 7 could use a sequence model
+
+**Why:** Lap time is a sequence problem currently flattened into per-lap rows. An LSTM/GRU or temporal
+transformer over stint history is the natural next step and would exploit structure the MLP cannot see.
+
+**How (short):**
+1. Add the architecture to `app/intelligence/dl/models.py` behind a new entry in `BUILDERS`.
+2. Reuse the existing lap-forward splits — do not invent a new splitting scheme.
+3. It will need windowed inputs; add the windowing to `dl/training.py` rather than to the Task 5 contract.
 
 ### [Priority: Low] Task 10 — Responsible AI evaluation not started
 
