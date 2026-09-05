@@ -224,3 +224,94 @@ def test_top_features_endpoint_returns_exactly_n_with_descriptions(client):
         assert f["display_name"]
         assert f["description"]
     assert "ranking_method" in body
+
+
+# ---------------------------------------------------------------------------
+# Security: static artifact serving (TODO.md — "The whole artifacts tree is
+# served unauthenticated as static files")
+# ---------------------------------------------------------------------------
+def test_trained_model_weights_are_not_served_statically(client):
+    """Anyone who can reach the API used to be able to download every trained
+    model. Only figures and reports are mounted now."""
+    for path in (
+        "/artifacts/models/laptime/decision_tree.joblib",
+        "/artifacts/models/pit_decision/random_forest.joblib",
+        "/artifacts/models/dl/target_laptime.keras",
+    ):
+        assert client.get(path).status_code == 404, f"{path} is still downloadable"
+
+
+def test_metadata_directory_is_not_served_statically(client):
+    assert client.get("/artifacts/metadata/model_registry.json").status_code == 404
+
+
+def test_public_artifact_directories_are_still_served(client):
+    """The restriction must not break the dashboard: every directory the
+    frontend reads has to stay reachable."""
+    for path in (
+        "/artifacts/figures/roc_curves.png",
+        "/artifacts/reports/regression_report.md",
+        "/artifacts/data_engineering/figures/dashboard.png",
+        "/artifacts/expert_system/reports/rule_catalogue.md",
+        "/artifacts/search/reports/comparison_report.md",
+        "/artifacts/knowledge_representation/reports/entity_table.md",
+    ):
+        assert client.get(path).status_code == 200, f"{path} is no longer served"
+
+
+def test_private_dirs_are_excluded_structurally_not_by_a_filter(client):
+    """The exclusion is 'no mount exists', which cannot be bypassed by path
+    tricks the way a string filter could."""
+    from app.api.main import PRIVATE_ARTIFACT_DIRS, PUBLIC_ARTIFACT_DIRS
+
+    assert set(PRIVATE_ARTIFACT_DIRS).isdisjoint(PUBLIC_ARTIFACT_DIRS)
+    for path in (
+        "/artifacts/figures/../models/laptime/decision_tree.joblib",
+        "/artifacts/figures/%2e%2e/models/laptime/decision_tree.joblib",
+    ):
+        assert client.get(path).status_code in (403, 404), f"{path} escaped the mount"
+
+
+# ---------------------------------------------------------------------------
+# Security: CORS (TODO.md — "API allows every origin, method and header")
+# ---------------------------------------------------------------------------
+def test_cors_rejects_an_unlisted_origin(client):
+    r = client.get("/api/health", headers={"Origin": "https://evil.example.com"})
+    assert r.headers.get("access-control-allow-origin") is None
+
+
+def test_cors_allows_the_frontend_origin(client):
+    r = client.get("/api/health", headers={"Origin": "http://localhost:3000"})
+    assert r.headers.get("access-control-allow-origin") == "http://localhost:3000"
+
+
+def test_cors_does_not_advertise_wildcard_methods_or_headers(client):
+    r = client.options(
+        "/api/health",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert r.headers.get("access-control-allow-methods") != "*"
+    assert r.headers.get("access-control-allow-headers") != "*"
+
+
+def test_allowed_origins_are_configurable_by_environment():
+    """A deployment must be able to set its real origin without a code change."""
+    import importlib
+    import os
+
+    import app.api.main as main_mod
+
+    original = os.environ.get("F1_ALLOWED_ORIGINS")
+    os.environ["F1_ALLOWED_ORIGINS"] = "https://example.test, https://second.test"
+    try:
+        reloaded = importlib.reload(main_mod)
+        assert reloaded.ALLOWED_ORIGINS == ["https://example.test", "https://second.test"]
+    finally:
+        if original is None:
+            os.environ.pop("F1_ALLOWED_ORIGINS", None)
+        else:
+            os.environ["F1_ALLOWED_ORIGINS"] = original
+        importlib.reload(main_mod)
