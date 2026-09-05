@@ -8,6 +8,7 @@ something is missing.
 from __future__ import annotations
 
 import json
+
 from app.core.runtime import prepare_dl_runtime
 
 prepare_dl_runtime()
@@ -203,3 +204,63 @@ def test_ml_feature_importance_ignores_deep_registry_entries():
     endpoint must not trip over them."""
     r = client.get("/api/ml/feature-importance")
     assert r.status_code == 200
+
+
+# --------------------------------------------------------------------------
+# Task 8 wired into the strategy engine — opt-in, non-breaking
+# --------------------------------------------------------------------------
+def _race_state(client_):
+    o = client_.get("/api/data/options").json()
+    return {
+        "driver": o["drivers"][0], "team": o["teams"][0],
+        "current_lap": 30, "total_laps": 57,
+        "tyre_compound": o["compounds"][0], "tyre_age": 22,
+        "track_temperature": 30.0,
+    }
+
+
+def test_strategy_response_is_unchanged_when_explain_is_omitted():
+    """The flag must be genuinely opt-in: every existing caller sees the
+    response shape it saw before."""
+    r = client.post("/api/strategy/predict", json=_race_state(client))
+    assert r.status_code == 200
+    assert "explanation" not in r.json()
+
+
+@_xai
+def test_strategy_explain_true_attaches_a_real_explanation():
+    r = client.post("/api/strategy/predict", json={**_race_state(client), "explain": True})
+    assert r.status_code == 200
+    body = r.json()
+    assert "explanation" in body
+    for target, e in body["explanation"].items():
+        if not e.get("available"):
+            continue
+        assert e["shap_factors"], f"{target}: no SHAP factors"
+        assert len(e["narrative"]) > 40
+        assert 0.0 <= e["trust_score"] <= 1.0
+        assert e["trust_band"]["label"] in {"HIGH", "MODERATE", "LOW", "DO NOT ACT"}
+
+
+@_xai
+def test_live_explanation_declares_its_reduced_budget():
+    """The live explainer is coarser than the committed reports and drops LIME.
+    It must say so rather than presenting a differently-computed score under
+    the same name."""
+    body = client.post("/api/strategy/predict",
+                       json={**_race_state(client), "explain": True}).json()
+    for target, e in body["explanation"].items():
+        if not e.get("available"):
+            continue
+        assert e["method"]["nsamples"] < 200, "live budget should be smaller than the batch one"
+        assert "LIME is not run" in e["method"]["note"]
+        assert set(e["trust_components"]) == {"confidence", "model_agreement"}
+
+
+def test_strategy_rejects_a_deep_model_it_cannot_load():
+    """/api/strategy/predict serves sklearn pipelines; a .keras model must be
+    refused with a clear 422 rather than a 500 at load time."""
+    r = client.post("/api/strategy/predict",
+                    json={**_race_state(client), "laptime_model": "dnn_mlp"})
+    assert r.status_code == 422
+    assert "dnn_mlp" in str(r.json()["detail"])

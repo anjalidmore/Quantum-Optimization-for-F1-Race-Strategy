@@ -34,7 +34,14 @@ def _validate_model_choice(target: str, model_name: str | None) -> None:
         return
     cache = get_model_cache()
     registry = cache.registry()
-    valid = {m["model_name"] for m in (registry or {}).get("models", []) if m["target"] == target and m["artifact"]}
+    # Deep models are excluded: this endpoint serves Task 6 sklearn pipelines
+    # through ModelCache, which cannot load a .keras archive. They are reachable
+    # via /api/dl/predict/* instead.
+    valid = {
+        m["model_name"]
+        for m in (registry or {}).get("models", [])
+        if m["target"] == target and m["artifact"] and m.get("family") != "deep"
+    }
     if model_name not in valid:
         raise HTTPException(
             status_code=422,
@@ -47,4 +54,9 @@ def predict_strategy(race_state: RaceStateRequest):
     _validate_against_known_options(race_state)
     _validate_model_choice("target_laptime", race_state.laptime_model)
     _validate_model_choice("target_pit_next_lap", race_state.pit_model)
-    return run_strategy_analysis(race_state, laptime_model=race_state.laptime_model, pit_model=race_state.pit_model)
+    return run_strategy_analysis(
+        race_state,
+        laptime_model=race_state.laptime_model,
+        pit_model=race_state.pit_model,
+        explain=race_state.explain,
+    )
