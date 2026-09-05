@@ -1,0 +1,19 @@
+# Phase 3 / Task 8 — Explainable AI
+#
+# Requires practical06 (Task 7) to have been run: Task 8 explains its models.
+
+shap>=0.44          # Shapley attributions (TreeExplainer + KernelExplainer)
+lime>=0.2           # local linear surrogates
+dice-ml>=0.11       # diverse whole-row counterfactuals
+
+# Shared with practical06 — the deep network is reloaded and re-queried here
+keras>=3.5
+torch>=2.4
+
+pandas>=2.0
+numpy>=1.24
+scikit-learn>=1.3
+joblib>=1.3
+matplotlib>=3.7
+
+pytest>=7.4
