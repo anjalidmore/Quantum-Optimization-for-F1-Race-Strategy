@@ -240,3 +240,74 @@ def test_undefined_metrics_are_null_not_zero():
 @_artifacts
 def test_artifacts_exist_helper_agrees_with_the_filesystem():
     assert dl_pipeline.artifacts_exist() is True
+
+
+# --------------------------------------------------------------------------
+# Registry survival (TODO.md — "A non-hermetic test run silently deleted
+# Task 7's registry rows")
+# --------------------------------------------------------------------------
+def test_task6_retrain_preserves_task7_registry_entries(tmp_path):
+    """Task 7 extends the shared registry rather than keeping a parallel one.
+    A Task 6 retrain must not delete its rows — that is exactly what happened
+    before ``write_registry`` learned to preserve foreign families, leaving
+    /api/dl/models returning 404 while the .keras files sat on disk.
+    """
+    import json
+
+    from app.intelligence.ml.registry import ModelRegistryEntry, load_registry, write_registry
+
+    registry_path = tmp_path / "model_registry.json"
+
+    # A registry holding one classical and one deep entry, as build_all produces.
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    registry_path.write_text(json.dumps({
+        "generated_at": "2026-01-01T00:00:00+00:00",
+        "models": [
+            {"model_name": "old_classical", "family": "classical", "target": "target_laptime"},
+            {"model_name": "dnn_mlp", "family": "deep", "target": "target_laptime",
+             "artifact": "models/dl/target_laptime.keras"},
+            {"model_name": "dnn_mlp", "family": "deep", "target": "target_pit_next_lap",
+             "artifact": "models/dl/target_pit_next_lap.keras"},
+        ],
+    }, indent=2))
+
+    # Simulate a Task 6 retrain writing an entirely new set of classical entries.
+    fresh = ModelRegistryEntry(
+        model_name="random_forest", task="target_laptime", target="target_laptime",
+        features=["a"], validation={}, metrics={}, artifact="models/laptime/random_forest.joblib",
+        hyperparameters={}, random_state=42, dataset="test", training_rows=10,
+        test_rows=2, cv_folds=4, is_selected_best=True, synthetic_data_warning=False,
+    )
+    write_registry([fresh], registry_path)
+
+    after = load_registry(registry_path)
+    families = [m.get("family", "classical") for m in after["models"]]
+    deep = [m for m in after["models"] if m.get("family") == "deep"]
+
+    assert "deep" in families, "a Task 6 retrain deleted Task 7's registry rows"
+    assert len(deep) == 2, f"expected both deep entries preserved, got {len(deep)}"
+    assert {m["target"] for m in deep} == {"target_laptime", "target_pit_next_lap"}
+    # The stale classical entry must be gone — only foreign families are kept.
+    assert "old_classical" not in {m["model_name"] for m in after["models"]}
+
+
+def test_restore_registry_entries_rebuilds_from_committed_artifacts():
+    """The recovery path must work without retraining, since that is the whole
+    point of it existing."""
+    import json
+
+    from app.core.paths import ML_MODEL_REGISTRY_JSON
+
+    if not ML_MODEL_REGISTRY_JSON.exists() or not DL_METRICS_JSON.exists():
+        import pytest as _pytest
+
+        _pytest.skip("Tasks 6/7 not built")
+
+    before = json.loads(ML_MODEL_REGISTRY_JSON.read_text())
+    n_deep_before = sum(1 for m in before["models"] if m.get("family") == "deep")
+
+    restored = dl_pipeline.restore_registry_entries()
+    after = json.loads(ML_MODEL_REGISTRY_JSON.read_text())
+    n_deep_after = sum(1 for m in after["models"] if m.get("family") == "deep")
+
+    assert restored == n_deep_after == n_deep_before, "restore changed the deep entry count"
