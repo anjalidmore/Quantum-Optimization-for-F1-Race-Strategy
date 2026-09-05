@@ -38,8 +38,19 @@ practical05  Feature Engineering & Selection
               practical05/outputs/f1_features_selected.csv
               practical05/outputs/feature_metadata.json
                           │
+                          ├──────────────► Task 6 (Machine Learning), `main` branch
+                          │
                           ▼
-              consumed by Task 6 (Machine Learning) on the `main` branch
+practical06  Deep Learning
+     │        Keras MLPs (one per target) trained on the SAME folds, compared
+     │        against classical baselines on the SAME untouched test set
+     │
+     │  MODEL DEPENDENCY ↓
+     │  practical06/outputs/models/target_*.keras (+ scalers, + feature spec)
+     ▼
+practical07  Explainable AI
+              SHAP + LIME + counterfactuals + trust score + fairness, over
+              both the deep network and its classical counterpart
 ```
 
 ## Two different kinds of dependency
@@ -54,7 +65,7 @@ handoff** between them. Each has its own `src/` package and its own
 `requirements.txt`, and each runs standalone. You can run practical 03 without
 ever having run practical 01.
 
-**Concrete (04 → 05).** This one is real. Practical 05 reads
+**Concrete (04 → 05 → 06 → 07).** These are real. Practical 05 reads
 `practical04/outputs/clean/fastf1_laps_clean.csv` from disk, and imports
 practical 04's `f1data.schemas` via `sys.path` so that column semantics are
 defined once rather than twice. Practical 05's notebook locates practical 04 by
@@ -87,6 +98,18 @@ half and the statistical half: near-zero variance → correlation → VIF →
 importance with fold stability, with the final feature count chosen by
 cross-validated error under a parsimony rule.
 
+5. **Go deeper** (06). Replace the tree ensemble with a neural network and test whether
+   the extra capacity buys anything. On this data it does for lap time (MAE 0.1584 vs
+   the forest's 0.2298) and does not for the pit decision (CV ROC-AUC 0.4178 — worse
+   than chance, on 16 positive examples). The payoff is representational power; the cost
+   is that it needs data this project does not have.
+6. **Open the box** (07). A network that outperforms a forest but cannot say why is
+   worse than useless on a pit wall. Practical 07 attributes every prediction to named
+   race-state factors, cross-checks two independent explanation methods against each
+   other, and scores how much the recommendation should be trusted. This closes the arc:
+   the symbolic engines were explainable *by construction*; the statistical ones have to
+   be made explainable *after the fact*, and that is a strictly harder problem.
+
 ## What is real vs. what is synthetic
 
 Being precise about this matters more than it flatters:
@@ -103,6 +126,15 @@ Being precise about this matters more than it flatters:
 * **Consequence to keep honest:** the synthetic session has a near-deterministic
   pit schedule, which inflates practical 05's pit-decision classification AUC.
   The notebook says so in its own metadata, and so does this document.
+* **A second consequence, surfaced by practical 06:** every pit event in the synthetic
+  matrix occurs at lap 18, 27 or 36. The chronological holdout is laps 46–55, so it
+  contains **zero** positive examples — ROC-AUC and PR-AUC are mathematically undefined
+  there for the deep network *and* every classical baseline alike. Practical 06 reports
+  this rather than substituting a number, and falls back to the CV folds for its verdict.
+* **A third, surfaced by practical 07:** practical 05's synthetic contract keeps only
+  **1** driver/team identity feature per target, so the fairness assessment finds
+  identity carrying 2–4% of attribution — well below an even spread. The real-data
+  contract on `proj-mode` keeps **28 of 45**, which is where that assessment matters.
 
 ## A note on reproducibility
 

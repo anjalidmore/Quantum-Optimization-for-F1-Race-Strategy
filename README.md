@@ -26,8 +26,10 @@ backend and a Next.js dashboard — see the **`main`** branch.
 | 03 | State-Space Search — pit strategy as shortest path, solved with BFS, DFS, UCS, Greedy and A\* | `practicals/practical03/practical03.py` | 18 |
 | 04 | Data Engineering & EDA — load → clean → transform → analyse → visualise → report, with a full cleaning audit | `practicals/practical04/practical04.py` | 17 |
 | 05 | Feature Engineering & Selection — a four-stage selection funnel producing the modelling matrix | `practicals/practical05/practical05.ipynb` | — (notebook) |
+| 06 | Deep Learning — Keras MLPs per target, tuned on the same folds, compared honestly against classical baselines | `practicals/practical06/practical06.py` | 21 |
+| 07 | Explainable AI — SHAP, LIME, counterfactuals, a trust score and a fairness assessment | `practicals/practical07/practical07.py` | 38 |
 
-**71 tests across practicals 01–04, all passing.**
+**130 tests across practicals 01–04, 06 and 07, all passing.**
 
 Read [FLOW.md](FLOW.md) for how they build on each other, and
 [SHOWCASE.md](SHOWCASE.md) for what to look at first.
@@ -51,9 +53,13 @@ practicals/
 ├── practical04/           # Data Engineering     → src/f1data/
 │   ├── data/raw/          #   committed input CSVs
 │   └── outputs/clean/fastf1_laps_clean.csv   ← committed, feeds practical05
-└── practical05/           # Feature Engineering
-    ├── practical05.ipynb
-    └── outputs/           #   committed — the Task 5 contract
+├── practical05/           # Feature Engineering
+│   ├── practical05.ipynb
+│   └── outputs/           #   committed — the Task 5 contract
+├── practical06/           # Deep Learning       → src/f1dl/
+│   └── outputs/models/*.keras
+└── practical07/           # Explainable AI      → src/f1xai/
+    └── outputs/reports/explainability_dashboard.md
 ```
 
 **Why per-practical folders rather than flat `practical01.py` files at the
@@ -127,7 +133,15 @@ for n in 01 02 03 04; do
   ( cd practicals/practical$n && pip install -q -r requirements.txt && \
     python practical$n.py && pytest -p no:warnings -q )
 done
+# 05 is a notebook (see below); then the deep-learning and XAI practicals:
+for n in 06 07; do
+  ( cd practicals/practical$n && pip install -q -r requirements.txt && \
+    python practical$n.py && pytest -p no:warnings -q )
+done
 ```
+
+Practicals 06 and 07 must run **after** 05: 06 trains on the Task 5 feature matrix, and
+07 explains the models 06 produced.
 
 ---
 
@@ -152,6 +166,8 @@ Everything below was executed on this branch, not assumed:
 | 03 | 18 passed | exit 0 — optimality invariant holds (A\* cost == UCS cost == 2262.42 s) |
 | 04 | 17 passed | exit 0 — all Task-4 deliverables written |
 | 05 | — | notebook executed end to end; 550 laps × 20 cols → 520 × 19 feature matrix |
+| 06 | 21 passed | exit 0 — DNN beats every classical baseline on lap time (MAE 0.1584 vs 0.2298) |
+| 07 | 38 passed | exit 0 — SHAP/LIME/counterfactuals/trust/fairness all computed on real models |
 
 Practical 04's cleaned CSV and practical 05's feature matrix both regenerated
 **byte-identical** to the committed copies. Practical 05's recorded validation
