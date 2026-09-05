@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routers import data, health, ml, strategy, tasks
+from app.api.routers import data, dl, health, ml, strategy, tasks, xai
 from app.core.paths import ARTIFACTS_DIR
 
 app = FastAPI(
@@ -38,6 +38,8 @@ app.include_router(ml.router)
 app.include_router(strategy.router)
 app.include_router(data.router)
 app.include_router(tasks.router)
+app.include_router(dl.router)
+app.include_router(xai.router)
 
 if ARTIFACTS_DIR.exists():
     app.mount("/artifacts", StaticFiles(directory=str(ARTIFACTS_DIR)), name="artifacts")

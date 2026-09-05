@@ -82,3 +82,22 @@ class DataOptionsResponse(BaseModel):
     total_laps_hint: int
     track_temperature_range: dict  # {min, mean, max} — the real range this session's model was trained on
     dataset_source: dict
+
+
+class DeepPredictionResponse(BaseModel):
+    """Task 7 prediction from a Keras network.
+
+    ``prediction`` is lap time in seconds for the regression target and a pit
+    probability in [0, 1] for the classification target; ``predicted_class`` is
+    populated only for the latter. ``model_format`` is surfaced because the
+    reference task spec names ``.h5`` while Keras 3 requires ``.keras``.
+    """
+
+    model: str
+    target: str
+    prediction: float
+    predicted_class: int | None = None
+    model_format: str
+    data_source: str
+
+    model_config = {"protected_namespaces": ()}

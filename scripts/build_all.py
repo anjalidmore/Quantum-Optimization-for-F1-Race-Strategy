@@ -13,6 +13,7 @@ Usage
     python scripts/build_all.py                 # build only what's missing
     python scripts/build_all.py --force          # regenerate everything
     python scripts/build_all.py --skip-ml        # skip Task 6 training (slow step)
+    python scripts/build_all.py --skip-dl        # skip Tasks 7-8 (deep learning + XAI)
 """
 from __future__ import annotations
 
@@ -26,7 +27,10 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
 
 from app.core.paths import (  # noqa: E402
+    ARTIFACTS_DIR,
     DATA_ENGINEERING_ARTIFACTS_DIR,
+    DL_METRICS_JSON,
+    XAI_RESULTS_JSON,
     DATA_RAW_DIR,
     EXPERT_SYSTEM_ARTIFACTS_DIR,
     FASTF1_LAPS_CLEAN_CSV,
@@ -153,6 +157,32 @@ def build_ml(force: bool) -> dict | None:
     return train_all()
 
 
+@_stage("Deep learning (Task 7)")
+def build_dl(force: bool) -> dict | None:
+    from app.intelligence.dl import pipeline as dl_pipeline
+
+    if not force and dl_pipeline.artifacts_exist():
+        log.info("Already built (%s exists). Use --force to regenerate.", DL_METRICS_JSON.name)
+        # Anything that rewrote the shared registry wholesale may have dropped
+        # Task 7's rows. They are reconstructable from the committed artifacts,
+        # so restore them rather than leaving the API advertising nothing.
+        restored = dl_pipeline.restore_registry_entries()
+        if restored:
+            log.info("Restored %d Task 7 registry entries from existing artifacts.", restored)
+        return None
+    return dl_pipeline.train_all(force=force)
+
+
+@_stage("Explainable AI (Task 8)")
+def build_xai(force: bool) -> dict | None:
+    from app.intelligence.xai import pipeline as xai_pipeline
+
+    if not force and xai_pipeline.artifacts_exist():
+        log.info("Already built (%s exists). Use --force to regenerate.", XAI_RESULTS_JSON.name)
+        return None
+    return xai_pipeline.run_all()
+
+
 @_stage("Artifact consistency validation")
 def validate_artifacts() -> None:
     from app.intelligence.ml.registry import load_registry
@@ -161,12 +191,19 @@ def validate_artifacts() -> None:
     if not registry:
         raise SystemExit("Task 6 registry missing after build.")
     for entry in registry["models"]:
-        if entry["artifact"] and not (_REPO_ROOT / entry["artifact"]).exists():
-            raise SystemExit(f"Registry references missing artifact: {entry['artifact']}")
-    log.info("All %d registered model artifacts present on disk.", len(registry["models"]))
+        artifact = entry.get("artifact")
+        if not artifact:
+            continue
+        # Task 6 records paths relative to the repo root; Task 7 records them
+        # relative to artifacts/. Resolve both rather than assuming one.
+        if not ((_REPO_ROOT / artifact).exists() or (ARTIFACTS_DIR / artifact).exists()):
+            raise SystemExit(f"Registry references missing artifact: {artifact}")
+    n_deep = sum(1 for m in registry["models"] if m.get("family") == "deep")
+    log.info("All %d registered model artifacts present on disk (%d classical, %d deep).",
+             len(registry["models"]), len(registry["models"]) - n_deep, n_deep)
 
 
-def _print_summary(ml_summary: dict | None) -> None:
+def _print_summary(ml_summary: dict | None, dl_summary: dict | None = None) -> None:
     log.info("=" * 70)
     log.info("BUILD SUMMARY — F1 Race Strategy Intelligence Platform")
     log.info("=" * 70)
@@ -189,6 +226,14 @@ def _print_summary(ml_summary: dict | None) -> None:
             log.info("Task 6 (Machine Learning): using existing artifacts")
             log.info("  Best regression model:     %s", best_reg)
             log.info("  Best classification model: %s", best_clf)
+    if dl_summary:
+        log.info("Task 7 (Deep Learning):")
+        for target, r in dl_summary.items():
+            log.info("  %s: %s", target, r["verdict"].replace("**", "").split(".")[0] + ".")
+    elif DL_METRICS_JSON.exists():
+        log.info("Task 7 (Deep Learning):   using existing artifacts (%s)", DL_METRICS_JSON.name)
+    if XAI_RESULTS_JSON.exists():
+        log.info("Task 8 (Explainable AI):  %s", XAI_RESULTS_JSON.name)
     log.info("=" * 70)
     log.info("Run the API:      uvicorn app.api.main:app --reload")
     log.info("Run the frontend: cd frontend && npm run dev")
@@ -198,6 +243,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Build the whole F1 Race Strategy Intelligence platform.")
     parser.add_argument("--force", action="store_true", help="Regenerate every stage even if artifacts already exist.")
     parser.add_argument("--skip-ml", action="store_true", help="Skip Task 6 model training (the slowest stage).")
+    parser.add_argument("--skip-dl", action="store_true",
+                        help="Skip Task 7 (deep learning) and Task 8 (explainable AI).")
     parser.add_argument(
         "--regenerate-synthetic",
         action="store_true",
@@ -221,11 +268,25 @@ def main() -> int:
     ml_summary = None
     if not args.skip_ml:
         ml_summary = build_ml(args.force)
-        validate_artifacts()
     else:
         log.info("Skipping Task 6 (--skip-ml).")
 
-    _print_summary(ml_summary)
+    dl_summary = None
+    if args.skip_dl:
+        log.info("Skipping Tasks 7-8 (--skip-dl).")
+    elif args.skip_ml and not ML_MODEL_REGISTRY_JSON.exists():
+        # Task 7 compares against Task 6's committed results and Task 8
+        # explains Task 6's persisted pipelines, so neither can run before it.
+        log.warning("Skipping Tasks 7-8: they depend on Task 6, which was skipped and has "
+                    "no existing artifacts.")
+    else:
+        dl_summary = build_dl(args.force)
+        build_xai(args.force)
+
+    if not args.skip_ml:
+        validate_artifacts()
+
+    _print_summary(ml_summary, dl_summary)
     return 0
 
 
