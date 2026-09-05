@@ -40,6 +40,8 @@ from app.intelligence.dl import persistence, training, tuning, visualize
 from app.intelligence.ml.data_contract import build_task_frame, load_and_validate
 from app.intelligence.ml.evaluation import classification_metrics, regression_metrics
 from app.intelligence.ml.splits import chronological_holdout, expanding_window_folds
+from app.intelligence.ml.threshold import DEFAULT_THRESHOLD, tune_threshold
+from app.intelligence.ml.threshold import apply as apply_threshold
 
 log = logging.getLogger(__name__)
 
@@ -140,6 +142,21 @@ def train_all(force: bool = False, quick: bool = False, output_root: Path | None
             max_epochs=max_epochs, patience=patience, log=log,
         )
 
+        # Decision threshold from pooled out-of-fold predictions, for the same
+        # reason Task 6 does it: 0.5 left this network predicting "never pit"
+        # for every test lap while scoring ROC-AUC 0.92 and accuracy 0.994.
+        best_trial = next(
+            tr for tr in trials
+            if {**tr.params, "hidden_units": list(tr.params["hidden_units"])}
+            == {**best_params, "hidden_units": list(best_params["hidden_units"])}
+        )
+        threshold_choice = None
+        if task == "classification":
+            threshold_choice = tune_threshold(
+                best_trial.oof_y_true, best_trial.oof_y_proba, objective="f1")
+            log.info("  tuned decision threshold: %.4f (%s)",
+                     threshold_choice.threshold, threshold_choice.note)
+
         final_fold = folds[-1]
         fit = training.fit_fold(
             build_fn,
@@ -159,8 +176,17 @@ def train_all(force: bool = False, quick: bool = False, output_root: Path | None
         if task == "regression":
             dl_metrics = regression_metrics(y_test, test_pred)
         else:
+            thr = threshold_choice.threshold if threshold_choice else DEFAULT_THRESHOLD
             dl_metrics = classification_metrics(
-                y_test, (test_pred >= 0.5).astype(int), y_proba=test_pred)
+                y_test, apply_threshold(test_pred, thr), y_proba=test_pred)
+            dl_metrics["decision_threshold"] = round(float(thr), 4)
+            # What the default would have produced, so the change is visible.
+            dl_metrics["at_default_threshold"] = {
+                k: v for k, v in classification_metrics(
+                    y_test, apply_threshold(test_pred, DEFAULT_THRESHOLD), y_proba=test_pred
+                ).items()
+                if k in ("precision", "recall", "f1", "accuracy")
+            }
 
         persistence.save(fit.model, fit.scaler, features, mask, target, out.models_dl, fit.y_scaler)
 
@@ -174,7 +200,10 @@ def train_all(force: bool = False, quick: bool = False, output_root: Path | None
         # --- comparison against Task 6's own committed results ---------------
         classical = _task6_holdout_metrics(target)
         best_classical = _task6_best(target)
-        primary = "mae" if task == "regression" else "roc_auc"
+        # PR-AUC for classification, matching Task 6's selection metric — a
+        # comparison decided on ROC-AUC would rank the models by a quantity
+        # neither pipeline now selects on.
+        primary = "mae" if task == "regression" else "pr_auc"
 
         comparison = [{"model": "dnn_mlp", "family": "deep", "metrics": dl_metrics}]
         for name, m in classical.items():
@@ -230,7 +259,7 @@ def train_all(force: bool = False, quick: bool = False, output_root: Path | None
             "search_space": space.to_metadata(),
             "trials": [t.to_metadata() for t in trials],
             "best_params": {**best_params, "hidden_units": list(best_params["hidden_units"])},
-            "selection_metric": "mae" if task == "regression" else "roc_auc",
+            "selection_metric": "mae" if task == "regression" else "pr_auc",
             "choice_note": (
                 "Ties are impossible here because the grid is fully enumerated and scored "
                 "deterministically under a fixed seed."
@@ -243,6 +272,7 @@ def train_all(force: bool = False, quick: bool = False, output_root: Path | None
             "max_epochs": max_epochs,
             "patience": patience,
             "test_metrics": dl_metrics,
+            "threshold": threshold_choice.to_metadata() if threshold_choice else None,
             "history": fit.history,
             "comparison": comparison,
             "task6_best_model": best_classical,
@@ -300,6 +330,7 @@ def _write_artifacts(results: dict, source: dict, out: ArtifactPaths) -> None:
             t: {
                 "task": r["task"],
                 "test_metrics": r["test_metrics"],
+                "threshold": r.get("threshold"),
                 "architecture": r["architecture"],
                 "hyperparameters": r["best_params"],
                 "n_train": r["n_train"],
