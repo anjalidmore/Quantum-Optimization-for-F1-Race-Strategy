@@ -47,8 +47,15 @@ Three things worth 30 seconds each:
 | mean_baseline | 0.4645 | −0.5398 |
 
 The network wins lap-time regression by 31%. It then **loses** the pit decision — CV
-ROC-AUC 0.4178, worse than chance on 16 positive examples — and the report says so
-plainly instead of quietly dropping the target.
+CV PR-AUC 0.0694 against a 0.048 chance baseline, on 16 positive examples — and the
+report says so plainly instead of quietly dropping the target.
+
+Worth noting *how* that is reported. Selection is by **PR-AUC**, not ROC-AUC, which stays
+flatteringly high at this prevalence for a model that never fires; and the decision
+threshold is tuned on out-of-fold predictions rather than left at sklearn's default 0.5,
+which took F1 from **0.0000 to 0.1107**. The network no longer predicts "never pit" for
+every lap — the score is still poor, but it is now poor for the honest reason that the
+synthetic signal is weak, rather than because of an unexamined default.
 
 Worth reading for the engineering, not just the result: the report states the
 parameters-to-training-rows ratio (**6.10**), names all three overfitting countermeasures

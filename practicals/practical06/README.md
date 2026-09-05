@@ -62,10 +62,21 @@ classical baseline alike. That is a property of the data, reported rather than
 patched around.
 
 Falling back to the cross-validation folds, where positives exist: the DNN's mean CV
-ROC-AUC is **0.4178** — *worse than chance*. With 16 positive examples in the whole
-matrix and 8 input features there is not enough signal for a network to learn a
-ranking. This is an honest negative result and exactly what the small-data caveat in
+**PR-AUC is 0.0694**, against a chance baseline of 0.048 at this prevalence (16 positives
+in 330 out-of-fold predictions). Barely above chance. With 16 positive examples in the
+whole matrix and 8 input features there is not enough signal for a network to learn a
+useful ranking — an honest negative result, and exactly what the small-data caveat in
 `src/f1dl/models.py` predicts.
+
+**Selection is by PR-AUC, not ROC-AUC.** At this prevalence ROC-AUC is dominated by the
+majority class and stays flatteringly high for a model that never fires. PR-AUC asks the
+question that matters: of the laps flagged, how many are real pit windows?
+
+**The decision threshold is tuned, not assumed.** 0.5 is sklearn's default, optimal only
+for balanced classes with equal error costs — neither holds here. Tuned on the 330 pooled
+out-of-fold predictions, it moves to **0.0025** and takes F1 from **0.0000 to 0.1107**.
+The network stops predicting "never pit" for every lap. The absolute number is still poor
+because the underlying signal is weak; the degenerate behaviour, however, is gone.
 
 > On the `proj-mode` branch the same code runs against the 995-row **real** FastF1
 > matrix, whose pit events are not clustered into three laps, and produces a defined

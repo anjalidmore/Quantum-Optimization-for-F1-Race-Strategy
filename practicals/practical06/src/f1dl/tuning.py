@@ -68,6 +68,11 @@ class TrialResult:
     fold_metrics: list[dict] = field(default_factory=list)
     summary: dict = field(default_factory=dict)
     mean_epochs: float = 0.0
+    # Pooled out-of-fold predictions (classification only): every value was
+    # produced by a network that had not seen that row, so a threshold tuned on
+    # them is honest in the same way a CV score is.
+    oof_y_true: list = field(default_factory=list)
+    oof_y_proba: list = field(default_factory=list)
 
     def to_metadata(self) -> dict:
         return {
@@ -110,13 +115,16 @@ def search(
     same rule.
     """
     metric_keys = (
-        ["mae", "rmse", "r2"] if task == "regression" else ["roc_auc", "pr_auc", "f1", "accuracy"]
+        ["mae", "rmse", "r2"] if task == "regression" else
+        ["roc_auc", "pr_auc", "f1", "accuracy", "precision", "recall"]
     )
     trials: list[TrialResult] = []
 
     for i, params in enumerate(space.combinations(), start=1):
         fold_metrics: list[dict] = []
         epochs: list[int] = []
+        oof_true: list = []
+        oof_proba: list = []
         for fold in folds:
             tr, va = fold.train_index, fold.val_index
             fit = training.fit_fold(
@@ -138,16 +146,22 @@ def search(
             fold_metrics.append(m)
             epochs.append(fit.best_epoch)
 
+            if task == "classification":
+                oof_true.extend(list(y[va]))
+                oof_proba.extend(list(np.asarray(pred).ravel()))
+
         summary = evaluation.aggregate_metrics(fold_metrics, metric_keys)
         trial = TrialResult(
             params=params,
             fold_metrics=fold_metrics,
             summary=summary,
             mean_epochs=float(np.mean(epochs)) if epochs else 0.0,
+            oof_y_true=oof_true,
+            oof_y_proba=oof_proba,
         )
         trials.append(trial)
         if log:
-            primary = "mae" if task == "regression" else "roc_auc"
+            primary = "mae" if task == "regression" else "pr_auc"
             val = summary.get(primary, {}).get("mean")
             log.info(
                 "  trial %d/%d  %s  CV %s=%s",
@@ -168,6 +182,10 @@ def _pick_best(trials: list[TrialResult], task: str) -> TrialResult:
             raise RuntimeError("No regression trial produced a defined CV MAE.")
         return min(scored, key=lambda p: p[0])[1]
 
+    # PR-AUC first: ROC-AUC is uninformative at this prevalence.
+    scored = [(t.summary["pr_auc"]["mean"], t) for t in trials if t.summary["pr_auc"]["mean"] is not None]
+    if scored:
+        return max(scored, key=lambda p: p[0])[1]
     scored = [(t.summary["roc_auc"]["mean"], t) for t in trials if t.summary["roc_auc"]["mean"] is not None]
     if scored:
         return max(scored, key=lambda p: p[0])[1]

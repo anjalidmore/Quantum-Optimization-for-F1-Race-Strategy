@@ -46,7 +46,7 @@ sys.path.insert(0, str(_HERE / "src"))
 
 import numpy as np  # noqa: E402
 
-from f1dl import baselines, contract, models, persistence, reports, splits, training, tuning, visualize  # noqa: E402
+from f1dl import baselines, contract, models, persistence, reports, splits, threshold as threshold_mod, training, tuning, visualize  # noqa: E402
 from f1dl import evaluation  # noqa: E402
 
 logging.basicConfig(
@@ -128,6 +128,22 @@ def run(output_dir: Path, quick: bool = False) -> dict:
         )
         log.info("Chosen: %s", {**best_params, "hidden_units": list(best_params["hidden_units"])})
 
+        # Decision threshold from pooled out-of-fold predictions. 0.5 is
+        # sklearn's default, not a considered choice, and it is only optimal
+        # when the classes are balanced and both errors cost the same - neither
+        # holds for a pit decision.
+        threshold_choice = None
+        if task == "classification":
+            best_trial = next(
+                tr for tr in trials
+                if {**tr.params, "hidden_units": list(tr.params["hidden_units"])}
+                == {**best_params, "hidden_units": list(best_params["hidden_units"])}
+            )
+            threshold_choice = threshold_mod.tune_threshold(
+                best_trial.oof_y_true, best_trial.oof_y_proba, objective="f1")
+            log.info("Tuned decision threshold: %.4f — %s",
+                     threshold_choice.threshold, threshold_choice.note)
+
         # --- Final fit on the whole development set -------------------------
         # The last fold's validation block is reused as the early-stopping
         # monitor. The test set is still untouched at this point.
@@ -154,9 +170,20 @@ def run(output_dir: Path, quick: bool = False) -> dict:
             log.info("DNN test MAE=%.4f RMSE=%.4f R2=%s",
                      dnn_metrics["mae"], dnn_metrics["rmse"], dnn_metrics["r2"])
         else:
+            thr = (threshold_choice.threshold if threshold_choice
+                   else threshold_mod.DEFAULT_THRESHOLD)
             dnn_metrics = evaluation.classification_metrics(
-                y_test, (test_pred >= 0.5).astype(int), y_proba=test_pred
+                y_test, threshold_mod.apply(test_pred, thr), y_proba=test_pred
             )
+            dnn_metrics["decision_threshold"] = round(float(thr), 4)
+            dnn_metrics["at_default_threshold"] = {
+                k: v for k, v in evaluation.classification_metrics(
+                    y_test,
+                    threshold_mod.apply(test_pred, threshold_mod.DEFAULT_THRESHOLD),
+                    y_proba=test_pred,
+                ).items()
+                if k in ("precision", "recall", "f1", "accuracy")
+            }
             log.info("DNN test ROC-AUC=%s PR-AUC=%s F1=%.4f",
                      dnn_metrics["roc_auc"], dnn_metrics["pr_auc"], dnn_metrics["f1"])
 
@@ -229,7 +256,7 @@ def run(output_dir: Path, quick: bool = False) -> dict:
         results[target] = _assemble(
             target, task, features, c, holdout, folds, space, trials, best_params,
             fit, arch, dnn_metrics, comparison, max_epochs, patience, saved, fig, cmp_fig,
-            cv_summary, n_pos_test,
+            cv_summary, n_pos_test, threshold_choice,
         )
 
     _write_registry(results, output_dir)
@@ -240,7 +267,7 @@ def run(output_dir: Path, quick: bool = False) -> dict:
 
 def _assemble(target, task, features, c, holdout, folds, space, trials, best_params,
               fit, arch, dnn_metrics, comparison, max_epochs, patience, saved, fig, cmp_fig,
-              cv_summary, n_pos_test) -> dict:
+              cv_summary, n_pos_test, threshold_choice=None) -> dict:
     n_train = len(holdout.dev_index)
     ratio = arch["total_parameters"] / max(n_train, 1)
     capacity_note = (
@@ -335,6 +362,7 @@ def _assemble(target, task, features, c, holdout, folds, space, trials, best_par
         "max_epochs": max_epochs,
         "patience": patience,
         "test_metrics": dnn_metrics,
+        "threshold": threshold_choice.to_metadata() if threshold_choice else None,
         "comparison": comparison,
         "verdict": verdict,
         "artifacts": {
@@ -368,6 +396,7 @@ def _write_registry(results: dict, output_dir: Path) -> None:
                 "architecture": r["architecture"],
                 "hyperparameters": r["best_params"],
                 "test_metrics": r["test_metrics"],
+                "threshold": r.get("threshold"),
                 "dataset": r["source_dataset"],
                 "artifact": r["artifacts"]["model"],
             }

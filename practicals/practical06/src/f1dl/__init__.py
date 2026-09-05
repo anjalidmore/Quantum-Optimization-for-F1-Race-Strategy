@@ -14,6 +14,7 @@ __all__ = [
     "evaluation",
     "models",
     "tuning",
+    "threshold",
     "training",
     "baselines",
     "persistence",

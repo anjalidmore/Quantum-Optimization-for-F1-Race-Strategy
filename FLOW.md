@@ -100,9 +100,9 @@ cross-validated error under a parsimony rule.
 
 5. **Go deeper** (06). Replace the tree ensemble with a neural network and test whether
    the extra capacity buys anything. On this data it does for lap time (MAE 0.1584 vs
-   the forest's 0.2298) and does not for the pit decision (CV ROC-AUC 0.4178 — worse
-   than chance, on 16 positive examples). The payoff is representational power; the cost
-   is that it needs data this project does not have.
+   the forest's 0.2298) and does not for the pit decision (CV PR-AUC 0.0694 against a
+   0.048 chance baseline, on 16 positive examples). The payoff is representational power;
+   the cost is that it needs data this project does not have.
 6. **Open the box** (07). A network that outperforms a forest but cannot say why is
    worse than useless on a pit wall. Practical 07 attributes every prediction to named
    race-state factors, cross-checks two independent explanation methods against each
