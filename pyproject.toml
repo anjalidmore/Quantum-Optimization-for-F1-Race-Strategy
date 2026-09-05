@@ -15,6 +15,9 @@ addopts = "-q"
 filterwarnings = [
     "error::pandas.errors.SettingWithCopyWarning",
 ]
+markers = [
+    "slow: deliberately reproduces a crash in a subprocess; a few seconds each",
+]
 
 [build-system]
 requires = ["setuptools>=68"]
