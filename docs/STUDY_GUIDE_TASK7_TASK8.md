@@ -497,3 +497,215 @@ the first place. Owning the frame removes the ambiguity at the source.
 2. **Turn a fixed class of bug into an error.** `pyproject.toml` now has
    `filterwarnings = ["error::pandas.errors.SettingWithCopyWarning"]`. Once you have paid
    to fix something, spend the extra minute making it impossible to reintroduce.
+
+---
+
+# Appendix B — Model-quality concepts from the Phase 2 remediation
+
+Added while fixing two "high ROC-AUC, useless in practice" classifiers and a regressor
+that lost to the mean out of sample. As in Appendix A: the concept, then **what it looked
+like here**.
+
+## B.1 Why ROC-AUC is misleading under severe class imbalance
+
+**The concept.** ROC-AUC plots the true-positive rate against the **false-positive rate**
+across every threshold. The trap is in the denominator of that second term: FPR is
+`FP / (FP + TN)`, and when negatives massively outnumber positives, `TN` is enormous. A
+model can raise hundreds of false alarms and barely move FPR at all.
+
+Concretely, at a 4.8% positive rate: 947 negatives, 48 positives. Flag 50 extra negatives
+and FPR rises by 50/947 ≈ 0.05 — visually nothing on the curve. But precision has just
+been destroyed, because you flagged 50 wrong laps to catch a handful of right ones.
+
+ROC-AUC also has a probabilistic reading that makes its limits obvious: it is the chance
+that a randomly-chosen positive is ranked above a randomly-chosen negative. That is a
+statement about **ranking**, and it says nothing about whether any threshold produces a
+usable decision.
+
+**What it looked like here.** Task 6's `random_forest`: test ROC-AUC **0.98**, and
+precision **0.04**. Task 7's network: ROC-AUC **0.92**, accuracy **99.4%**, and F1,
+precision and recall all exactly **0.0** — it predicted "never pit" for all 180 test laps.
+Both would have been reported as successes by ROC-AUC alone.
+
+**What we did.** Made **CV PR-AUC** the primary selection metric in both
+`ml/selection.py` and `dl/tuning.py`, and put it first in the dashboard tables with a note
+explaining why.
+
+> **Likely question: "so is ROC-AUC useless?"** No — it is the right metric when classes
+> are roughly balanced, or when you genuinely care about ranking rather than a decision
+> (triage ordering, for instance). It is the wrong *headline* for a rare-event decision
+> problem. We still report it as a secondary metric, because "this model ranks well but
+> cannot be thresholded usefully" is itself a diagnosis worth being able to state.
+
+## B.2 What PR-AUC actually measures
+
+**The concept.** The precision–recall curve plots precision against recall across
+thresholds; PR-AUC (also called average precision) is the area under it. Neither axis
+involves true negatives, so the vast majority class cannot flatter the score.
+
+The single most useful fact about PR-AUC, and the one most often omitted: **its baseline
+is the positive rate, not 0.5.** A random ranker scores ROC-AUC 0.5 regardless of
+prevalence, but scores PR-AUC ≈ prevalence. So "PR-AUC 0.38" means nothing on its own —
+you must know the base rate to interpret it.
+
+**What it looked like here.** Prevalence 4.8%, so a random ranker scores ≈0.048.
+Task 6's `random_forest` scored CV PR-AUC **0.3863** — about **8× better than chance**,
+which is genuinely respectable and completely invisible in the ROC-AUC number. On the
+`task-mode` synthetic data the same computation scored **0.0694** against a 0.048 baseline:
+barely above chance, and the practical's README now says so in exactly those terms rather
+than quoting a ROC-AUC that flatters it.
+
+**The habit to take away.** Always quote PR-AUC next to its baseline. "PR-AUC 0.07" and
+"PR-AUC 0.07 against a chance baseline of 0.05" are the same number and completely
+different claims.
+
+## B.3 Threshold tuning, and why 0.5 is an arbitrary default
+
+**The concept.** A classifier outputs a probability; a decision needs a cut-off.
+`sklearn`'s `predict()` uses 0.5, which is **provably optimal only when** the classes are
+balanced *and* a false positive costs exactly as much as a false negative. Neither
+condition is common, and neither holds here.
+
+Two independent reasons 0.5 fails in this project:
+1. **Imbalance.** With 4.8% positives, a well-calibrated model's probabilities cluster far
+   below 0.5 for almost every row. The threshold sits outside the range where the model
+   actually discriminates.
+2. **Asymmetric costs.** Missing a pit window costs a driver track position and a ruined
+   stint; an unnecessary early stop costs a few seconds. Treating those as equal is a
+   modelling choice nobody made deliberately.
+
+**How to do it without cheating.** The threshold is a hyperparameter, and tuning a
+hyperparameter on the test set is leakage in exactly the ordinary way. We tune it on
+**pooled out-of-fold predictions**: each validation fold's predictions come from a model
+that had not seen those rows, and pooling all four folds gives 635 predictions with 36
+positives instead of the 6–11 a single fold offers.
+
+**What it looked like here.**
+
+| | Task 6 best (OOF) | Task 7 DNN (OOF) |
+|---|---:|---:|
+| F1 @ 0.5 | 0.2381 | **0.0000** |
+| F1 @ tuned | **0.2921** | **0.3143** |
+| Threshold | 0.480 | 0.1189 |
+
+The network's case is the vivid one: a model whose F1 was *exactly zero* — because every
+predicted probability fell below 0.5 — became usable without a single weight changing.
+Nothing was retrained. The model was always able to rank; it was never able to decide.
+
+**One number that looks like a regression and is not.** The network's test accuracy fell
+from 0.9944 to 0.8556. That is the fix working: it now fires on ~14% of laps instead of
+none. 99.4% accuracy from a model that always says "no" is the class-imbalance illusion,
+not a result.
+
+> **Likely question: "did tuning the threshold improve your test F1?"** No, and this is
+> worth being precise about. Our holdout contains **one positive example in 180 rows**, so
+> test-set precision/recall/F1 there are a coin flip, not evidence. The improvement is
+> measured out of fold, on 36 positives, which is the only place it *can* be measured
+> honestly. Claiming a test-set improvement would have been claiming signal from a single
+> sample.
+
+## B.4 Probability calibration, and why `CalibratedClassifierCV` exists
+
+**The concept.** A model is **calibrated** if its probabilities mean what they say: among
+rows it scores 0.7, about 70% should be positive. Ranking and calibration are independent
+— a model can rank perfectly while being badly calibrated (every probability squashed into
+[0.0, 0.3], say), which is precisely how you end up with F1 = 0 at a 0.5 cut-off.
+
+SVMs are the classic example: they optimise a margin, not a likelihood, so their decision
+function is not a probability at all. `SVC(probability=True)` retrofits one via **Platt
+scaling** — fitting a logistic regression to the decision values on internal
+cross-validation folds. `CalibratedClassifierCV` does the same thing as an explicit,
+inspectable wrapper (and also offers isotonic regression, a non-parametric alternative
+that needs more data).
+
+**What it looked like here.** `SVC(probability=True)` is deprecated in scikit-learn 1.9
+and **removed in 1.11** — combined with unpinned dependencies, Task 6 would have broken on
+a routine `pip install` with no code change on our side. We replaced it with
+`CalibratedClassifierCV(SVC(), ensemble=False, cv=3)`. Metrics were essentially unchanged
+(CV PR-AUC 0.3316 → 0.3321), which is what a correct calibration swap should look like:
+the deprecation was the reason to move, not a performance claim.
+
+**Why the explicit form is better anyway.** The calibration becomes a visible pipeline
+step you can inspect, swap for isotonic, or reason about — rather than behaviour hidden
+inside `SVC`'s constructor.
+
+**The connection to B.3.** Calibration and threshold tuning solve *different halves of the
+same problem*. Calibration makes the probabilities meaningful; threshold tuning picks
+where to cut them. A well-calibrated model with a bad threshold is still a bad decision
+rule, and vice versa. This project now does both. Task 10's reliability diagrams and
+Brier score are how you'd *measure* the first half — which is why that entry pairs
+naturally with this work.
+
+## B.5 What a negative R² actually tells you
+
+**The concept.** R² = 1 − (SS_residual / SS_total). The denominator is the error of the
+dumbest possible model: **always predict the mean**. So R² is not "correlation squared"
+and it is not bounded below by zero — on data the model did not fit, it can go arbitrarily
+negative.
+
+In plain terms: **R² < 0 means the model does worse than guessing the average.**
+
+That is not an exotic failure. It is what extrapolation failure looks like: a model fitted
+in one regime, evaluated in another, confidently producing predictions that are worse than
+no model at all.
+
+**What it looked like here.** Task 6's `decision_tree` won on CV MAE (1.1898, CV R²
++0.34) and scored test R² **−0.1669**. Not a bug — the holdout is the *closing laps of a
+single race*, where fuel load is low and tyres are old, a regime under-represented in
+training. Meanwhile `svr` scored test R² **+0.3023** and was not selected, because
+selection looked only at CV.
+
+**What we did.** Added a **generalisation guard** to `ml/selection.py`: refuse to select a
+negative-R² model when a positive-R² candidate exists, and record *why* the CV ranking was
+overridden as a named warning in the selection report.
+
+| | Before | After |
+|---|---|---|
+| Selected | decision_tree | **svr** |
+| Test R² | **−0.1669** | **+0.3023** |
+| Test MAE | 0.8673 | **0.7815** |
+| CV MAE | 1.1898 | 1.3813 |
+
+The CV MAE is *worse*, and that is the trade made explicitly.
+
+> **Likely question: "isn't selecting on the test set exactly the leakage you warned
+> about?"** A fair challenge, and the design answers it narrowly. The guard does not
+> *rank* by test R² — it uses it as a single binary veto ("does this model beat the
+> mean?"), and among the survivors the original CV ranking still decides. A test asserts
+> this: given a broken CV winner, a positive-R² model with better CV MAE, and another with
+> far better test R², it must pick the first of those two. There is real tension here —
+> any use of the holdout costs some independence — but a *fully* independent selection that
+> ships a model known to be worse than the mean is not the safer option. The honest framing
+> is that CV and holdout disagreeing this badly is itself the finding, and the right fix is
+> more races (Appendix B.6), not a cleverer rule.
+
+## B.6 A methodological note: what your holdout is actually asking
+
+This is the thread running through all of Phase 2, and the most transferable idea in it.
+
+`chronological_holdout` reserves the last 20% of **laps within one race**. That is a
+legitimate split, but it answers a specific question: *can the model extrapolate to the
+end of a race it has already seen most of?*
+
+The question that matters for deployment is different: *can it predict a race it has never
+seen?* A lap-level split cannot answer that, because track, weather and tyre allocation are
+constant across the boundary — the model has seen those conditions, just at earlier laps.
+
+This one distinction explains three separate symptoms we spent the phase chasing:
+- the negative test R² (late-race fuel/tyre regime is under-represented in training);
+- the 1-positive holdout that makes classification metrics uninterpretable (pit events
+  cluster early-to-mid race, so the tail has almost none);
+- CV and holdout disagreeing on which model is best.
+
+They are not three bugs. They are one evaluation design, seen from three angles.
+
+We added `race_level_holdout()` for the correct split and deliberately **did not** claim
+the entry as closed: the dataset is a single session, so the function raises rather than
+degrading silently, and the multi-session fetch is still open. Building infrastructure and
+being honest that it is unexercised is a better outcome than a split that technically runs
+and answers nothing.
+
+> **Likely question: "what would you do first with more time?"** Fetch five to ten more
+> 2023 sessions and re-run with the race-level holdout. It addresses the negative R², the
+> uninterpretable classification metrics, and the CV/holdout disagreement simultaneously —
+> because all three are the same problem.

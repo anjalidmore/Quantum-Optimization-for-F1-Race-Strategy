@@ -183,7 +183,17 @@ generalise to the closing laps rather than doing worse than predicting the mean 
 Chosen configuration: hidden `(32, 16)`, dropout 0.1, lr 1e-3, batch 32. 2,017 parameters
 against 815 training rows (ratio 2.47).
 
-### `target_pit_next_lap` — the classical model wins, and the network is degenerate
+### `target_pit_next_lap` — superseded by the Phase 2 threshold fix
+
+> **⚠ The table below is the pre-Phase-2 state, kept because the failure it documents is
+> instructive.** The network's F1/precision/recall of exactly 0.0 was a *threshold*
+> problem, not a ranking problem: every predicted probability fell below sklearn's default
+> 0.5 cut-off. Tuning the threshold on pooled out-of-fold predictions moved F1 from
+> **0.0000 to 0.3143** without retraining a single weight. Selection also moved from
+> ROC-AUC to PR-AUC. See `todo-complete.md` (Phase 2) for the current numbers and
+> `STUDY_GUIDE_TASK7_TASK8.md` §B.3 for the concept.
+
+### `target_pit_next_lap` — the original failure, as measured
 
 | Model | ROC-AUC | PR-AUC | F1 | Precision | Recall | Accuracy |
 |---|---:|---:|---:|---:|---:|---:|
@@ -205,6 +215,13 @@ the capacity.
 
 **Neither result was tuned toward.** Selection used cross-validated MAE and ROC-AUC
 respectively, decided before the holdout was touched.
+
+> **Phase 2 update.** Classification selection now uses cross-validated **PR-AUC**, not
+> ROC-AUC — at a 4.8% positive rate ROC-AUC stays high for a model that never fires.
+> Regression selection gained a **generalisation guard**, which changed the Task 6 winner
+> from `decision_tree` (test R² −0.1669) to `svr` (test R² +0.3023). The Task 7 comparison
+> above is against the pre-guard Task 6 models; the current comparison lives in
+> `artifacts/metrics/dl_vs_classical.json`.
 
 ## Significance — what these deliverables mean
 
@@ -248,13 +265,23 @@ Task 7 does not pretend to be exempt from it.
 **Why ROC-AUC alone is misleading for the pit target.** Pit events are a small minority of
 laps. A model can achieve a high ROC-AUC — meaning it *ranks* laps well — while being
 useless as a decision rule at the default 0.5 threshold, because precision collapses. Read
-PR-AUC and F1 alongside ROC-AUC, always. Where a metric is mathematically undefined on a
-split (a holdout containing no pit events at all), the artifacts record `null` with a
-reason rather than a plausible-looking number.
+PR-AUC and F1 alongside ROC-AUC, always, **and read PR-AUC against its baseline**, which is
+the positive rate (0.048 here) rather than 0.5. Where a metric is mathematically undefined
+on a split, the artifacts record `null` with a reason rather than a plausible-looking
+number.
+
+**The holdout has one positive example.** 1 pit event in 180 laps. Test-set precision,
+recall, F1 and PR-AUC computed on a single positive carry essentially no information. Every
+classification claim in this project is therefore measured on pooled out-of-fold CV
+predictions (635 rows, 36 positives), with test-set figures reported alongside and
+explicitly caveated. This is also why the multi-race evaluation entry stays open: it is the
+single change that would make these numbers trustworthy.
 
 **When to trust the DNN over the classical model, and when not to.** Trust the network
-where it wins on the **primary CV metric** *and* its holdout number agrees — that pattern
-means the advantage is real rather than a lucky test block. Prefer the classical model
+where it wins on the **primary CV metric** (MAE for regression, PR-AUC for classification)
+*and* its holdout number agrees — that pattern means the advantage is real rather than a
+lucky test block. For the pit target the holdout cannot corroborate anything (one
+positive), so the CV columns are the only evidence available. Prefer the classical model
 when the two disagree, when the network's parameter-to-row ratio is high, or when the
 target has few positive examples. And whichever wins, Task 8's trust score is the
 per-prediction arbiter: two families agreeing is evidence, one disagreeing means at least

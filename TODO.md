@@ -11,6 +11,12 @@ is speculative.
 
 **Priority counts:** 33 entries — 9 High · 14 Medium · 10 Low
 
+**Updated 2026-09-05 (Phase 2 remediation):** 5 entries closed and 2 partially closed —
+see [`todo-complete.md`](todo-complete.md). The measurement that shaped the phase: the
+chronological holdout contains **1 pit event in 180 laps**, so every classification change
+is tuned and measured on pooled out-of-fold CV predictions (36 positives) and the test-set
+numbers are reported with that caveat rather than presented as evidence.
+
 **Updated 2026-09-05 (Phase 1 remediation):** 9 entries closed — see
 [`todo-complete.md`](todo-complete.md). Closed entries are struck through below rather than deleted, so
 the record of what was wrong stays readable. One entry (the Next.js advisories) is blocked pending a
@@ -24,7 +30,10 @@ also closed by work done since: CI now exists (`.github/workflows/ci.yml`) and s
 
 ## Model Quality
 
-### [Priority: High] Pit-decision classifier is unusable at its operating point
+### ~~[Priority: High] Pit-decision classifier is unusable at its operating point~~ — ✅ CLOSED (Phase 2)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** Pit events are 4.8% of laps (48 of 995). The selected `random_forest` scores test ROC-AUC 0.98 —
 which looks excellent and is the number most likely to be quoted — but test PR-AUC is 0.25 and F1 is
@@ -42,7 +51,10 @@ prediction.
    `app/intelligence/ml/selection.py` — ROC-AUC is the wrong headline at this prevalence.
 4. Surface precision/recall/F1 alongside ROC-AUC on `frontend/app/machine-learning/page.tsx`.
 
-### [Priority: High] Selected regression model has negative test R²
+### ~~[Priority: High] Selected regression model has negative test R²~~ — ✅ CLOSED (Phase 2)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** `decision_tree` is selected on CV MAE (1.19 s, CV R² 0.34) but scores test R² −0.17 — worse than
 predicting the mean. `svr` generalises better on the same holdout (test MAE 0.78 s, R² 0.30) yet is not
@@ -58,7 +70,10 @@ held-out data as the platform's lap-time predictor is not.
 3. Record the CV-versus-test gap explicitly in `artifacts/reports/model_selection_report.md` as a
    selection warning.
 
-### [Priority: Medium] Evaluation rests on a single race and a ~180-row holdout
+### 🟡 [Priority: Medium] Evaluation rests on a single race and a ~180-row holdout — PARTIALLY CLOSED (Phase 2)
+
+**🟡 PARTIALLY CLOSED (Phase 2).** `race_level_holdout()` now exists in `app/intelligence/ml/splits.py`, but the committed dataset is a single session so it has **not been exercised on multiple races** — it raises rather than degrading silently. The multi-session fetch remains open. See [`todo-complete.md`](todo-complete.md).
+
 
 **Why:** All Task 6 conclusions come from one session (2023 Bahrain GP, 995 usable rows after warm-up).
 Variance is high enough that model ranking is not trustworthy, which is the likely root cause of the two
@@ -305,7 +320,10 @@ project whose core claim is reproducibility, the environment must be pinned.
 3. Record the resolved versions in `artifacts/metadata/model_registry.json` (it already stores
    `software_versions` — extend it to the full set).
 
-### [Priority: Medium] scikit-learn deprecation will break Task 6 at version 1.11
+### ~~[Priority: Medium] scikit-learn deprecation will break Task 6 at version 1.11~~ — ✅ CLOSED (Phase 2)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** `SVC(probability=True)` is deprecated in scikit-learn 1.9 and removed in 1.11. It raises 17
 `FutureWarning`s per test run today. Combined with unpinned dependencies, Task 6 will break on a routine
@@ -339,7 +357,10 @@ exactly this way, so the prior probability of staleness is not low.
    `phase1_taskN/` layout or `src/f1kr`-style package names.
 2. Cross-link them from `docs/PROJECT_REPORT.md` so they are visited when it is updated.
 
-### [Priority: Medium] Two OpenMP runtimes coexist in one process
+### ~~[Priority: Medium] Two OpenMP runtimes coexist in one process~~ — ✅ CLOSED (Phase 2)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** Adding `torch` for Task 7 put a third `libomp.dylib` in the process alongside sklearn's and
 XGBoost's. XGBoost segfaults outright if it initialises against PyTorch's copy — the full test suite
@@ -417,7 +438,10 @@ anyone browsing the dashboard.
    everything required.
 3. Add each to `LINKS` in `frontend/components/Nav.tsx`.
 
-### [Priority: High] The Task 7 pit classifier is degenerate at its operating point
+### ~~[Priority: High] The Task 7 pit classifier is degenerate at its operating point~~ — ✅ CLOSED (Phase 2)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** The deep classifier scores test ROC-AUC 0.9218 and accuracy 0.9944, but **F1, precision and
 recall are all exactly 0.0** — at the 0.5 threshold it predicts "never pit" for every test lap and rides
@@ -446,7 +470,10 @@ reason other than that they have not been connected.
    feature row and attach `shap_factors`, `trust_score` and `narrative`.
 3. Show them in `frontend/components/strategy/` next to the triggered rules.
 
-### [Priority: Medium] Deep learning is only ever compared on one race
+### 🟡 [Priority: Medium] Deep learning is only ever compared on one race — PARTIALLY CLOSED (Phase 2)
+
+**🟡 PARTIALLY CLOSED (Phase 2).** `race_level_holdout()` now exists in `app/intelligence/ml/splits.py`, but the committed dataset is a single session so it has **not been exercised on multiple races** — it raises rather than degrading silently. The multi-session fetch remains open. See [`todo-complete.md`](todo-complete.md).
+
 
 **Why:** Task 7's headline result — the network beating every classical model on lap time (MAE 0.5154 vs
 0.7815, R² +0.48 vs −0.17) — comes from a single session's 180-row holdout. It is the strongest ML result
