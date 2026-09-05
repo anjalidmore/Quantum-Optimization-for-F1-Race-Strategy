@@ -230,7 +230,8 @@ def trust_report(results: dict, weights: dict, out_path: Path) -> Path:
                   "| Case | Test row | Confidence | Agreement | Stability | **Trust** | Band |",
                   "|---|---:|---:|---:|---:|---:|---|"]
         for label, ex in r["examples"].items():
-            t = ex["trust"]; c = t["components"]
+            t = ex["trust"]
+            c = t["components"]
             lines.append(
                 f"| {label.replace('_', ' ')} | {ex['row_index']} | {c['confidence']:.3f} | "
                 f"{c['model_agreement']:.3f} | {c['explanation_stability']:.3f} | "
@@ -315,7 +316,7 @@ def dashboard(results: dict, out_path: Path) -> Path:
                 f"| Model agreement | {t['components']['model_agreement']:.3f} |",
                 f"| Explanation stability | {t['components']['explanation_stability']:.3f} |",
                 "", f"_{t['band']['meaning']}_", "",
-                f"**Top factors (SHAP):** " + ", ".join(
+                "**Top factors (SHAP):** " + ", ".join(
                     f"`{c['feature']}` ({c['shap_value']:+.4f})" for c in ex["shap_dnn"][:3]
                 ), "",
                 f"**Counterfactual:** {ex.get('counterfactual_sentence', '_not computed for this row_')}", "",

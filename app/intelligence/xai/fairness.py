@@ -28,8 +28,6 @@ a plain-language reading, and the report states it whichever way it falls.
 """
 from __future__ import annotations
 
-import numpy as np
-
 
 def assess(shap_ranking: list[dict], identity_features: list[str]) -> dict:
     """``shap_ranking`` is the output of ``shap_analysis.global_ranking``."""

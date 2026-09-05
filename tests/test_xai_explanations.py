@@ -8,7 +8,6 @@ the artifact itself records.
 """
 from __future__ import annotations
 
-import json
 import warnings
 
 from app.core.runtime import prepare_dl_runtime
@@ -22,8 +21,13 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from app.core.paths import ML_REPORTS_DIR, XAI_RESULTS_JSON
 from app.intelligence.xai import (
-    counterfactual, fairness, importance, lime_analysis,
-    narrative, shap_analysis, trust,
+    counterfactual,
+    fairness,
+    importance,
+    lime_analysis,
+    narrative,
+    shap_analysis,
+    trust,
 )
 from app.intelligence.xai import pipeline as xai_pipeline
 

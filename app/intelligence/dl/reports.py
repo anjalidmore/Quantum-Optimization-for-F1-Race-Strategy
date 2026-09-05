@@ -150,7 +150,7 @@ def evaluation_report(results: dict, out_path: Path) -> Path:
             "| Mechanism | Setting | Effect observed |",
             "|---|---|---|",
             f"| Dropout | {res['best_params']['dropout']} on every hidden layer | see loss curve |",
-            f"| L2 weight decay | 1e-04 on every Dense kernel | see loss curve |",
+            "| L2 weight decay | 1e-04 on every Dense kernel | see loss curve |",
             f"| Early stopping | patience {res['patience']} on `val_loss`, best weights restored | "
             f"stopped at epoch {res['best_epoch']} of {res['epochs_run']} run "
             f"(cap {res['max_epochs']}) |",

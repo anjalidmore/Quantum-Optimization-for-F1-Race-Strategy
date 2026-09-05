@@ -17,7 +17,6 @@ callable so every explainer downstream is model-agnostic by construction.
 """
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 
 from app.core.runtime import prepare_dl_runtime

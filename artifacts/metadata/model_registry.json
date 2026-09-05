@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T01:46:15.653002+00:00",
+  "generated_at": "2026-09-05T04:06:05.215700+00:00",
   "task": "Task 6 - Machine Learning Model Development",
   "models": [
     {
@@ -161,7 +161,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T01:46:15.652393+00:00",
+      "trained_at": "2026-09-05T04:06:05.215127+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -329,7 +329,7 @@
       "is_selected_best": true,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T01:46:15.652460+00:00",
+      "trained_at": "2026-09-05T04:06:05.215196+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -455,32 +455,32 @@
       "metrics": {
         "cv": {
           "mae": {
-            "mean": 1.3817047349139693,
-            "std": 0.3140119906267356,
+            "mean": 1.381704734913969,
+            "std": 0.3140119906267351,
             "n_folds": 4
           },
           "rmse": {
-            "mean": 1.7623564209307718,
-            "std": 0.4923435030681746,
+            "mean": 1.7623564209307725,
+            "std": 0.4923435030681749,
             "n_folds": 4
           },
           "r2": {
-            "mean": 0.21405944564163273,
-            "std": 0.19711833365715545,
+            "mean": 0.21405944564163215,
+            "std": 0.19711833365715628,
             "n_folds": 4
           },
           "mape": {
-            "mean": 1.3890090172947582,
-            "std": 0.30259716239196627,
+            "mean": 1.389009017294758,
+            "std": 0.3025971623919657,
             "n_folds": 4
           },
           "n_folds_total": 4
         },
         "test": {
-          "mae": 0.9253493148742153,
-          "rmse": 1.2670569038087485,
-          "r2": -0.057857224681923114,
-          "mape": 0.9419029351153158,
+          "mae": 0.925349314874216,
+          "rmse": 1.2670569038087482,
+          "r2": -0.05785722468192289,
+          "mape": 0.9419029351153164,
           "n": 180
         }
       },
@@ -497,7 +497,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T01:46:15.652508+00:00",
+      "trained_at": "2026-09-05T04:06:05.215239+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -666,7 +666,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T01:46:15.652552+00:00",
+      "trained_at": "2026-09-05T04:06:05.215281+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -835,7 +835,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": "available",
-      "trained_at": "2026-09-05T01:46:15.652596+00:00",
+      "trained_at": "2026-09-05T04:06:05.215322+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -993,7 +993,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T01:46:15.652638+00:00",
+      "trained_at": "2026-09-05T04:06:05.215366+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1152,7 +1152,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T01:46:15.652678+00:00",
+      "trained_at": "2026-09-05T04:06:05.215403+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1311,7 +1311,7 @@
       "is_selected_best": true,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T01:46:15.652720+00:00",
+      "trained_at": "2026-09-05T04:06:05.215441+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1471,7 +1471,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T01:46:15.652759+00:00",
+      "trained_at": "2026-09-05T04:06:05.215479+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1631,7 +1631,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": "available",
-      "trained_at": "2026-09-05T01:46:15.652802+00:00",
+      "trained_at": "2026-09-05T04:06:05.215517+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"

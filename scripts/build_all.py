@@ -29,9 +29,8 @@ sys.path.insert(0, str(_REPO_ROOT))
 from app.core.paths import (  # noqa: E402
     ARTIFACTS_DIR,
     DATA_ENGINEERING_ARTIFACTS_DIR,
-    DL_METRICS_JSON,
-    XAI_RESULTS_JSON,
     DATA_RAW_DIR,
+    DL_METRICS_JSON,
     EXPERT_SYSTEM_ARTIFACTS_DIR,
     FASTF1_LAPS_CLEAN_CSV,
     KNOWLEDGE_REPRESENTATION_ARTIFACTS_DIR,
@@ -39,6 +38,7 @@ from app.core.paths import (  # noqa: E402
     SEARCH_ARTIFACTS_DIR,
     TASK5_FEATURE_METADATA_JSON,
     TASK5_FEATURES_CSV,
+    XAI_RESULTS_JSON,
     ensure_dirs,
 )
 

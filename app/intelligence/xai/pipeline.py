@@ -15,7 +15,6 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timezone
-from pathlib import Path
 
 import numpy as np
 
@@ -27,8 +26,16 @@ from app.core.paths import (
     ensure_dirs,
 )
 from app.intelligence.xai import (
-    counterfactual, fairness, importance, lime_analysis, loading,
-    narrative, reports, shap_analysis, trust, visualize,
+    counterfactual,
+    fairness,
+    importance,
+    lime_analysis,
+    loading,
+    narrative,
+    reports,
+    shap_analysis,
+    trust,
+    visualize,
 )
 
 log = logging.getLogger(__name__)

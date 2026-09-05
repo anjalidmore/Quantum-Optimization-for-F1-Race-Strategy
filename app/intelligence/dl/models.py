@@ -28,8 +28,6 @@ binary pit-decision.
 """
 from __future__ import annotations
 
-import os
-
 # Keras 3 is backend-agnostic. TensorFlow publishes no wheel for the Python
 # version this project targets, so the torch backend is selected here, before
 # keras is imported. The Keras API used below is identical either way.

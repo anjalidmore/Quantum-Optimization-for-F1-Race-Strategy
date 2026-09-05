@@ -9,12 +9,12 @@ each other.
 from __future__ import annotations
 
 import json
+
 from app.core.runtime import prepare_dl_runtime
 
 prepare_dl_runtime()
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from app.core.paths import (

@@ -33,12 +33,12 @@ import numpy as np
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-import shap  # noqa: E402
-
 # KernelExplainer logs its internal coalition weights at INFO level, which
 # drowns this practical's own progress output. It is diagnostic noise, not a
 # result, so it is silenced here rather than by lowering the global log level.
 import logging  # noqa: E402
+
+import shap  # noqa: E402
 
 logging.getLogger("shap").setLevel(logging.WARNING)
 
