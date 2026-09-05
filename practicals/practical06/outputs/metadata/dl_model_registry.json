@@ -1,0 +1,195 @@
+{
+  "generated_at": "2026-09-05T06:58:53.450432+00:00",
+  "task": "Task 7 - Deep Learning Model Development",
+  "framework": "keras",
+  "backend": "torch",
+  "model_format": ".keras",
+  "format_note": "Reference spec names .h5; Keras 3 cannot reload HDF5 models saved this way, so .keras is used.",
+  "models": [
+    {
+      "model_name": "dnn_mlp",
+      "target": "target_laptime",
+      "task": "regression",
+      "features": [
+        "tyre_life",
+        "gap_roll3_mean",
+        "gap_expanding",
+        "field_median_lag1",
+        "driver_sai",
+        "race_progress"
+      ],
+      "n_features": 6,
+      "architecture": {
+        "name": "laptime_mlp",
+        "layers": [
+          {
+            "name": "hidden_1",
+            "type": "Dense",
+            "units": 64,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_1",
+            "type": "Dropout",
+            "rate": 0.3
+          },
+          {
+            "name": "hidden_2",
+            "type": "Dense",
+            "units": 32,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_2",
+            "type": "Dropout",
+            "rate": 0.3
+          },
+          {
+            "name": "laptime_seconds",
+            "type": "Dense",
+            "units": 1,
+            "activation": "linear"
+          }
+        ],
+        "total_parameters": 2561,
+        "optimizer": "Adam",
+        "loss": "mse"
+      },
+      "hyperparameters": {
+        "hidden_units": [
+          64,
+          32
+        ],
+        "dropout": 0.3,
+        "learning_rate": 0.001,
+        "batch_size": 32
+      },
+      "test_metrics": {
+        "mae": 0.15843101501464843,
+        "rmse": 0.20797285442271787,
+        "r2": 0.7631087895945279,
+        "mape": 0.17317129253649446,
+        "n": 100
+      },
+      "threshold": null,
+      "dataset": "practical04/outputs/clean/fastf1_laps_clean.csv",
+      "artifact": "target_laptime.keras"
+    },
+    {
+      "model_name": "dnn_mlp",
+      "target": "target_pit_next_lap",
+      "task": "classification",
+      "features": [
+        "tyre_life",
+        "race_progress",
+        "field_median_lag1",
+        "form_vs_baseline",
+        "team_aston_martin",
+        "field_pace_trend",
+        "tyrelife_x_medium",
+        "tracktemp_dev_x_tyrelife"
+      ],
+      "n_features": 8,
+      "architecture": {
+        "name": "pit_decision_mlp",
+        "layers": [
+          {
+            "name": "hidden_1",
+            "type": "Dense",
+            "units": 16,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_1",
+            "type": "Dropout",
+            "rate": 0.4
+          },
+          {
+            "name": "hidden_2",
+            "type": "Dense",
+            "units": 8,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_2",
+            "type": "Dropout",
+            "rate": 0.4
+          },
+          {
+            "name": "pit_probability",
+            "type": "Dense",
+            "units": 1,
+            "activation": "sigmoid"
+          }
+        ],
+        "total_parameters": 289,
+        "optimizer": "Adam",
+        "loss": "binary_crossentropy"
+      },
+      "hyperparameters": {
+        "hidden_units": [
+          16,
+          8
+        ],
+        "dropout": 0.4,
+        "learning_rate": 0.001,
+        "batch_size": 32
+      },
+      "test_metrics": {
+        "accuracy": 0.28,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": null,
+        "pr_auc": null,
+        "confusion_matrix": [
+          [
+            28,
+            72
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "confusion_matrix_labels": [
+          0,
+          1
+        ],
+        "undefined_reason": "Only one class present in this split's ground truth no pit event falls inside this split; ROC-AUC and PR-AUC are mathematically undefined.",
+        "n": 100,
+        "n_positive": 0,
+        "decision_threshold": 0.0025,
+        "at_default_threshold": {
+          "accuracy": 1.0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        }
+      },
+      "threshold": {
+        "threshold": 0.0025,
+        "objective": "f1",
+        "chosen_on": "pooled out-of-fold CV predictions",
+        "n_samples": 330,
+        "n_positive": 16,
+        "at_threshold": {
+          "f1": 0.1107,
+          "precision": 0.0586,
+          "recall": 1.0,
+          "expected_cost": 257.0
+        },
+        "at_default_0.5": {
+          "threshold": 0.5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "expected_cost": 80.0
+        },
+        "note": "Chosen on 330 pooled out-of-fold predictions containing 16 positives. F1 0.0000 at the default 0.5 -> 0.1107 at 0.0025 (+0.1107)."
+      },
+      "dataset": "practical04/outputs/clean/fastf1_laps_clean.csv",
+      "artifact": "target_pit_next_lap.keras"
+    }
+  ]
+}

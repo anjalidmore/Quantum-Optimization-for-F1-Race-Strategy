@@ -1,0 +1,326 @@
+# Claude Code Prompts — TODO Backlog, in 4 Phases
+
+> How to use this file: run **one phase at a time**. Paste a phase's prompt into Claude Code, let it
+> finish, review its report and the diff yourself, and only then paste the next phase. Do not paste all
+> four at once — several phases assume the previous phase's fixes are already live (e.g. Phase 2 assumes
+> Phase 1's hermetic-test fix, or its model-quality changes will get silently reverted the next time
+> someone runs `pytest`).
+>
+> Every phase operates on **both `task-mode` and `proj-mode`**, but not symmetrically: `task-mode` holds
+> standalone `practicalNN` submissions with no API/frontend/CI, so only the entries that are genuinely
+> about *data, models, or reproducibility* apply there. Entries about the FastAPI app, the Next.js
+> frontend, CI, or the build orchestrator are `proj-mode`-only — each phase prompt says explicitly which
+> is which. Never invent frontend/API/CI infrastructure on `task-mode` to "match" `proj-mode`; that branch
+> is deliberately simpler.
+
+---
+
+## SHARED RULES (apply to every phase — re-read before each one)
+
+You are acting as a **senior ML engineer, QA tester, security specialist, and project manager** fixing a
+real, audited backlog (`TODO.md`, dated 2026-09-05) in a working repository. This is remediation work on a
+system that already runs — your job is to make it **more correct, more secure, and more honest**, not to
+redesign it.
+
+1. **Do no harm.** Before changing anything in a given entry, capture the current behavior (the current
+   metric value, the current API response shape, the current test pass count, the current file list) so
+   you can prove afterward that you improved it and did not silently break something else. If a fix could
+   change an existing API response shape, keep the change additive/backward-compatible (new optional
+   field, new default-off flag) unless the entry explicitly says otherwise.
+2. **Preserve structure.** Keep the existing module layout, naming conventions, and branch conventions
+   (`practicalNN` on `task-mode`, `app/intelligence/<task>/` on `proj-mode`) exactly as they are. Extend
+   files/functions in place; don't restructure directories as a side effect of a bug fix.
+3. **Every fix must be verified, not asserted.** After each entry, re-run whatever test/build/metric check
+   proves the fix worked, and quote the real before/after numbers in your report. If a fix makes something
+   else measurably worse (e.g. tuning the pit-decision threshold for F1 drops accuracy), say so explicitly
+   — do not hide a trade-off.
+4. **If a "How" step in `TODO.md` turns out to be wrong or infeasible once you're in the code**, stop and
+   tell me why, propose an alternative, and wait for confirmation before deviating — don't quietly do
+   something different from what was asked.
+5. **Branch discipline:** commit each entry (or small group of related entries) separately, with a message
+   that names the `TODO.md` entry it closes. Do not merge `proj-mode` into `main` in any of these phases —
+   this backlog work stays on `task-mode`/`proj-mode` until I say otherwise.
+6. **Two running documents to maintain across all four phases** (create at the start of Phase 1, extend in
+   every subsequent phase — never overwrite previous phases' sections):
+   - **`todo-complete.md`** (`proj-mode` only, next to `TODO.md`) — one section per entry you close, in
+     this format:
+     ```markdown
+     ### ✅ [Was: Priority] <Task title> — closed in Phase <N>
+     **What changed:** <concrete summary of the actual code/config change, with file paths>
+     **Before → After:** <the real metric/behavior before, and after — numbers, not adjectives>
+     **Verified by:** <which test/build/manual check you ran to confirm it>
+     **Branch(es) touched:** task-mode / proj-mode / both
+     ```
+     Also remove or mark closed the corresponding entry in `TODO.md` itself so the two files stay in sync
+     (strike it through with a note "see `todo-complete.md`" rather than deleting the history outright).
+   - **`docs/STUDY_GUIDE_TASK7_TASK8.md`** (extend this existing file, don't create a new one) — for every
+     entry that teaches a transferable concept (class imbalance, PR-AUC vs ROC-AUC, test hermeticity, CORS,
+     dependency pinning, calibration, OpenMP conflicts, QUBO, etc.), add a short primer plus "how this
+     showed up in our project and how we fixed it" — this file is for your evaluation, so it must let you
+     explain *why* each fix mattered, not just that it happened.
+
+---
+
+## PHASE 1 — SECURITY & TEST-INFRASTRUCTURE FOUNDATION
+
+Fix these first: everything else in later phases depends on tests you can trust and a repo that isn't
+leaking models/data. Applies mostly to `proj-mode` (this is where the API/tests/CI live); note in
+`todo-complete.md` explicitly if an entry has no `task-mode` equivalent.
+
+### Entries to close (from `TODO.md`)
+
+1. **API allows every origin, method and header, with no authentication** (High, Security) —
+   `app/api/main.py`. Restrict CORS to an env-configured origin list (default
+   `["http://localhost:3000"]`), restrict methods to `["GET", "POST"]`, drop the header wildcard. Note in
+   your report where an auth dependency would need to go for real deployment, but don't over-engineer auth
+   into a project that only needs to run locally today unless I ask.
+2. **The whole artifacts tree is served unauthenticated as static files** (Medium, Security) — mount only
+   `figures/`, `reports/`, and per-task report dirs at `/artifacts`; explicitly exclude
+   `artifacts/models/` and `artifacts/metadata/`. Add the `tests/test_api.py` check that
+   `GET /artifacts/models/laptime/decision_tree.joblib` 404s.
+3. **Frontend ships dependencies with 2 high-severity advisories** (High, Security) — run `npm audit` in
+   `frontend/`, evaluate the `next@16` upgrade path vs. staying on latest 14.2.x patch; do the safer one
+   first (patch bump), re-run `npm run build` and confirm all routes still compile, and record in
+   `todo-complete.md` which option you took and why (a major-version bump is a bigger, riskier change —
+   don't do it without flagging the App Router migration cost to me first).
+4. **`run.sh` kills arbitrary processes on ports 8000/3000** (Medium, Security) — require confirmation or
+   add a `--force-ports` flag before killing; alternatively read `BACKEND_PORT`/`FRONTEND_PORT` from env.
+5. **`msgpack` 1.1.2 has a known advisory** (Low, Security) — pin `msgpack>=1.2.1` in `requirements.txt`,
+   re-run `pip-audit`, confirm clean.
+6. **No secret-scanning or dependency-audit automation** (Low, Security) — add `pip-audit` and
+   `npm audit --audit-level=high` as CI steps; add a `gitleaks` or `detect-secrets` pre-commit hook.
+7. **A non-hermetic test run silently deleted Task 7's registry rows** (High, Testing) — verify
+   `write_registry`'s family-preserving fix and `dl.pipeline.restore_registry_entries()` actually hold; add
+   the regression test asserting the registry keeps both ML and DL entries after a Task 6 retrain.
+8. **The test suite is not hermetic — it rewrites committed artifacts** (High, Testing) — this is the root
+   cause of #7. Parameterize the writer functions in `app/intelligence/ml/persistence.py` and `reports.py`
+   (and the DL/XAI equivalents from Task 7/8) on an output directory; give ML/DL tests a `tmp_path` fixture
+   instead of writing into tracked `artifacts/`. Add a CI step failing if `git status --porcelain` is
+   non-empty after `pytest`. **Verify this by actually running `pytest` twice in a row on a clean clone and
+   confirming `git status` is clean both times** — don't just claim it.
+9. **Nothing tests the "no fabricated results" contract** (Medium, Testing) — add
+   `tests/test_artifact_contract.py`: write a sentinel value into a temp copy of a metrics artifact, point
+   `app/core/paths.py` at it, assert the corresponding API endpoint returns the sentinel; assert the
+   reverse (missing artifact → explicit error, not a silent default).
+10. **Test suite emits 133 warnings, including 69 `SettingWithCopyWarning`** (Low, Testing) — fix the three
+    sites in `app/intelligence/data/pipeline.py` (lines ~139, 155, 181) with explicit `.loc[:, col] = …` or
+    `.copy()`; then add `filterwarnings = ["error::pandas.errors.SettingWithCopyWarning"]` to
+    `pyproject.toml` so it can't regress silently.
+
+### `task-mode` scope for this phase
+If the corresponding practicals (Task 6/7/8) write outputs into tracked folders in a way that makes their
+own test/verification runs non-hermetic, apply the same `tmp_path`-style fix there too, and note it in
+`todo-complete.md` under "Branch(es) touched: both." The CORS/auth/artifacts-serving entries have no
+`task-mode` equivalent — skip them there and say so.
+
+### Phase 1 exit check
+Full `proj-mode` test suite green, `git status` clean after running it twice, `npm audit` and `pip-audit`
+both re-run and reported, `todo-complete.md` has 10 new entries (or fewer if some don't apply to
+`task-mode` — reflect that honestly), `STUDY_GUIDE_TASK7_TASK8.md` has new primers on: test hermeticity,
+why CORS wildcards are dangerous even "just locally," and what a supply-chain advisory (`npm audit`,
+`pip-audit`) actually tells you.
+
+---
+
+## PHASE 2 — MODEL QUALITY & CORRECTNESS (Task 6 & Task 7)
+
+This is the substantive analytical fix: two "high-ROC-AUC, useless-in-practice" classifiers and one
+regression model that loses to the mean on real held-out data. Applies to both branches — the underlying
+model code exists in both `task-mode`'s Task 6/7 practicals and `proj-mode`'s `app/intelligence/ml/` and
+`app/intelligence/dl/`.
+
+### Entries to close (from `TODO.md`)
+
+1. **Pit-decision classifier (Task 6) is unusable at its operating point** (High) — test PR-AUC 0.25, F1
+   0.077 despite ROC-AUC 0.98, because pit events are 4.8% of laps. In
+   `app/intelligence/ml/classification.py`: add `class_weight="balanced"` to classifier configs; evaluate
+   resampling (SMOTE or undersampling) **inside CV folds only** (never on the test set, never before the
+   split — this is the same leakage discipline as Task 5). Tune the decision threshold on validation folds
+   to maximise F1 or expected cost, persist the chosen threshold into `model_registry.json`. Make PR-AUC,
+   not ROC-AUC, the primary selection metric in `app/intelligence/ml/selection.py`. Surface
+   precision/recall/F1 next to ROC-AUC on `frontend/app/machine-learning/page.tsx`.
+2. **Task 7's DNN pit classifier is degenerate at its operating point** (High) — F1/precision/recall
+   exactly 0.0 at threshold 0.5; it predicts "never pit" for every test lap. Same fix pattern as #1, applied
+   in `app/intelligence/dl/tuning.py`: tune the threshold on validation data, make PR-AUC the primary
+   selection metric, surface precision/recall/F1 on the new `/deep-learning` page alongside `/machine-learning`.
+3. **Selected regression model (Task 6) has negative test R²** (High) — `decision_tree` is selected on CV
+   MAE but scores test R² −0.17; `svr` generalises better (test R² 0.30) but isn't selected. In
+   `app/intelligence/ml/selection.py`: add a generalisation guard that refuses to select a model with
+   negative test R² when a positive-R² candidate exists, or surfaces both with an explicit override
+   requirement. Record the CV/test disagreement explicitly in `artifacts/reports/model_selection_report.md`
+   as a named selection warning, not a buried number.
+4. **scikit-learn deprecation will break Task 6 at version 1.11** (Medium) — replace
+   `SVC(probability=True)` with `CalibratedClassifierCV(SVC(), ensemble=False)` in
+   `app/intelligence/ml/classification.py`; re-run the full build and confirm classification metrics stay
+   comparable (report the before/after numbers — calibration can shift them).
+5. **Two OpenMP runtimes coexist in one process** (Medium) — confirm `app/core/runtime.py`'s
+   `prepare_dl_runtime()` guard genuinely prevents the XGBoost/PyTorch segfault (reproduce the crash
+   deliberately by importing `keras` without the guard in a throwaway script, then confirm the guarded path
+   fixes it). Add the regression test that imports `keras` in a subprocess and asserts the guarded ordering
+   is what's actually used. Note in your report whether moving the DL build stage to its own subprocess
+   (removing the shared-process constraint entirely) is worth doing now or worth deferring — your call, but
+   justify it.
+6. **Evaluation rests on a single race and a ~180-row holdout** (Medium) — don't attempt the full
+   multi-session fetch in this phase (that's a larger, separate effort — flag it, don't half-do it), but do
+   extend `app/intelligence/ml/splits.py` with a race-level (not just tail-of-race) holdout **function**,
+   even if only exercised on the current single session for now, so the multi-race work in a later effort
+   has something to plug into. State clearly in `todo-complete.md` that this entry is **partially** closed
+   (infrastructure ready, not yet exercised on multiple races) — don't mark it fully done if it isn't.
+7. **Deep learning is only ever compared on one race** (Medium) — same partial-closure treatment as #6;
+   this is the same underlying limitation. Cross-reference the two entries in `todo-complete.md` rather than
+   duplicating the explanation.
+
+### `task-mode` scope for this phase
+Apply the same threshold-tuning, `class_weight`, PR-AUC-as-primary-metric, and generalisation-guard logic
+inside the Task 6/7 practicals' own model code (not just `proj-mode`'s `app/`) — these are genuine
+correctness bugs, not architecture-specific ones. Update each practical's own report output and its section
+in `task-mode/SHOWCASE.md` if it previously highlighted the now-corrected (previously misleading) ROC-AUC
+number as a headline result.
+
+### Phase 2 exit check
+Re-run `scripts/build_all.py --force` on `proj-mode` and the equivalent practical scripts on `task-mode`;
+report the real before/after metrics for every model touched (both pit-classifiers' new PR-AUC/F1 at their
+tuned thresholds, the regression model now selected and its test R²). Update
+`docs/TASK7_TASK8_DETAILS.md`'s "how to interpret the results" sections if the headline numbers changed.
+`STUDY_GUIDE_TASK7_TASK8.md` gets new primers on: why ROC-AUC is misleading under severe class imbalance,
+what PR-AUC actually measures, what threshold tuning does and why 0.5 is an arbitrary default, what
+probability calibration means and why `CalibratedClassifierCV` exists, and a plain-language explanation of
+what a negative R² actually tells you (worse than guessing the mean).
+
+---
+
+## PHASE 3 — PIPELINE INTEGRITY, DEPENDENCY MANAGEMENT & CI
+
+The build orchestrator's most dangerous defect (silent stale-feature retraining) and the reproducibility
+risks around unpinned dependencies and CI coverage. Mostly `proj-mode`; note `task-mode` scope per entry.
+
+### Entries to close (from `TODO.md`)
+
+1. **`build_all.py`'s Task 5 stage is a presence check, not a build step** (High) — under `--force`, it
+   currently just logs "present" and exits in 0.0s without regenerating features, so Task 6/7 can silently
+   retrain on stale features after a new session is fetched. Fix by having the Task 5 stage execute
+   `docs/notebooks/task5_feature_engineering.ipynb` via `nbclient` when `--force` is passed (already a
+   declared dependency). If that's not feasible cleanly, implement the fallback: hash
+   `artifacts/data_engineering/clean/fastf1_laps_clean.csv` and compare against the `source_dataset`
+   provenance in `feature_metadata.json`, aborting loudly on mismatch. **Prove the fix**: deliberately
+   change the underlying clean data, run `build_all.py --force`, and confirm it now either regenerates
+   features or aborts loudly — do not just claim this works, demonstrate it in your report.
+2. **The Task 5 notebook must be re-run by hand, and nothing says so at the point of use** (Medium,
+   Documentation, tightly coupled to #1) — make the Task 5 stage log an explicit `WARNING` naming the
+   notebook whenever it short-circuits, and repeat that warning in the build's final summary block.
+3. **Every dependency is unpinned, so results drift between environments** (Medium) — generate
+   `requirements.lock` via `pip freeze` from the currently-verified environment; have `run.sh` and CI
+   install from the lock file; keep `requirements.txt` as the loose declaration and document the split in
+   `README.md`. Extend `model_registry.json`'s existing `software_versions` field to record the full
+   resolved set.
+4. **Committed binary artifacts inflate the repository and churn on every build** (Medium) — this is a
+   judgment call, not an automatic fix: **ask me explicitly** whether to keep artifacts committed (current,
+   defensible default) or move to a release-asset/LFS model, before changing anything structural. If I say
+   "keep committed," the concrete fix is smaller: make report generators write their `Generated <timestamp>`
+   line to a small sidecar file instead of the report body, so a no-op rebuild produces a clean `git diff`.
+5. **CI does not cover Tasks 7 and 8** (Medium) — confirm `.github/workflows/ci.yml` installs from
+   `requirements.txt`/lock file so `keras`/`torch`/`shap`/`lime`/`dice-ml` are present; add a
+   `python scripts/build_all.py --force` (or `--skip-dl` plus a dedicated Task 7/8 build job) step so the
+   currently skip-guarded DL/XAI tests actually execute in CI, not just locally. Add the Phase 1
+   artifact-cleanliness (`git status --porcelain`) check here too if it isn't already wired in.
+6. **`docs/task{1,2,3,4}_*.md` were not verified against the code** (Low) — read each against its current
+   `app/intelligence/` package, correct any references to the retired `phase1_taskN/`/`src/f1kr`-style
+   naming, and cross-link them from `docs/PROJECT_REPORT.md`.
+7. **Stray untracked `refernce.png` in the repository root** (Low) — ask me whether it's needed; if yes,
+   move it to `docs/images/reference.png` and commit it properly (fixing the filename typo); if no, delete
+   it. Don't guess silently either way.
+
+### `task-mode` scope for this phase
+`task-mode` has no `build_all.py`/CI/lock-file equivalent to fix, but it does share `requirements.txt` — if
+so, apply the same pin/lock treatment there for consistency, and check whether any practical has its own
+stray/misnamed files worth flagging alongside `refernce.png`.
+
+### Phase 3 exit check
+Demonstrate the Task 5 stale-feature bug fix concretely (as described above). Confirm CI is green on a
+fresh push including the new Task 7/8 build step, and confirm it would have failed before your fix (show
+the CI config diff). `STUDY_GUIDE_TASK7_TASK8.md` gets new primers on: why unpinned dependencies threaten
+reproducibility specifically (with this project's own `pip freeze` numbers as the worked example), what a
+"silent success, wrong output" pipeline bug looks like and why it's more dangerous than a crash, and how CI
+gating (`git status --porcelain` after tests) enforces hermeticity structurally rather than by convention.
+
+---
+
+## PHASE 4 — FEATURE COMPLETION, EXPLAINABILITY WIRING, FRONTEND & FORWARD-LOOKING DOCS
+
+The remaining Medium/Low items: connecting work that already exists but isn't joined up, filling the
+dashboard gaps, adding missing test coverage and contributor docs, and documenting (not necessarily
+building) the Task 9/10/quantum roadmap honestly.
+
+### Entries to close (from `TODO.md`)
+
+1. **Task 8 is not wired into the strategy recommendation** (Medium) — add an optional `explain: bool`
+   field to `RaceStateRequest` in `app/api/schemas.py`, **defaulting to `false`** so existing callers of
+   `POST /api/strategy/predict` see no change. When `true`, call the XAI pipeline's per-row explanation path
+   for the constructed feature row and attach `shap_factors`, `trust_score`, and `narrative` to the
+   response. Show them in `frontend/components/strategy/` next to the existing `triggered_expert_rules`, so
+   the recommendation finally has both its symbolic and statistical explanation side by side.
+2. **Task 9 — three engine dashboard pages are not built** (Medium) — add
+   `frontend/app/knowledge/page.tsx`, `expert-system/page.tsx`, `search/page.tsx`, following the existing
+   pattern in `frontend/app/data-analysis/page.tsx` (no new backend work needed — `GET /api/tasks/evidence`
+   and the `/artifacts` mount, corrected per Phase 1, already serve everything required). Add each to
+   `LINKS` in `frontend/components/Nav.tsx`.
+3. **Zero frontend tests** (Medium) — add Vitest + React Testing Library, starting with
+   `frontend/lib/api.ts` response parsing against fixtures captured from the live (now-corrected) API; add
+   a Playwright smoke test that boots the API, loads all routes (including the three new ones from #2), and
+   asserts no error boundary renders.
+4. **No `CONTRIBUTING.md`, issue templates or PR template** (Low) — extract the README's Contributing
+   section into `CONTRIBUTING.md`, link to it from `README.md`; add
+   `.github/PULL_REQUEST_TEMPLATE.md` with a checklist (tests pass, `build_all.py --force` exits 0,
+   frontend builds, `git status` clean — reuse the exact checks Phase 1–3 already enforce in CI).
+5. **No architecture diagram image** (Low) — add a Mermaid diagram to `README.md`'s Architecture section
+   (renders natively on GitHub); keep the existing ASCII diagram in `FLOW.md` as the detailed reference,
+   don't remove it.
+6. **Task 7 could use a sequence model** (Low, forward-looking) — do **not** implement this speculatively.
+   Instead, scaffold it responsibly: add the architecture as a new, clearly-labelled-experimental entry in
+   `app/intelligence/dl/models.py`'s `BUILDERS` registry behind a flag, reusing the existing lap-forward
+   splits (do not invent a new splitting scheme), with windowing added to `dl/training.py`. If it doesn't
+   clearly outperform the existing MLP on the real evaluation, leave it registered but **not** selected as
+   the default, and say so plainly in `TASK7_TASK8_DETAILS.md`.
+7. **Task 10 — Responsible AI evaluation not started** (Low) — add calibration analysis (reliability
+   diagrams, Brier score) for the pit classifier(s) — this pairs naturally with Phase 2's threshold-tuning
+   and calibration work — and prediction intervals for lap-time regression, surfaced in the strategy
+   simulator UI. Document this as the concrete start of Task 10, not a full implementation of it.
+8. **Quantum optimisation layer not started** (Low) — this phase should **document, not build**: write a
+   short design note (in `docs/` or appended to `TODO.md`'s own Quantum section) formalising pit-strategy
+   selection as a QUBO over the existing `app/intelligence/search/problem.py` state space, and name the
+   concrete next step (`app/intelligence/quantum/` behind the same interface as the classical algorithms).
+   Do not attempt a Qiskit/PennyLane implementation in this phase unless I explicitly ask for it separately
+   — this is scoped as a roadmap item, not a Phase 4 deliverable.
+
+### `task-mode` scope for this phase
+Frontend/CI/PR-template entries are `proj-mode`-only. The calibration/prediction-interval work (#7) and the
+sequence-model scaffold (#6) are genuine modeling additions — mirror them into the relevant `task-mode`
+practicals if those practicals are meant to stand alone as complete submissions; otherwise note in
+`todo-complete.md` that `task-mode` intentionally stays at its current scope and point to `proj-mode` as the
+canonical implementation.
+
+### Phase 4 exit check
+All new frontend pages render real data (screenshot or describe what you verified, don't just claim
+"built"). Frontend test suite passes. `CONTRIBUTING.md` and the PR template exist and are linked from
+`README.md`. `todo-complete.md` now covers all closed/partially-closed entries across all four phases, and
+`TODO.md` on `proj-mode` reflects only what's genuinely still open (the fully-deferred items: multi-race
+evaluation infrastructure exercised at scale, full quantum implementation). `STUDY_GUIDE_TASK7_TASK8.md`
+gets its final additions: what a Brier score/reliability diagram tells you and why it matters more than
+accuracy for a decision-support tool, what a QUBO formulation is at a conceptual level and why this
+project's small feature count was deliberately kept quantum-circuit-friendly (per the README's own stated
+research direction), and a one-paragraph honest summary of what's genuinely production-ready in this
+project versus what's a documented, deliberate stopping point.
+
+---
+
+## FINAL DELIVERABLE CHECK (after all four phases)
+
+- [ ] `todo-complete.md` exists on `proj-mode`, one section per closed/partially-closed entry, with real
+      before/after numbers for every model-quality fix.
+- [ ] `TODO.md` on `proj-mode` is updated to strike through closed items and point to `todo-complete.md`,
+      not silently rewritten.
+- [ ] `docs/STUDY_GUIDE_TASK7_TASK8.md` has a new primer for every concept introduced across the four
+      phases, each tied to a concrete "how this showed up in our project" example.
+- [ ] Nothing in this backlog work touched `main`.
+- [ ] Every "no fabricated results" check from the original repo audit still holds after four phases of
+      changes — re-verify it once, at the very end, not just at the end of Phase 1.

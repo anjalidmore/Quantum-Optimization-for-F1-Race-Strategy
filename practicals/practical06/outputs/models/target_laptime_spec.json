@@ -1,0 +1,24 @@
+{
+  "target": "target_laptime",
+  "features": [
+    "tyre_life",
+    "gap_roll3_mean",
+    "gap_expanding",
+    "field_median_lag1",
+    "driver_sai",
+    "race_progress"
+  ],
+  "numeric_mask": [
+    true,
+    true,
+    true,
+    true,
+    false,
+    true
+  ],
+  "model_file": "target_laptime.keras",
+  "scaler_file": "target_laptime_scaler.joblib",
+  "target_scaler_file": "target_laptime_target_scaler.joblib",
+  "format": ".keras",
+  "format_note": "Reference spec names .h5; Keras 3 cannot reload HDF5 models saved this way, so the native .keras archive is used instead."
+}
