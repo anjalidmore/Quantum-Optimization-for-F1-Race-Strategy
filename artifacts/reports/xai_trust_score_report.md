@@ -1,6 +1,6 @@
 # Task 8 - Trust Score Report
 
-_Generated 2026-09-05 01:38 UTC._
+_Generated 2026-09-05 06:50 UTC._
 
 ## The formula
 
@@ -37,11 +37,11 @@ as `f1xai.trust.WEIGHTS` so they can be challenged and changed.
 
 | Case | Test row | Confidence | Agreement | Stability | **Trust** | Band |
 |---|---:|---:|---:|---:|---:|---|
-| fastest predicted lap | 89 | 0.400 | 0.400 | 0.500 | **0.430** | LOW |
-| median predicted lap | 92 | 0.396 | 0.396 | 0.500 | **0.427** | LOW |
-| slowest predicted lap | 178 | 0.000 | 0.000 | 0.500 | **0.150** | DO NOT ACT |
+| fastest predicted lap | 89 | 0.101 | 0.101 | 0.500 | **0.221** | DO NOT ACT |
+| median predicted lap | 92 | 0.851 | 0.851 | 0.500 | **0.745** | MODERATE |
+| slowest predicted lap | 178 | 0.967 | 0.967 | 0.500 | **0.827** | HIGH |
 
-**Across all 3 explained rows:** mean 0.336, range 0.150-0.430. Bands: {'HIGH': 0, 'MODERATE': 0, 'LOW': 2, 'DO NOT ACT': 1}.
+**Across all 3 explained rows:** mean 0.598, range 0.221-0.827. Bands: {'HIGH': 1, 'MODERATE': 1, 'LOW': 0, 'DO NOT ACT': 1}.
 
 ---
 
@@ -49,10 +49,10 @@ as `f1xai.trust.WEIGHTS` so they can be challenged and changed.
 
 | Case | Test row | Confidence | Agreement | Stability | **Trust** | Band |
 |---|---:|---:|---:|---:|---:|---|
-| lowest pit probability | 179 | 1.000 | 0.898 | 0.500 | **0.819** | HIGH |
-| closest to decision boundary | 34 | 0.592 | 0.866 | 0.200 | **0.557** | MODERATE |
+| lowest pit probability | 43 | 1.000 | 0.977 | 0.500 | **0.843** | HIGH |
+| closest to decision boundary | 34 | 0.577 | 0.868 | 0.500 | **0.641** | MODERATE |
 
-**Across all 2 explained rows:** mean 0.688, range 0.557-0.819. Bands: {'HIGH': 1, 'MODERATE': 1, 'LOW': 0, 'DO NOT ACT': 0}.
+**Across all 2 explained rows:** mean 0.742, range 0.641-0.843. Bands: {'HIGH': 1, 'MODERATE': 1, 'LOW': 0, 'DO NOT ACT': 0}.
 
 ---
 

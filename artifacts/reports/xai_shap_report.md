@@ -1,6 +1,6 @@
 # Task 8 - SHAP Report
 
-_Generated 2026-09-05 01:38 UTC._
+_Generated 2026-09-05 06:50 UTC._
 
 SHAP distributes the gap between a prediction and the average prediction
 among the input features, using Shapley values from cooperative game theory.
@@ -72,63 +72,63 @@ _Approximate Shapley values sampled with nsamples=200 over a k-means background 
 | 44 | `driver_lec` | 0.000000 |
 | 45 | `driver_ham` | 0.000000 |
 
-### Global ranking - decision_tree
+### Global ranking - svr
 
-_Exact Shapley values; TreeExplainer enumerates the ensemble rather than sampling._
+_Approximate Shapley values sampled with nsamples=60 over a k-means background of 25 points. Ranks and signs are meaningful; magnitudes carry sampling noise and are not directly comparable to TreeExplainer's exact values._
 
 | Rank | Feature | Mean \|SHAP\| |
 |---:|---|---:|
-| 1 | `tracktemp_dev_x_tyrelife` | 0.682427 |
-| 2 | `stint_number` | 0.669129 |
-| 3 | `gap_expanding` | 0.414635 |
-| 4 | `tyre_life` | 0.222912 |
-| 5 | `track_status` | 0.188641 |
-| 6 | `gap_roll3_mean` | 0.127319 |
-| 7 | `team_red_bull_racing` | 0.069264 |
-| 8 | `is_fresh_tyre` | 0.053144 |
-| 9 | `field_median_lag1` | 0.051855 |
-| 10 | `driver_oco` | 0.033057 |
-| 11 | `form_vs_baseline` | 0.025248 |
-| 12 | `gap_roll3_std` | 0.010864 |
-| 13 | `tyrelife_x_soft` | 0.004318 |
-| 14 | `compound_soft` | 0.001351 |
-| 15 | `field_pace_trend` | 0.001190 |
-| 16 | `wind_speed` | 0.000000 |
-| 17 | `humidity` | 0.000000 |
-| 18 | `tyrelife_x_medium` | 0.000000 |
-| 19 | `driver_dev` | 0.000000 |
-| 20 | `team_aston_martin` | 0.000000 |
-| 21 | `driver_per` | 0.000000 |
-| 22 | `driver_rus` | 0.000000 |
-| 23 | `team_mclaren` | 0.000000 |
-| 24 | `driver_gas` | 0.000000 |
-| 25 | `driver_zho` | 0.000000 |
-| 26 | `driver_alo` | 0.000000 |
-| 27 | `driver_bot` | 0.000000 |
-| 28 | `driver_ver` | 0.000000 |
-| 29 | `team_mercedes` | 0.000000 |
-| 30 | `driver_str` | 0.000000 |
-| 31 | `team_alpine` | 0.000000 |
-| 32 | `team_williams` | 0.000000 |
-| 33 | `driver_nor` | 0.000000 |
-| 34 | `driver_pia` | 0.000000 |
-| 35 | `team_alphatauri` | 0.000000 |
-| 36 | `driver_sar` | 0.000000 |
-| 37 | `driver_lec` | 0.000000 |
-| 38 | `team_haas_f1_team` | 0.000000 |
-| 39 | `driver_mag` | 0.000000 |
-| 40 | `driver_ham` | 0.000000 |
-| 41 | `driver_hul` | 0.000000 |
-| 42 | `driver_sai` | 0.000000 |
-| 43 | `driver_tsu` | 0.000000 |
-| 44 | `team_ferrari` | 0.000000 |
-| 45 | `compound_medium` | 0.000000 |
+| 1 | `stint_number` | 0.468331 |
+| 2 | `tracktemp_dev_x_tyrelife` | 0.458424 |
+| 3 | `tyre_life` | 0.347920 |
+| 4 | `field_median_lag1` | 0.278125 |
+| 5 | `form_vs_baseline` | 0.166605 |
+| 6 | `gap_roll3_mean` | 0.098847 |
+| 7 | `gap_roll3_std` | 0.073139 |
+| 8 | `tyrelife_x_soft` | 0.058210 |
+| 9 | `gap_expanding` | 0.052076 |
+| 10 | `track_status` | 0.046786 |
+| 11 | `team_red_bull_racing` | 0.046773 |
+| 12 | `wind_speed` | 0.041363 |
+| 13 | `is_fresh_tyre` | 0.040481 |
+| 14 | `field_pace_trend` | 0.030945 |
+| 15 | `team_alphatauri` | 0.023876 |
+| 16 | `team_haas_f1_team` | 0.023702 |
+| 17 | `compound_soft` | 0.022405 |
+| 18 | `team_mclaren` | 0.022025 |
+| 19 | `team_aston_martin` | 0.021817 |
+| 20 | `driver_nor` | 0.021579 |
+| 21 | `driver_ver` | 0.015798 |
+| 22 | `driver_mag` | 0.014947 |
+| 23 | `tyrelife_x_medium` | 0.013768 |
+| 24 | `humidity` | 0.013494 |
+| 25 | `team_mercedes` | 0.012128 |
+| 26 | `team_williams` | 0.011916 |
+| 27 | `compound_medium` | 0.010625 |
+| 28 | `driver_sar` | 0.010444 |
+| 29 | `driver_zho` | 0.008667 |
+| 30 | `driver_alo` | 0.007601 |
+| 31 | `driver_dev` | 0.007519 |
+| 32 | `driver_bot` | 0.007208 |
+| 33 | `driver_hul` | 0.003461 |
+| 34 | `driver_per` | 0.002562 |
+| 35 | `driver_rus` | 0.002181 |
+| 36 | `driver_ham` | 0.002156 |
+| 37 | `team_alpine` | 0.001917 |
+| 38 | `team_ferrari` | 0.001530 |
+| 39 | `driver_tsu` | 0.001294 |
+| 40 | `driver_gas` | 0.001227 |
+| 41 | `driver_sai` | 0.000483 |
+| 42 | `driver_str` | 0.000180 |
+| 43 | `driver_oco` | 0.000000 |
+| 44 | `driver_pia` | 0.000000 |
+| 45 | `driver_lec` | 0.000000 |
 
 ### Representative predictions explained
 
 #### Fastest Predicted Lap (test row 89, lap 51)
 
-Deep network prediction: **95.9445**  |  decision_tree: **97.1719**
+Deep network prediction: **95.9445**  |  svr: **97.7846**
 
 | Feature | Value | SHAP | Effect |
 |---|---:|---:|---|
@@ -143,7 +143,7 @@ Deep network prediction: **95.9445**  |  decision_tree: **97.1719**
 
 #### Median Predicted Lap (test row 92, lap 54)
 
-Deep network prediction: **97.7566**  |  decision_tree: **98.9938**
+Deep network prediction: **97.7566**  |  svr: **98.0624**
 
 | Feature | Value | SHAP | Effect |
 |---|---:|---:|---|
@@ -158,7 +158,7 @@ Deep network prediction: **97.7566**  |  decision_tree: **98.9938**
 
 #### Slowest Predicted Lap (test row 178, lap 55)
 
-Deep network prediction: **102.2913**  |  decision_tree: **97.1719**
+Deep network prediction: **102.2913**  |  svr: **102.2228**
 
 | Feature | Value | SHAP | Effect |
 |---|---:|---:|---|
@@ -185,14 +185,14 @@ _Approximate Shapley values sampled with nsamples=200 over a k-means background 
 
 | Rank | Feature | Mean \|SHAP\| |
 |---:|---|---:|
-| 1 | `tracktemp_dev_x_tyrelife` | 0.123178 |
-| 2 | `tyre_life` | 0.113410 |
-| 3 | `tyrelife_x_soft` | 0.044555 |
-| 4 | `compound_soft` | 0.022829 |
-| 5 | `gap_roll3_mean` | 0.016200 |
-| 6 | `field_median_lag1` | 0.014686 |
-| 7 | `form_vs_baseline` | 0.006367 |
-| 8 | `field_pace_trend` | 0.005147 |
+| 1 | `tyre_life` | 0.114313 |
+| 2 | `tracktemp_dev_x_tyrelife` | 0.113231 |
+| 3 | `tyrelife_x_soft` | 0.031832 |
+| 4 | `compound_soft` | 0.020711 |
+| 5 | `gap_roll3_mean` | 0.016185 |
+| 6 | `field_median_lag1` | 0.006576 |
+| 7 | `form_vs_baseline` | 0.004810 |
+| 8 | `field_pace_trend` | 0.003543 |
 
 ### Global ranking - random_forest
 
@@ -200,44 +200,44 @@ _Exact Shapley values; TreeExplainer enumerates the ensemble rather than samplin
 
 | Rank | Feature | Mean \|SHAP\| |
 |---:|---|---:|
-| 1 | `tyre_life` | 0.113556 |
-| 2 | `tracktemp_dev_x_tyrelife` | 0.096343 |
-| 3 | `form_vs_baseline` | 0.075203 |
-| 4 | `field_median_lag1` | 0.063239 |
-| 5 | `tyrelife_x_soft` | 0.053029 |
-| 6 | `gap_roll3_mean` | 0.048826 |
-| 7 | `field_pace_trend` | 0.042995 |
-| 8 | `compound_soft` | 0.004071 |
+| 1 | `tyre_life` | 0.113444 |
+| 2 | `tracktemp_dev_x_tyrelife` | 0.111478 |
+| 3 | `form_vs_baseline` | 0.078155 |
+| 4 | `field_median_lag1` | 0.060573 |
+| 5 | `tyrelife_x_soft` | 0.052117 |
+| 6 | `gap_roll3_mean` | 0.045295 |
+| 7 | `field_pace_trend` | 0.043422 |
+| 8 | `compound_soft` | 0.003690 |
 
 ### Representative predictions explained
 
-#### Lowest Pit Probability (test row 179, lap 56)
+#### Lowest Pit Probability (test row 43, lap 47)
 
-Deep network prediction: **0.0000**  |  random_forest: **0.1022**
+Deep network prediction: **0.0001**  |  random_forest: **0.0235**
 
 | Feature | Value | SHAP | Effect |
 |---|---:|---:|---|
-| `form_vs_baseline` | 5.111 | -0.018549 | decreases the prediction |
-| `tyre_life` | 5 | -0.017075 | decreases the prediction |
-| `gap_roll3_mean` | 3.723 | -0.008885 | decreases the prediction |
-| `compound_soft` | 1 | -0.007701 | decreases the prediction |
-| `tyrelife_x_soft` | 5 | +0.005519 | increases the prediction |
-| `tracktemp_dev_x_tyrelife` | -6.046 | -0.004183 | decreases the prediction |
+| `tyre_life` | 7 | -0.021578 | decreases the prediction |
+| `gap_roll3_mean` | -1.405 | -0.015844 | decreases the prediction |
+| `compound_soft` | 1 | -0.011191 | decreases the prediction |
+| `tyrelife_x_soft` | 7 | +0.009316 | increases the prediction |
+| `form_vs_baseline` | -1.693 | -0.006696 | decreases the prediction |
+| `tracktemp_dev_x_tyrelife` | -6.365 | -0.005286 | decreases the prediction |
 
 ![waterfall](xai_target_pit_next_lap_lowest_pit_probability_shap_waterfall.png)
 
 #### Closest To Decision Boundary (test row 34, lap 48)
 
-Deep network prediction: **0.2040**  |  random_forest: **0.3379**
+Deep network prediction: **0.2113**  |  random_forest: **0.3436**
 
 | Feature | Value | SHAP | Effect |
 |---|---:|---:|---|
-| `tyre_life` | 21 | +0.236009 | increases the prediction |
-| `tracktemp_dev_x_tyrelife` | -19.1 | -0.151469 | decreases the prediction |
-| `gap_roll3_mean` | 1.411 | +0.057514 | increases the prediction |
-| `tyrelife_x_soft` | 0 | -0.036969 | decreases the prediction |
-| `compound_soft` | 0 | +0.030424 | increases the prediction |
-| `field_pace_trend` | -0.157 | +0.016188 | increases the prediction |
+| `tyre_life` | 21 | +0.229481 | increases the prediction |
+| `tracktemp_dev_x_tyrelife` | -19.1 | -0.144088 | decreases the prediction |
+| `gap_roll3_mean` | 1.411 | +0.042296 | increases the prediction |
+| `tyrelife_x_soft` | 0 | -0.026945 | decreases the prediction |
+| `compound_soft` | 0 | +0.024934 | increases the prediction |
+| `field_median_lag1` | 97.43 | +0.015858 | increases the prediction |
 
 ![waterfall](xai_target_pit_next_lap_closest_to_decision_boundary_shap_waterfall.png)
 

@@ -1,6 +1,6 @@
 # Task 8 - Counterfactual Analysis Report
 
-_Generated 2026-09-05 01:38 UTC._
+_Generated 2026-09-05 06:50 UTC._
 
 *What would have to change about the race state for the recommendation to flip?*
 
@@ -60,9 +60,9 @@ counterfactual exists inside the feature's observed range, that is reported as
 
 ## target_pit_next_lap
 
-### Lowest Pit Probability (test row 179, lap 56)
+### Lowest Pit Probability (test row 43, lap 47)
 
-**Scanned feature:** `tyre_life`  |  **Current value:** 5  |  **Current prediction:** 0.0000  |  **Threshold:** 0.5
+**Scanned feature:** `tyre_life`  |  **Current value:** 7  |  **Current prediction:** 0.0001  |  **Threshold:** 0.5
 
 **Searched range:** [1, 22] in 60 steps
 
@@ -74,7 +74,7 @@ counterfactual exists inside the feature's observed range, that is reported as
 
 ### Closest To Decision Boundary (test row 34, lap 48)
 
-**Scanned feature:** `tyre_life`  |  **Current value:** 21  |  **Current prediction:** 0.2040  |  **Threshold:** 0.5
+**Scanned feature:** `tyre_life`  |  **Current value:** 21  |  **Current prediction:** 0.2113  |  **Threshold:** 0.5
 
 **Searched range:** [1, 22] in 60 steps
 
@@ -90,9 +90,9 @@ _Each row above is a complete alternative race state the model would classify th
 
 | # | Features changed | Changes |
 |---:|---:|---|
-| 1 | 2 | `tracktemp_dev_x_tyrelife` -19.095 -> -1.363 (+17.733); `form_vs_baseline` +0.690 -> +0.318 (-0.372) |
-| 2 | 2 | `tracktemp_dev_x_tyrelife` -19.095 -> -1.076 (+18.019); `form_vs_baseline` +0.690 -> +0.482 (-0.208) |
-| 3 | 2 | `tracktemp_dev_x_tyrelife` -19.095 -> -13.007 (+6.088); `field_median_lag1` +97.432 -> +97.633 (+0.201) |
+| 1 | 2 | `tracktemp_dev_x_tyrelife` -19.095 -> -5.668 (+13.428); `compound_soft` +0.000 -> +0.400 (+0.400) |
+| 2 | 1 | `tracktemp_dev_x_tyrelife` -19.095 -> +2.399 (+21.494) |
+| 3 | 1 | `tracktemp_dev_x_tyrelife` -19.095 -> -4.450 (+14.645) |
 
 ---
 

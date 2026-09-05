@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T01:37:39.616809+00:00",
+  "generated_at": "2026-09-05T06:48:12.574279+00:00",
   "dataset_source": {
     "source": "real_fastf1",
     "year": 2023,
@@ -14,7 +14,7 @@
     "target_laptime": {
       "task": "regression",
       "selection_metric": "mae",
-      "task6_best_model": "decision_tree",
+      "task6_best_model": "svr",
       "comparison": [
         {
           "model": "dnn_mlp",
@@ -53,10 +53,10 @@
           "model": "random_forest",
           "family": "classical",
           "metrics": {
-            "mae": 0.9253493148742166,
-            "rmse": 1.2670569038087496,
-            "r2": -0.05785722468192511,
-            "mape": 0.9419029351153172,
+            "mae": 0.9253493148742131,
+            "rmse": 1.26705690380875,
+            "r2": -0.05785722468192578,
+            "mape": 0.9419029351153135,
             "n": 180
           }
         },
@@ -87,23 +87,23 @@
     },
     "target_pit_next_lap": {
       "task": "classification",
-      "selection_metric": "roc_auc",
+      "selection_metric": "pr_auc",
       "task6_best_model": "random_forest",
       "comparison": [
         {
           "model": "dnn_mlp",
           "family": "deep",
           "metrics": {
-            "accuracy": 0.9944444444444445,
+            "accuracy": 0.8555555555555555,
             "precision": 0.0,
             "recall": 0.0,
             "f1": 0.0,
-            "roc_auc": 0.9217877094972067,
-            "pr_auc": 0.06666666666666667,
+            "roc_auc": 0.5754189944134078,
+            "pr_auc": 0.012987012987012988,
             "confusion_matrix": [
               [
-                179,
-                0
+                154,
+                25
               ],
               [
                 1,
@@ -116,23 +116,30 @@
             ],
             "undefined_reason": null,
             "n": 180,
-            "n_positive": 1
+            "n_positive": 1,
+            "decision_threshold": 0.1189,
+            "at_default_threshold": {
+              "accuracy": 0.9944444444444445,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
           }
         },
         {
           "model": "logistic_regression",
           "family": "classical",
           "metrics": {
-            "accuracy": 0.4,
-            "precision": 0.009174311926605505,
+            "accuracy": 0.4888888888888889,
+            "precision": 0.010752688172043012,
             "recall": 1.0,
-            "f1": 0.01818181818181818,
+            "f1": 0.02127659574468085,
             "roc_auc": 0.9832402234636871,
             "pr_auc": 0.25,
             "confusion_matrix": [
               [
-                71,
-                108
+                87,
+                92
               ],
               [
                 0,
@@ -145,23 +152,30 @@
             ],
             "undefined_reason": null,
             "n": 180,
-            "n_positive": 1
+            "n_positive": 1,
+            "decision_threshold": 0.5756,
+            "at_default_threshold": {
+              "accuracy": 0.4,
+              "precision": 0.009174311926605505,
+              "recall": 1.0,
+              "f1": 0.01818181818181818
+            }
           }
         },
         {
           "model": "decision_tree",
           "family": "classical",
           "metrics": {
-            "accuracy": 0.3888888888888889,
-            "precision": 0.009009009009009009,
+            "accuracy": 0.6111111111111112,
+            "precision": 0.014084507042253521,
             "recall": 1.0,
-            "f1": 0.017857142857142856,
-            "roc_auc": 0.8491620111731844,
-            "pr_auc": 0.01818181818181818,
+            "f1": 0.027777777777777776,
+            "roc_auc": 0.9692737430167598,
+            "pr_auc": 0.08333333333333333,
             "confusion_matrix": [
               [
-                69,
-                110
+                109,
+                70
               ],
               [
                 0,
@@ -174,23 +188,30 @@
             ],
             "undefined_reason": null,
             "n": 180,
-            "n_positive": 1
+            "n_positive": 1,
+            "decision_threshold": 0.7608,
+            "at_default_threshold": {
+              "accuracy": 0.4444444444444444,
+              "precision": 0.009900990099009901,
+              "recall": 1.0,
+              "f1": 0.0196078431372549
+            }
           }
         },
         {
           "model": "random_forest",
           "family": "classical",
           "metrics": {
-            "accuracy": 0.8666666666666667,
-            "precision": 0.04,
+            "accuracy": 0.8777777777777778,
+            "precision": 0.043478260869565216,
             "recall": 1.0,
-            "f1": 0.07692307692307693,
+            "f1": 0.08333333333333333,
             "roc_auc": 0.9832402234636871,
             "pr_auc": 0.25,
             "confusion_matrix": [
               [
-                155,
-                24
+                157,
+                22
               ],
               [
                 0,
@@ -203,7 +224,14 @@
             ],
             "undefined_reason": null,
             "n": 180,
-            "n_positive": 1
+            "n_positive": 1,
+            "decision_threshold": 0.4803,
+            "at_default_threshold": {
+              "accuracy": 0.9055555555555556,
+              "precision": 0.05555555555555555,
+              "recall": 1.0,
+              "f1": 0.10526315789473684
+            }
           }
         },
         {
@@ -214,8 +242,8 @@
             "precision": 0.0,
             "recall": 0.0,
             "f1": 0.0,
-            "roc_auc": 0.8044692737430168,
-            "pr_auc": 0.027777777777777776,
+            "roc_auc": 0.7988826815642458,
+            "pr_auc": 0.02702702702702703,
             "confusion_matrix": [
               [
                 179,
@@ -232,27 +260,34 @@
             ],
             "undefined_reason": null,
             "n": 180,
-            "n_positive": 1
+            "n_positive": 1,
+            "decision_threshold": 0.1008,
+            "at_default_threshold": {
+              "accuracy": 0.9944444444444445,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
           }
         },
         {
           "model": "xgboost",
           "family": "classical",
           "metrics": {
-            "accuracy": 0.9944444444444445,
-            "precision": 0.0,
-            "recall": 0.0,
-            "f1": 0.0,
-            "roc_auc": 0.9776536312849162,
-            "pr_auc": 0.2,
+            "accuracy": 0.8277777777777777,
+            "precision": 0.03125,
+            "recall": 1.0,
+            "f1": 0.06060606060606061,
+            "roc_auc": 0.9273743016759776,
+            "pr_auc": 0.07142857142857142,
             "confusion_matrix": [
               [
-                179,
-                0
+                148,
+                31
               ],
               [
-                1,
-                0
+                0,
+                1
               ]
             ],
             "confusion_matrix_labels": [
@@ -261,11 +296,18 @@
             ],
             "undefined_reason": null,
             "n": 180,
-            "n_positive": 1
+            "n_positive": 1,
+            "decision_threshold": 0.1527,
+            "at_default_threshold": {
+              "accuracy": 0.9944444444444445,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0
+            }
           }
         }
       ],
-      "verdict": "**Task 6's classical `logistic_regression` wins on roc_auc** (0.9832 vs the deep network's 0.9218). Reported as measured. With 815 training rows from a single race session, a tree ensemble's inductive bias suits this problem better than a network's; deep learning's advantage requires substantially more data than exists here."
+      "verdict": "**Task 6's classical `logistic_regression` wins on pr_auc** (0.2500 vs the deep network's 0.0130). Reported as measured. With 815 training rows from a single race session, a tree ensemble's inductive bias suits this problem better than a network's; deep learning's advantage requires substantially more data than exists here."
     }
   }
 }

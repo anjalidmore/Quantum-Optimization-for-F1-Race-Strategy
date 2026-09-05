@@ -1,6 +1,6 @@
 # Task 7 - Hyperparameter Report
 
-_Generated 2026-09-05 01:37 UTC._
+_Generated 2026-09-05 06:48 UTC._
 
 Every combination below was **fully enumerated**, not sampled, and each was
 scored on the same expanding-window lap-forward folds Task 6 uses. A random
@@ -68,36 +68,36 @@ future of; the Task 5 contract forbids it explicitly.
 | Batch size | [32] |
 | Max epochs | 200 (early stopping, patience 20) |
 
-**Selection metric:** roc_auc (higher is better), averaged across folds.
+**Selection metric:** pr_auc (higher is better), averaged across folds.
 
 ### All trials
 
-| Hidden units | Dropout | LR | Batch | CV roc_auc (mean) | CV roc_auc (std) | Mean best epoch |
+| Hidden units | Dropout | LR | Batch | CV pr_auc (mean) | CV pr_auc (std) | Mean best epoch |
 |---|---|---|---|---|---|---|
-| [16, 8] | 0.2 | 0.001 | 32 | 0.8903 | 0.0581 | 63.5 |
-| [16, 8] | 0.2 | 0.0003 | 32 | 0.8821 | 0.0599 | 116.0 |
-| [16, 8] | 0.4 | 0.001 | 32 | 0.8899 | 0.0499 | 73.0 |
-| [16, 8] | 0.4 | 0.0003 | 32 | 0.8816 | 0.0568 | 123.5 |
-| [32, 16] | 0.2 | 0.001 | 32 | 0.8244 | 0.1485 | 24.0 |
-| [32, 16] | 0.2 | 0.0003 | 32 | 0.8182 | 0.1570 | 75.0 |
-| [32, 16] | 0.4 | 0.001 | 32 | 0.8136 | 0.1522 | 26.8 |
-| [32, 16] | 0.4 | 0.0003 | 32 | 0.8133 | 0.1644 | 87.0 |
+| [16, 8] | 0.2 | 0.001 | 32 | 0.4262 | 0.1121 | 63.5 |
+| [16, 8] | 0.2 | 0.0003 | 32 | 0.3983 | 0.1141 | 116.0 |
+| [16, 8] | 0.4 | 0.001 | 32 | 0.4106 | 0.1250 | 73.0 |
+| [16, 8] | 0.4 | 0.0003 | 32 | 0.3975 | 0.1155 | 123.5 |
+| [32, 16] | 0.2 | 0.001 | 32 | 0.4321 | 0.2930 | 24.0 |
+| [32, 16] | 0.2 | 0.0003 | 32 | 0.4449 | 0.3138 | 75.0 |
+| [32, 16] | 0.4 | 0.001 | 32 | 0.4002 | 0.2637 | 26.8 |
+| [32, 16] | 0.4 | 0.0003 | 32 | 0.4497 | 0.3254 | 87.0 |
 
 ### Chosen configuration
 
 ```json
 {
   "hidden_units": [
-    16,
-    8
+    32,
+    16
   ],
-  "dropout": 0.2,
-  "learning_rate": 0.001,
+  "dropout": 0.4,
+  "learning_rate": 0.0003,
   "batch_size": 32
 }
 ```
 
-**Why:** best mean CV roc_auc across 4 expanding-window folds. Ties are impossible here because the grid is fully enumerated and scored deterministically under a fixed seed.
+**Why:** best mean CV pr_auc across 4 expanding-window folds. Ties are impossible here because the grid is fully enumerated and scored deterministically under a fixed seed.
 
 ---
 

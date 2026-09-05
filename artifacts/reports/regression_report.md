@@ -1,6 +1,6 @@
 # Task 6 — Lap-Time Regression Report
 
-Generated: 2026-09-05T04:06:05.216670+00:00
+Generated: 2026-09-05T06:38:02.673934+00:00
 
 ## Objective
 
@@ -32,15 +32,15 @@ Primary ranking metric: **CV MAE** (lower is better).
 
 | Model | CV MAE | CV RMSE | CV R² | Test MAE | Test RMSE | Test R² | Selected |
 |---|---:|---:|---:|---:|---:|---:|:---:|
-| decision_tree | 1.1898 | 1.6321 | 0.3381 | 0.8673 | 1.3308 | -0.1669 | ✅ |
-| svr | 1.3813 | 1.6942 | 0.2553 | 0.7815 | 1.0290 | 0.3023 |  |
+| decision_tree | 1.1898 | 1.6321 | 0.3381 | 0.8673 | 1.3308 | -0.1669 |  |
+| svr | 1.3813 | 1.6942 | 0.2553 | 0.7815 | 1.0290 | 0.3023 | ✅ |
 | random_forest | 1.3817 | 1.7624 | 0.2141 | 0.9253 | 1.2671 | -0.0579 |  |
 | xgboost | 1.4384 | 1.8325 | 0.1351 | 1.0858 | 1.4412 | -0.3686 |  |
 | linear_regression | 2.0181 | 2.7964 | -1.2807 | 0.7901 | 1.1414 | 0.1415 |  |
 
 ## Best model
 
-**decision_tree**
+**svr**
 
 ## Limitations
 

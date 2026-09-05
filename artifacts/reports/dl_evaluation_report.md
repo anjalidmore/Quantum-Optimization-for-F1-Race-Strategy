@@ -1,6 +1,6 @@
 # Task 7 - Deep Learning Evaluation Report
 
-_Generated 2026-09-05 01:37 UTC._
+_Generated 2026-09-05 06:48 UTC._
 
 Deep neural networks for F1 race-state prediction, compared against **Task 6's own
 committed holdout results** - the same numbers the Machine Learning dashboard shows,
@@ -65,44 +65,44 @@ Early stopping restored the weights from epoch 200. Validation loss was still im
 
 ### Network architecture
 
-`pit_decision_mlp` - 289 trainable parameters, optimizer Adam, loss `binary_crossentropy`.
+`pit_decision_mlp` - 833 trainable parameters, optimizer Adam, loss `binary_crossentropy`.
 
 | Layer | Type | Detail |
 |---|---|---|
-| hidden_1 | Dense | 16 units, relu |
-| dropout_1 | Dropout | rate 0.2 |
-| hidden_2 | Dense | 8 units, relu |
-| dropout_2 | Dropout | rate 0.2 |
+| hidden_1 | Dense | 32 units, relu |
+| dropout_1 | Dropout | rate 0.4 |
+| hidden_2 | Dense | 16 units, relu |
+| dropout_2 | Dropout | rate 0.4 |
 | pit_probability | Dense | 1 units, sigmoid |
 
-**Parameters-to-training-rows ratio:** 0.35
+**Parameters-to-training-rows ratio:** 1.02
 
-With 289 parameters against 815 training rows (ratio 0.35), this network has fewer parameters than training examples, which is the intended small-data design.
+With 833 parameters against 815 training rows (ratio 1.02), this network has more parameters than training examples. That is the expected regime for this dataset and it is why dropout, L2 and early stopping are applied together; it is also the honest reason to expect a tree ensemble to be competitive here.
 
 ### Overfitting prevention
 
 | Mechanism | Setting | Effect observed |
 |---|---|---|
-| Dropout | 0.2 on every hidden layer | see loss curve |
+| Dropout | 0.4 on every hidden layer | see loss curve |
 | L2 weight decay | 1e-04 on every Dense kernel | see loss curve |
-| Early stopping | patience 20 on `val_loss`, best weights restored | stopped at epoch 192 of 200 run (cap 200) |
+| Early stopping | patience 20 on `val_loss`, best weights restored | stopped at epoch 197 of 200 run (cap 200) |
 
-Early stopping restored the weights from epoch 192. Training ran 200 epochs, so 8 epochs of validation-loss deterioration were discarded - the countermeasures did real work.
+Early stopping restored the weights from epoch 197. Training ran 200 epochs, so 3 epochs of validation-loss deterioration were discarded - the countermeasures did real work.
 
 ### Test-set comparison - DL vs classical
 
 | Model | ROC-AUC | PR-AUC | F1 | Precision | Recall | Accuracy |
 |---|---:|---:|---:|---:|---:|---:|
-| dnn_mlp **<-- deep network** | 0.9218 | 0.0667 | 0.0000 | 0.0000 | 0.0000 | 0.9944 |
-| logistic_regression | 0.9832 | 0.2500 | 0.0182 | 0.0092 | 1.0000 | 0.4000 |
-| decision_tree | 0.8492 | 0.0182 | 0.0179 | 0.0090 | 1.0000 | 0.3889 |
-| random_forest | 0.9832 | 0.2500 | 0.0769 | 0.0400 | 1.0000 | 0.8667 |
-| svm | 0.8045 | 0.0278 | 0.0000 | 0.0000 | 0.0000 | 0.9944 |
-| xgboost | 0.9777 | 0.2000 | 0.0000 | 0.0000 | 0.0000 | 0.9944 |
+| dnn_mlp **<-- deep network** | 0.5754 | 0.0130 | 0.0000 | 0.0000 | 0.0000 | 0.8556 |
+| logistic_regression | 0.9832 | 0.2500 | 0.0213 | 0.0108 | 1.0000 | 0.4889 |
+| decision_tree | 0.9693 | 0.0833 | 0.0278 | 0.0141 | 1.0000 | 0.6111 |
+| random_forest | 0.9832 | 0.2500 | 0.0833 | 0.0435 | 1.0000 | 0.8778 |
+| svm | 0.7989 | 0.0270 | 0.0000 | 0.0000 | 0.0000 | 0.9944 |
+| xgboost | 0.9274 | 0.0714 | 0.0606 | 0.0312 | 1.0000 | 0.8278 |
 
 ### Verdict
 
-**Task 6's classical `logistic_regression` wins on roc_auc** (0.9832 vs the deep network's 0.9218). Reported as measured. With 815 training rows from a single race session, a tree ensemble's inductive bias suits this problem better than a network's; deep learning's advantage requires substantially more data than exists here.
+**Task 6's classical `logistic_regression` wins on pr_auc** (0.2500 vs the deep network's 0.0130). Reported as measured. With 815 training rows from a single race session, a tree ensemble's inductive bias suits this problem better than a network's; deep learning's advantage requires substantially more data than exists here.
 
 ---
 

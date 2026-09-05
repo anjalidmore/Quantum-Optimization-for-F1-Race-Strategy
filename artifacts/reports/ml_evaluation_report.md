@@ -1,6 +1,6 @@
 # Task 6 — Machine Learning Model Development
 
-Generated: 2026-09-05T04:06:05.217008+00:00
+Generated: 2026-09-05T06:38:02.674432+00:00
 
 ## 1. Objective
 
@@ -46,7 +46,7 @@ XGBoost (optional — see section 9).
 
 See `regression_report.md`, `classification_report.md`, and
 `model_selection_report.md` for full tables. Best regression model:
-**decision_tree**. Best classification model: **random_forest**.
+**svr**. Best classification model: **random_forest**.
 
 ## 9. XGBoost availability
 

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T01:37:39.616215+00:00",
+  "generated_at": "2026-09-05T06:48:12.573550+00:00",
   "task": "Task 7 - Deep Learning Model Development",
   "dataset_source": {
     "source": "real_fastf1",
@@ -20,6 +20,7 @@
         "mape": 0.521825814638619,
         "n": 180
       },
+      "threshold": null,
       "architecture": {
         "name": "laptime_mlp",
         "layers": [
@@ -71,16 +72,16 @@
     "target_pit_next_lap": {
       "task": "classification",
       "test_metrics": {
-        "accuracy": 0.9944444444444445,
+        "accuracy": 0.8555555555555555,
         "precision": 0.0,
         "recall": 0.0,
         "f1": 0.0,
-        "roc_auc": 0.9217877094972067,
-        "pr_auc": 0.06666666666666667,
+        "roc_auc": 0.5754189944134078,
+        "pr_auc": 0.012987012987012988,
         "confusion_matrix": [
           [
-            179,
-            0
+            154,
+            25
           ],
           [
             1,
@@ -93,7 +94,35 @@
         ],
         "undefined_reason": null,
         "n": 180,
-        "n_positive": 1
+        "n_positive": 1,
+        "decision_threshold": 0.1189,
+        "at_default_threshold": {
+          "accuracy": 0.9944444444444445,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        }
+      },
+      "threshold": {
+        "threshold": 0.1189,
+        "objective": "f1",
+        "chosen_on": "pooled out-of-fold CV predictions",
+        "n_samples": 635,
+        "n_positive": 36,
+        "at_threshold": {
+          "f1": 0.3143,
+          "precision": 0.3235,
+          "recall": 0.3056,
+          "expected_cost": 148.0
+        },
+        "at_default_0.5": {
+          "threshold": 0.5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "expected_cost": 180.0
+        },
+        "note": "Chosen on 635 pooled out-of-fold predictions containing 36 positives. F1 0.0000 at the default 0.5 -> 0.3143 at 0.1189 (+0.3143)."
       },
       "architecture": {
         "name": "pit_decision_mlp",
@@ -101,24 +130,24 @@
           {
             "name": "hidden_1",
             "type": "Dense",
-            "units": 16,
+            "units": 32,
             "activation": "relu"
           },
           {
             "name": "dropout_1",
             "type": "Dropout",
-            "rate": 0.2
+            "rate": 0.4
           },
           {
             "name": "hidden_2",
             "type": "Dense",
-            "units": 8,
+            "units": 16,
             "activation": "relu"
           },
           {
             "name": "dropout_2",
             "type": "Dropout",
-            "rate": 0.2
+            "rate": 0.4
           },
           {
             "name": "pit_probability",
@@ -127,17 +156,17 @@
             "activation": "sigmoid"
           }
         ],
-        "total_parameters": 289,
+        "total_parameters": 833,
         "optimizer": "Adam",
         "loss": "binary_crossentropy"
       },
       "hyperparameters": {
         "hidden_units": [
-          16,
-          8
+          32,
+          16
         ],
-        "dropout": 0.2,
-        "learning_rate": 0.001,
+        "dropout": 0.4,
+        "learning_rate": 0.0003,
         "batch_size": 32
       },
       "n_train": 815,

@@ -1,6 +1,6 @@
 # Task 8 - Fairness Assessment
 
-_Generated 2026-09-05 01:38 UTC._
+_Generated 2026-09-05 06:50 UTC._
 
 **The question:** is the model predicting from *race state*, or from *who is driving*?
 
@@ -43,7 +43,7 @@ across all features. The ratio of the two is the concentration.
 | Expected share if uniform | 0.0% |
 | **Concentration ratio** | **n/ax** |
 | Highest-ranked identity feature | n/a |
-| Top race-state features | `tracktemp_dev_x_tyrelife`, `tyre_life`, `tyrelife_x_soft`, `compound_soft`, `gap_roll3_mean` |
+| Top race-state features | `tyre_life`, `tracktemp_dev_x_tyrelife`, `tyrelife_x_soft`, `compound_soft`, `gap_roll3_mean` |
 
 **Reading:** No driver or team identity features survived Task 5's selection funnel for this target, so this model cannot be leaning on identity - the risk does not arise here.
 

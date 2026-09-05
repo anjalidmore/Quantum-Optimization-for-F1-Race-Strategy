@@ -1,6 +1,6 @@
 # Entity Table
 
-_Generated 2026-09-05 01:24 UTC — 61 entities._
+_Generated 2026-09-05 06:37 UTC — 61 entities._
 
 | # | Entity | Category | Source | Parent | #Attrs | Description |
 |---|--------|----------|--------|--------|--------|-------------|

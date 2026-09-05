@@ -1,6 +1,6 @@
 # Attribute Table
 
-_Generated 2026-09-05 01:24 UTC — 90 attributes across 61 entities._
+_Generated 2026-09-05 06:37 UTC — 90 attributes across 61 entities._
 
 | Entity | Attribute | Type | Unit | Description |
 |--------|-----------|------|------|-------------|

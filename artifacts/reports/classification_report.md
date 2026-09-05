@@ -1,6 +1,6 @@
 # Task 6 — Pit-Decision Classification Report
 
-Generated: 2026-09-05T04:06:05.216866+00:00
+Generated: 2026-09-05T06:38:02.674166+00:00
 
 ## Objective
 
@@ -47,11 +47,11 @@ no-pit" already scores 95.2% accuracy while being useless.
 
 | Model | CV ROC-AUC | CV PR-AUC | CV F1 | Test ROC-AUC | Test PR-AUC | Test F1 | Selected |
 |---|---:|---:|---:|---:|---:|---:|:---:|
-| random_forest | 0.8517 | 0.3809 | 0.2033 | 0.9832 | 0.2500 | 0.0769 | ✅ |
-| logistic_regression | 0.8298 | 0.2964 | 0.2887 | 0.9832 | 0.2500 | 0.0182 |  |
-| xgboost | 0.8231 | 0.3205 | 0.1389 | 0.9777 | 0.2000 | 0.0000 |  |
-| svm | 0.7854 | 0.3316 | 0.3100 | 0.8045 | 0.0278 | 0.0000 |  |
-| decision_tree | 0.7073 | 0.1511 | 0.2466 | 0.8492 | 0.0182 | 0.0179 |  |
+| random_forest | 0.8482 | 0.3863 | 0.1967 | 0.9832 | 0.2500 | 0.0833 | ✅ |
+| svm | 0.7843 | 0.3321 | 0.1429 | 0.7989 | 0.0270 | 0.0000 |  |
+| xgboost | 0.8125 | 0.3083 | 0.2307 | 0.9274 | 0.0714 | 0.0606 |  |
+| logistic_regression | 0.8298 | 0.2964 | 0.2887 | 0.9832 | 0.2500 | 0.0213 |  |
+| decision_tree | 0.6711 | 0.1797 | 0.1870 | 0.9693 | 0.0833 | 0.0278 |  |
 
 *undefined = ROC-AUC/PR-AUC could not be computed because the split's ground
 truth contained only one class.

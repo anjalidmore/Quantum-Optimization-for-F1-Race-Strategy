@@ -184,32 +184,32 @@
     "random_forest": {
       "cv_summary": {
         "mae": {
-          "mean": 1.381704734913969,
-          "std": 0.3140119906267351,
+          "mean": 1.3817047349139664,
+          "std": 0.3140119906267335,
           "n_folds": 4
         },
         "rmse": {
-          "mean": 1.7623564209307725,
-          "std": 0.4923435030681749,
+          "mean": 1.7623564209307703,
+          "std": 0.4923435030681757,
           "n_folds": 4
         },
         "r2": {
-          "mean": 0.21405944564163215,
-          "std": 0.19711833365715628,
+          "mean": 0.21405944564163484,
+          "std": 0.19711833365715337,
           "n_folds": 4
         },
         "mape": {
-          "mean": 1.389009017294758,
-          "std": 0.3025971623919657,
+          "mean": 1.3890090172947556,
+          "std": 0.30259716239196427,
           "n_folds": 4
         },
         "n_folds_total": 4
       },
       "test_metrics": {
-        "mae": 0.925349314874216,
-        "rmse": 1.2670569038087482,
-        "r2": -0.05785722468192289,
-        "mape": 0.9419029351153164,
+        "mae": 0.9253493148742131,
+        "rmse": 1.26705690380875,
+        "r2": -0.05785722468192578,
+        "mape": 0.9419029351153135,
         "n": 180
       },
       "best_params": {
@@ -305,8 +305,8 @@
       "test_mae": 0.8673476599610876,
       "test_rmse": 1.33075044521226,
       "test_r2": -0.1668850011117824,
-      "fit_seconds": 0.0062858330202288926,
-      "selected": true
+      "fit_seconds": 0.007604417041875422,
+      "selected": false
     },
     {
       "rank": 2,
@@ -317,19 +317,20 @@
       "test_mae": 0.7814539478981232,
       "test_rmse": 1.0290236008487383,
       "test_r2": 0.3022730658092154,
-      "fit_seconds": 0.025391999981366098,
-      "selected": false
+      "fit_seconds": 0.0287039169925265,
+      "selected": true,
+      "selection_warning": "CV ranking overridden by the generalisation guard: the best CV MAE model (decision_tree, CV MAE 1.1898) scores test R2 -0.1669 \u2014 worse than predicting the mean. Selected svr instead (CV MAE 1.3813, test R2 0.3023), the best CV performer among candidates that generalise to the holdout. This disagreement between CV and holdout is itself a finding: the holdout is the closing laps of a single race, a different fuel and tyre regime from training."
     },
     {
       "rank": 3,
       "model": "random_forest",
-      "cv_mae": 1.381704734913969,
-      "cv_rmse": 1.7623564209307725,
-      "cv_r2": 0.21405944564163215,
-      "test_mae": 0.925349314874216,
-      "test_rmse": 1.2670569038087482,
-      "test_r2": -0.05785722468192289,
-      "fit_seconds": 0.12434316700091586,
+      "cv_mae": 1.3817047349139664,
+      "cv_rmse": 1.7623564209307703,
+      "cv_r2": 0.21405944564163484,
+      "test_mae": 0.9253493148742131,
+      "test_rmse": 1.26705690380875,
+      "test_r2": -0.05785722468192578,
+      "fit_seconds": 0.14200745802372694,
       "selected": false
     },
     {
@@ -341,7 +342,7 @@
       "test_mae": 1.0858447513156468,
       "test_rmse": 1.441168384547523,
       "test_r2": -0.36856134696928633,
-      "fit_seconds": 0.11550266700214706,
+      "fit_seconds": 0.11824270797660574,
       "selected": false
     },
     {
@@ -353,9 +354,9 @@
       "test_mae": 0.7900968753200531,
       "test_rmse": 1.141441062668266,
       "test_r2": 0.14149703141275993,
-      "fit_seconds": 0.005614959023660049,
+      "fit_seconds": 0.006378124991897494,
       "selected": false
     }
   ],
-  "best_model": "decision_tree"
+  "best_model": "svr"
 }

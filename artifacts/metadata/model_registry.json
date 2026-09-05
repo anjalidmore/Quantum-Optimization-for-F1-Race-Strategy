@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T04:06:05.215700+00:00",
+  "generated_at": "2026-09-05T06:38:02.673001+00:00",
   "task": "Task 6 - Machine Learning Model Development",
   "models": [
     {
@@ -161,7 +161,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T04:06:05.215127+00:00",
+      "trained_at": "2026-09-05T06:38:02.672147+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -326,10 +326,10 @@
       "training_rows": 815,
       "test_rows": 180,
       "cv_folds": 4,
-      "is_selected_best": true,
+      "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T04:06:05.215196+00:00",
+      "trained_at": "2026-09-05T06:38:02.672224+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -455,32 +455,32 @@
       "metrics": {
         "cv": {
           "mae": {
-            "mean": 1.381704734913969,
-            "std": 0.3140119906267351,
+            "mean": 1.3817047349139664,
+            "std": 0.3140119906267335,
             "n_folds": 4
           },
           "rmse": {
-            "mean": 1.7623564209307725,
-            "std": 0.4923435030681749,
+            "mean": 1.7623564209307703,
+            "std": 0.4923435030681757,
             "n_folds": 4
           },
           "r2": {
-            "mean": 0.21405944564163215,
-            "std": 0.19711833365715628,
+            "mean": 0.21405944564163484,
+            "std": 0.19711833365715337,
             "n_folds": 4
           },
           "mape": {
-            "mean": 1.389009017294758,
-            "std": 0.3025971623919657,
+            "mean": 1.3890090172947556,
+            "std": 0.30259716239196427,
             "n_folds": 4
           },
           "n_folds_total": 4
         },
         "test": {
-          "mae": 0.925349314874216,
-          "rmse": 1.2670569038087482,
-          "r2": -0.05785722468192289,
-          "mape": 0.9419029351153164,
+          "mae": 0.9253493148742131,
+          "rmse": 1.26705690380875,
+          "r2": -0.05785722468192578,
+          "mape": 0.9419029351153135,
           "n": 180
         }
       },
@@ -497,7 +497,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T04:06:05.215239+00:00",
+      "trained_at": "2026-09-05T06:38:02.672271+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -663,10 +663,10 @@
       "training_rows": 815,
       "test_rows": 180,
       "cv_folds": 4,
-      "is_selected_best": false,
+      "is_selected_best": true,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T04:06:05.215281+00:00",
+      "trained_at": "2026-09-05T06:38:02.672314+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -835,7 +835,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": "available",
-      "trained_at": "2026-09-05T04:06:05.215322+00:00",
+      "trained_at": "2026-09-05T06:38:02.672355+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -956,16 +956,16 @@
           "n_folds_total": 4
         },
         "test": {
-          "accuracy": 0.4,
-          "precision": 0.009174311926605505,
+          "accuracy": 0.4888888888888889,
+          "precision": 0.010752688172043012,
           "recall": 1.0,
-          "f1": 0.01818181818181818,
+          "f1": 0.02127659574468085,
           "roc_auc": 0.9832402234636871,
           "pr_auc": 0.25,
           "confusion_matrix": [
             [
-              71,
-              108
+              87,
+              92
             ],
             [
               0,
@@ -978,7 +978,14 @@
           ],
           "undefined_reason": null,
           "n": 180,
-          "n_positive": 1
+          "n_positive": 1,
+          "decision_threshold": 0.5756,
+          "at_default_threshold": {
+            "accuracy": 0.4,
+            "precision": 0.009174311926605505,
+            "recall": 1.0,
+            "f1": 0.01818181818181818
+          }
         }
       },
       "artifact": "artifacts/models/pit_decision/logistic_regression.joblib",
@@ -993,7 +1000,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T04:06:05.215366+00:00",
+      "trained_at": "2026-09-05T06:38:02.672399+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1082,48 +1089,48 @@
       "metrics": {
         "cv": {
           "accuracy": {
-            "mean": 0.6560439373627869,
-            "std": 0.25606337038927024,
+            "mean": 0.8277146354257737,
+            "std": 0.10038539514632552,
             "n_folds": 4
           },
           "precision": {
-            "mean": 0.19656614000691963,
-            "std": 0.12588927214686763,
+            "mean": 0.12299437016185785,
+            "std": 0.11452875369233516,
             "n_folds": 4
           },
           "recall": {
-            "mean": 0.7166666666666667,
-            "std": 0.32787192621510003,
+            "mean": 0.46212121212121215,
+            "std": 0.3947398627306978,
             "n_folds": 4
           },
           "f1": {
-            "mean": 0.24659481149682716,
-            "std": 0.14085751375034292,
+            "mean": 0.18704275351134436,
+            "std": 0.17481641309680657,
             "n_folds": 4
           },
           "roc_auc": {
-            "mean": 0.7072952383897657,
-            "std": 0.13344408317412904,
+            "mean": 0.6711077530068512,
+            "std": 0.1811027370893195,
             "n_folds": 4
           },
           "pr_auc": {
-            "mean": 0.1510565339053711,
-            "std": 0.09916853015310945,
+            "mean": 0.17971510572042063,
+            "std": 0.16376129378636822,
             "n_folds": 4
           },
           "n_folds_total": 4
         },
         "test": {
-          "accuracy": 0.3888888888888889,
-          "precision": 0.009009009009009009,
+          "accuracy": 0.6111111111111112,
+          "precision": 0.014084507042253521,
           "recall": 1.0,
-          "f1": 0.017857142857142856,
-          "roc_auc": 0.8491620111731844,
-          "pr_auc": 0.01818181818181818,
+          "f1": 0.027777777777777776,
+          "roc_auc": 0.9692737430167598,
+          "pr_auc": 0.08333333333333333,
           "confusion_matrix": [
             [
-              69,
-              110
+              109,
+              70
             ],
             [
               0,
@@ -1136,12 +1143,19 @@
           ],
           "undefined_reason": null,
           "n": 180,
-          "n_positive": 1
+          "n_positive": 1,
+          "decision_threshold": 0.7608,
+          "at_default_threshold": {
+            "accuracy": 0.4444444444444444,
+            "precision": 0.009900990099009901,
+            "recall": 1.0,
+            "f1": 0.0196078431372549
+          }
         }
       },
       "artifact": "artifacts/models/pit_decision/decision_tree.joblib",
       "hyperparameters": {
-        "max_depth": 3,
+        "max_depth": 8,
         "min_samples_leaf": 10
       },
       "random_state": 42,
@@ -1152,7 +1166,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T04:06:05.215403+00:00",
+      "trained_at": "2026-09-05T06:38:02.672439+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1241,48 +1255,48 @@
       "metrics": {
         "cv": {
           "accuracy": {
-            "mean": 0.8947121923024615,
-            "std": 0.056821462714390425,
+            "mean": 0.8945712148588525,
+            "std": 0.06010170279027627,
             "n_folds": 4
           },
           "precision": {
-            "mean": 0.23928571428571427,
-            "std": 0.19681779619221218,
+            "mean": 0.23909736308316432,
+            "std": 0.19786284624329276,
             "n_folds": 4
           },
           "recall": {
-            "mean": 0.3421717171717172,
-            "std": 0.31419611641691614,
+            "mean": 0.3143939393939394,
+            "std": 0.2771888844920561,
             "n_folds": 4
           },
           "f1": {
-            "mean": 0.2032688406927758,
-            "std": 0.17506677799428658,
+            "mean": 0.19670329670329673,
+            "std": 0.16681231811440403,
             "n_folds": 4
           },
           "roc_auc": {
-            "mean": 0.8516564429616357,
-            "std": 0.060116288144326624,
+            "mean": 0.8482151290298057,
+            "std": 0.056036247123630666,
             "n_folds": 4
           },
           "pr_auc": {
-            "mean": 0.3809058123288467,
-            "std": 0.1496969579141113,
+            "mean": 0.3862802677035923,
+            "std": 0.124920388196662,
             "n_folds": 4
           },
           "n_folds_total": 4
         },
         "test": {
-          "accuracy": 0.8666666666666667,
-          "precision": 0.04,
+          "accuracy": 0.8777777777777778,
+          "precision": 0.043478260869565216,
           "recall": 1.0,
-          "f1": 0.07692307692307693,
+          "f1": 0.08333333333333333,
           "roc_auc": 0.9832402234636871,
           "pr_auc": 0.25,
           "confusion_matrix": [
             [
-              155,
-              24
+              157,
+              22
             ],
             [
               0,
@@ -1295,12 +1309,19 @@
           ],
           "undefined_reason": null,
           "n": 180,
-          "n_positive": 1
+          "n_positive": 1,
+          "decision_threshold": 0.4803,
+          "at_default_threshold": {
+            "accuracy": 0.9055555555555556,
+            "precision": 0.05555555555555555,
+            "recall": 1.0,
+            "f1": 0.10526315789473684
+          }
         }
       },
       "artifact": "artifacts/models/pit_decision/random_forest.joblib",
       "hyperparameters": {
-        "n_estimators": 100,
+        "n_estimators": 300,
         "max_depth": 5
       },
       "random_state": 42,
@@ -1311,7 +1332,7 @@
       "is_selected_best": true,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T04:06:05.215441+00:00",
+      "trained_at": "2026-09-05T06:38:02.672480+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1400,33 +1421,33 @@
       "metrics": {
         "cv": {
           "accuracy": {
-            "mean": 0.8971016446154144,
-            "std": 0.0388860619271247,
+            "mean": 0.9438663276408075,
+            "std": 0.008013977198903828,
             "n_folds": 4
           },
           "precision": {
-            "mean": 0.30465686274509807,
-            "std": 0.06654174787243917,
+            "mean": 0.125,
+            "std": 0.21650635094610965,
             "n_folds": 4
           },
           "recall": {
-            "mean": 0.4843434343434343,
-            "std": 0.30383856853099905,
+            "mean": 0.16666666666666666,
+            "std": 0.2886751345948129,
             "n_folds": 4
           },
           "f1": {
-            "mean": 0.31000769342731793,
-            "std": 0.061904448814766096,
+            "mean": 0.14285714285714285,
+            "std": 0.24743582965269673,
             "n_folds": 4
           },
           "roc_auc": {
-            "mean": 0.7854444109419234,
-            "std": 0.09078016500513497,
+            "mean": 0.7842834861724788,
+            "std": 0.09302829944018293,
             "n_folds": 4
           },
           "pr_auc": {
-            "mean": 0.331594726002629,
-            "std": 0.11929516019110528,
+            "mean": 0.332073938568648,
+            "std": 0.12284023915511313,
             "n_folds": 4
           },
           "n_folds_total": 4
@@ -1436,8 +1457,8 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "roc_auc": 0.8044692737430168,
-          "pr_auc": 0.027777777777777776,
+          "roc_auc": 0.7988826815642458,
+          "pr_auc": 0.02702702702702703,
           "confusion_matrix": [
             [
               179,
@@ -1454,14 +1475,21 @@
           ],
           "undefined_reason": null,
           "n": 180,
-          "n_positive": 1
+          "n_positive": 1,
+          "decision_threshold": 0.1008,
+          "at_default_threshold": {
+            "accuracy": 0.9944444444444445,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          }
         }
       },
       "artifact": "artifacts/models/pit_decision/svm.joblib",
       "hyperparameters": {
-        "C": 1.0,
-        "gamma": "scale",
-        "kernel": "rbf"
+        "estimator__C": 1.0,
+        "estimator__gamma": "auto",
+        "estimator__kernel": "rbf"
       },
       "random_state": 42,
       "dataset": "data/processed/f1_features_selected.csv",
@@ -1471,7 +1499,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-09-05T04:06:05.215479+00:00",
+      "trained_at": "2026-09-05T06:38:02.672520+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1560,52 +1588,52 @@
       "metrics": {
         "cv": {
           "accuracy": {
-            "mean": 0.9321965281420606,
-            "std": 0.012623707455407756,
+            "mean": 0.9115648860523402,
+            "std": 0.033225352277361266,
             "n_folds": 4
           },
           "precision": {
-            "mean": 0.23809523809523808,
-            "std": 0.2735506022160966,
+            "mean": 0.2277777777777778,
+            "std": 0.19027270877270788,
             "n_folds": 4
           },
           "recall": {
-            "mean": 0.10101010101010101,
-            "std": 0.10201520139759673,
+            "mean": 0.2626262626262626,
+            "std": 0.16365506814161263,
             "n_folds": 4
           },
           "f1": {
-            "mean": 0.1388888888888889,
-            "std": 0.14433756729740643,
+            "mean": 0.2307422969187675,
+            "std": 0.17167970736726534,
             "n_folds": 4
           },
           "roc_auc": {
-            "mean": 0.823135045118876,
-            "std": 0.034245665651813105,
+            "mean": 0.8124607160793418,
+            "std": 0.08239147675115992,
             "n_folds": 4
           },
           "pr_auc": {
-            "mean": 0.3204724825093915,
-            "std": 0.13517720969107913,
+            "mean": 0.30832665281413935,
+            "std": 0.1206766676150012,
             "n_folds": 4
           },
           "n_folds_total": 4
         },
         "test": {
-          "accuracy": 0.9944444444444445,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1": 0.0,
-          "roc_auc": 0.9776536312849162,
-          "pr_auc": 0.2,
+          "accuracy": 0.8277777777777777,
+          "precision": 0.03125,
+          "recall": 1.0,
+          "f1": 0.06060606060606061,
+          "roc_auc": 0.9273743016759776,
+          "pr_auc": 0.07142857142857142,
           "confusion_matrix": [
             [
-              179,
-              0
+              148,
+              31
             ],
             [
-              1,
-              0
+              0,
+              1
             ]
           ],
           "confusion_matrix_labels": [
@@ -1614,14 +1642,21 @@
           ],
           "undefined_reason": null,
           "n": 180,
-          "n_positive": 1
+          "n_positive": 1,
+          "decision_threshold": 0.1527,
+          "at_default_threshold": {
+            "accuracy": 0.9944444444444445,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          }
         }
       },
       "artifact": "artifacts/models/pit_decision/xgboost.joblib",
       "hyperparameters": {
-        "n_estimators": 300,
+        "n_estimators": 100,
         "max_depth": 3,
-        "learning_rate": 0.05
+        "learning_rate": 0.1
       },
       "random_state": 42,
       "dataset": "data/processed/f1_features_selected.csv",
@@ -1631,7 +1666,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": "available",
-      "trained_at": "2026-09-05T04:06:05.215517+00:00",
+      "trained_at": "2026-09-05T06:38:02.672561+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1787,24 +1822,24 @@
           {
             "name": "hidden_1",
             "type": "Dense",
-            "units": 16,
+            "units": 32,
             "activation": "relu"
           },
           {
             "name": "dropout_1",
             "type": "Dropout",
-            "rate": 0.2
+            "rate": 0.4
           },
           {
             "name": "hidden_2",
             "type": "Dense",
-            "units": 8,
+            "units": 16,
             "activation": "relu"
           },
           {
             "name": "dropout_2",
             "type": "Dropout",
-            "rate": 0.2
+            "rate": 0.4
           },
           {
             "name": "pit_probability",
@@ -1813,31 +1848,31 @@
             "activation": "sigmoid"
           }
         ],
-        "total_parameters": 289,
+        "total_parameters": 833,
         "optimizer": "Adam",
         "loss": "binary_crossentropy"
       },
       "hyperparameters": {
         "hidden_units": [
-          16,
-          8
+          32,
+          16
         ],
-        "dropout": 0.2,
-        "learning_rate": 0.001,
+        "dropout": 0.4,
+        "learning_rate": 0.0003,
         "batch_size": 32
       },
       "metrics": {
         "test": {
-          "accuracy": 0.9944444444444445,
+          "accuracy": 0.8555555555555555,
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "roc_auc": 0.9217877094972067,
-          "pr_auc": 0.06666666666666667,
+          "roc_auc": 0.5754189944134078,
+          "pr_auc": 0.012987012987012988,
           "confusion_matrix": [
             [
-              179,
-              0
+              154,
+              25
             ],
             [
               1,
@@ -1850,7 +1885,14 @@
           ],
           "undefined_reason": null,
           "n": 180,
-          "n_positive": 1
+          "n_positive": 1,
+          "decision_threshold": 0.1189,
+          "at_default_threshold": {
+            "accuracy": 0.9944444444444445,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          }
         }
       },
       "artifact": "models/dl/target_pit_next_lap.keras",

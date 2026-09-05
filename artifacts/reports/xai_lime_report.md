@@ -1,6 +1,6 @@
 # Task 8 - LIME Report
 
-_Generated 2026-09-05 01:38 UTC._
+_Generated 2026-09-05 06:50 UTC._
 
 ## How this differs from the SHAP report
 
@@ -83,41 +83,41 @@ Local surrogate R2: **0.306** over 2000 perturbations.
 
 ## target_pit_next_lap
 
-### Lowest Pit Probability (test row 179, lap 56)
+### Lowest Pit Probability (test row 43, lap 47)
 
-Local surrogate R2: **0.131** over 2000 perturbations.
+Local surrogate R2: **0.150** over 2000 perturbations.
 
 | Condition | Weight | Effect |
 |---|---:|---|
-| `tyre_life <= 5.00` | -0.062288 | decreases the prediction |
-| `gap_roll3_mean > 0.71` | +0.046581 | increases the prediction |
-| `0.00 < compound_soft <= 1.00` | -0.031306 | decreases the prediction |
-| `form_vs_baseline > 0.36` | -0.020471 | decreases the prediction |
-| `tracktemp_dev_x_tyrelife <= -2.15` | -0.019711 | decreases the prediction |
-| `field_median_lag1 <= 98.01` | -0.016083 | decreases the prediction |
+| `gap_roll3_mean <= -0.52` | -0.047017 | decreases the prediction |
+| `field_pace_trend > 0.12` | -0.039193 | decreases the prediction |
+| `5.00 < tyre_life <= 8.00` | -0.037571 | decreases the prediction |
+| `0.00 < compound_soft <= 1.00` | -0.033398 | decreases the prediction |
+| `tracktemp_dev_x_tyrelife <= -2.15` | -0.020648 | decreases the prediction |
+| `form_vs_baseline <= -0.47` | -0.010429 | decreases the prediction |
 
-**SHAP top-3:** `form_vs_baseline`, `tyre_life`, `gap_roll3_mean`
-**LIME top-3:** `tyre_life`, `gap_roll3_mean`, `compound_soft`
+**SHAP top-3:** `tyre_life`, `gap_roll3_mean`, `compound_soft`
+**LIME top-3:** `gap_roll3_mean`, `field_pace_trend`, `tyre_life`
 **Agreement (Jaccard):** 0.500
 
 ![lime](xai_target_pit_next_lap_lowest_pit_probability_lime.png)
 
 ### Closest To Decision Boundary (test row 34, lap 48)
 
-Local surrogate R2: **0.319** over 2000 perturbations.
+Local surrogate R2: **0.437** over 2000 perturbations.
 
 | Condition | Weight | Effect |
 |---|---:|---|
-| `tyre_life > 12.00` | +0.098646 | increases the prediction |
-| `tyrelife_x_soft <= 0.00` | -0.067732 | decreases the prediction |
-| `field_pace_trend <= -0.12` | +0.061148 | increases the prediction |
-| `gap_roll3_mean > 0.71` | +0.042690 | increases the prediction |
-| `compound_soft <= 0.00` | +0.033812 | increases the prediction |
-| `tracktemp_dev_x_tyrelife <= -2.15` | -0.021965 | decreases the prediction |
+| `tyre_life > 12.00` | +0.110299 | increases the prediction |
+| `tyrelife_x_soft <= 0.00` | -0.062580 | decreases the prediction |
+| `gap_roll3_mean > 0.71` | +0.045587 | increases the prediction |
+| `field_pace_trend <= -0.12` | +0.039478 | increases the prediction |
+| `compound_soft <= 0.00` | +0.032176 | increases the prediction |
+| `tracktemp_dev_x_tyrelife <= -2.15` | -0.021163 | decreases the prediction |
 
 **SHAP top-3:** `tyre_life`, `tracktemp_dev_x_tyrelife`, `gap_roll3_mean`
-**LIME top-3:** `tyre_life`, `tyrelife_x_soft`, `field_pace_trend`
-**Agreement (Jaccard):** 0.200
+**LIME top-3:** `tyre_life`, `tyrelife_x_soft`, `gap_roll3_mean`
+**Agreement (Jaccard):** 0.500
 
 ![lime](xai_target_pit_next_lap_closest_to_decision_boundary_lime.png)
 

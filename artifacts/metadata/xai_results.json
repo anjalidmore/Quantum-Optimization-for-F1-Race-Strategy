@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T01:38:45.595330+00:00",
+  "generated_at": "2026-09-05T06:50:29.114304+00:00",
   "task": "Task 8 - Explainable AI",
   "dataset_source": {
     "source": "real_fastf1",
@@ -13,7 +13,7 @@
   "targets": {
     "target_laptime": {
       "task": "regression",
-      "classical_name": "decision_tree",
+      "classical_name": "svr",
       "source_dataset": "data/processed/fastf1_laps_clean.csv",
       "dataset_source": {
         "source": "real_fastf1",
@@ -377,85 +377,175 @@
         ],
         "classical": [
           {
-            "feature": "gap_expanding",
-            "importance": 0.05491077694678179,
-            "std": 0.033499947402630126,
-            "undefined_reason": null
-          },
-          {
-            "feature": "team_red_bull_racing",
-            "importance": 0.03667859062426458,
-            "std": 0.009451092054424556,
-            "undefined_reason": null
-          },
-          {
             "feature": "tyre_life",
-            "importance": 0.03082836076542843,
-            "std": 0.013319110567712065,
-            "undefined_reason": null
-          },
-          {
-            "feature": "is_fresh_tyre",
-            "importance": 0.0182838371405294,
-            "std": 0.011796668740941289,
-            "undefined_reason": null
-          },
-          {
-            "feature": "field_median_lag1",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "track_status",
-            "importance": 0.0,
-            "std": 0.0,
+            "importance": 0.24465375925647734,
+            "std": 0.01904183476509863,
             "undefined_reason": null
           },
           {
             "feature": "tracktemp_dev_x_tyrelife",
-            "importance": 0.0,
-            "std": 0.0,
+            "importance": 0.19422748087250805,
+            "std": 0.02300281592652797,
             "undefined_reason": null
           },
           {
             "feature": "form_vs_baseline",
-            "importance": 0.0,
-            "std": 0.0,
+            "importance": 0.08001006283110865,
+            "std": 0.013180367229794914,
             "undefined_reason": null
           },
           {
-            "feature": "field_pace_trend",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "gap_roll3_std",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "wind_speed",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "tyrelife_x_soft",
-            "importance": 0.0,
-            "std": 0.0,
+            "feature": "gap_expanding",
+            "importance": 0.03190221772013259,
+            "std": 0.006999472958121954,
             "undefined_reason": null
           },
           {
             "feature": "gap_roll3_mean",
-            "importance": 0.0,
-            "std": 0.0,
+            "importance": 0.02470544673403513,
+            "std": 0.007435392298410613,
+            "undefined_reason": null
+          },
+          {
+            "feature": "stint_number",
+            "importance": 0.017654162700327193,
+            "std": 0.0052367447905257445,
+            "undefined_reason": null
+          },
+          {
+            "feature": "compound_soft",
+            "importance": 0.017334401694903377,
+            "std": 0.002854001064863088,
+            "undefined_reason": null
+          },
+          {
+            "feature": "is_fresh_tyre",
+            "importance": 0.016839737285517076,
+            "std": 0.005014454743052968,
+            "undefined_reason": null
+          },
+          {
+            "feature": "team_aston_martin",
+            "importance": 0.01640190472082135,
+            "std": 0.002583449651210633,
+            "undefined_reason": null
+          },
+          {
+            "feature": "team_alphatauri",
+            "importance": 0.016380007987506783,
+            "std": 0.00356425295461869,
+            "undefined_reason": null
+          },
+          {
+            "feature": "gap_roll3_std",
+            "importance": 0.0159795285245793,
+            "std": 0.009859704770515825,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_bot",
+            "importance": 0.013770671236425914,
+            "std": 0.002019762417889485,
             "undefined_reason": null
           },
           {
             "feature": "driver_dev",
+            "importance": 0.013551703389347214,
+            "std": 0.0035736611239363353,
+            "undefined_reason": null
+          },
+          {
+            "feature": "team_alpine",
+            "importance": 0.007519306400617998,
+            "std": 0.001996715416928166,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_gas",
+            "importance": 0.007436986906053799,
+            "std": 0.002804260560558243,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_tsu",
+            "importance": 0.006218046367827501,
+            "std": 0.0008261912481457311,
+            "undefined_reason": null
+          },
+          {
+            "feature": "wind_speed",
+            "importance": 0.005239401938822818,
+            "std": 0.007612671431573449,
+            "undefined_reason": null
+          },
+          {
+            "feature": "team_williams",
+            "importance": 0.004664727749972642,
+            "std": 0.003925497991247116,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_rus",
+            "importance": 0.004175692125455632,
+            "std": 0.0010496252942067594,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_str",
+            "importance": 0.003293263007974434,
+            "std": 0.001023151554080428,
+            "undefined_reason": null
+          },
+          {
+            "feature": "tyrelife_x_soft",
+            "importance": 0.003030075216652639,
+            "std": 0.007131385353329516,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_alo",
+            "importance": 0.002933156325481212,
+            "std": 0.0014293728137835448,
+            "undefined_reason": null
+          },
+          {
+            "feature": "team_red_bull_racing",
+            "importance": 0.002628765000565614,
+            "std": 0.002343262916041294,
+            "undefined_reason": null
+          },
+          {
+            "feature": "field_median_lag1",
+            "importance": 0.002554764180191038,
+            "std": 0.0023098381997216345,
+            "undefined_reason": null
+          },
+          {
+            "feature": "team_mclaren",
+            "importance": 0.0020574682682943713,
+            "std": 0.0013930751778953128,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_nor",
+            "importance": 0.0012058599622051358,
+            "std": 0.0012507870277588206,
+            "undefined_reason": null
+          },
+          {
+            "feature": "team_haas_f1_team",
+            "importance": 0.0005284082132184676,
+            "std": 0.005229360622566716,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_ver",
+            "importance": 0.0002180554658280931,
+            "std": 0.0025372887432457145,
+            "undefined_reason": null
+          },
+          {
+            "feature": "track_status",
             "importance": 0.0,
             "std": 0.0,
             "undefined_reason": null
@@ -467,115 +557,13 @@
             "undefined_reason": null
           },
           {
-            "feature": "team_aston_martin",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_per",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_rus",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "compound_soft",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
             "feature": "humidity",
             "importance": 0.0,
             "std": 0.0,
             "undefined_reason": null
           },
           {
-            "feature": "team_mclaren",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_gas",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_zho",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_alo",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_bot",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_ver",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "team_mercedes",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_str",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "team_alpine",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "team_williams",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_nor",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
             "feature": "driver_pia",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "team_alphatauri",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_sar",
             "importance": 0.0,
             "std": 0.0,
             "undefined_reason": null
@@ -593,57 +581,69 @@
             "undefined_reason": null
           },
           {
-            "feature": "team_haas_f1_team",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_mag",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_ham",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_hul",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_sai",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "driver_tsu",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
-            "feature": "team_ferrari",
-            "importance": 0.0,
-            "std": 0.0,
-            "undefined_reason": null
-          },
-          {
             "feature": "compound_medium",
             "importance": 0.0,
             "std": 0.0,
             "undefined_reason": null
           },
           {
-            "feature": "stint_number",
-            "importance": -0.020125787437396313,
-            "std": 0.013305801798554416,
+            "feature": "field_pace_trend",
+            "importance": -0.0003524759531985611,
+            "std": 0.001124703842770152,
+            "undefined_reason": null
+          },
+          {
+            "feature": "team_mercedes",
+            "importance": -0.0003578544351764301,
+            "std": 0.0014013229878248527,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_sai",
+            "importance": -0.0009047524611403346,
+            "std": 0.0019377338017902348,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_hul",
+            "importance": -0.0014370080061404389,
+            "std": 0.001673603925822585,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_mag",
+            "importance": -0.0014722761022593067,
+            "std": 0.004550548511198447,
+            "undefined_reason": null
+          },
+          {
+            "feature": "team_ferrari",
+            "importance": -0.0020177212220012673,
+            "std": 0.0011102800362263751,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_ham",
+            "importance": -0.0028132158251597205,
+            "std": 0.001282400714225065,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_per",
+            "importance": -0.003942127941335494,
+            "std": 0.001678953564196117,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_zho",
+            "importance": -0.005128490849101575,
+            "std": 0.0017328818715266348,
+            "undefined_reason": null
+          },
+          {
+            "feature": "driver_sar",
+            "importance": -0.006089222605421485,
+            "std": 0.004357172124043055,
             "undefined_reason": null
           }
         ]
@@ -652,258 +652,258 @@
         {
           "feature": "tyre_life",
           "dnn_importance": 0.8833714842796325,
-          "classical_importance": 0.03082836076542843,
+          "classical_importance": 0.24465375925647734,
           "dnn_rank": 1,
-          "classical_rank": 3,
-          "rank_gap": 2
+          "classical_rank": 1,
+          "rank_gap": 0
         },
         {
           "feature": "tracktemp_dev_x_tyrelife",
           "dnn_importance": 0.7468784570693969,
-          "classical_importance": 0.0,
+          "classical_importance": 0.19422748087250805,
           "dnn_rank": 2,
-          "classical_rank": 7,
-          "rank_gap": 5
+          "classical_rank": 2,
+          "rank_gap": 0
         },
         {
           "feature": "form_vs_baseline",
           "dnn_importance": 0.196039617061615,
-          "classical_importance": 0.0,
+          "classical_importance": 0.08001006283110865,
           "dnn_rank": 3,
-          "classical_rank": 8,
-          "rank_gap": 5
+          "classical_rank": 3,
+          "rank_gap": 0
         },
         {
           "feature": "gap_expanding",
           "dnn_importance": 0.1943004310131073,
-          "classical_importance": 0.05491077694678179,
+          "classical_importance": 0.03190221772013259,
           "dnn_rank": 4,
-          "classical_rank": 1,
-          "rank_gap": 3
+          "classical_rank": 4,
+          "rank_gap": 0
         },
         {
           "feature": "tyrelife_x_soft",
           "dnn_importance": 0.07716055512428284,
-          "classical_importance": 0.0,
+          "classical_importance": 0.003030075216652639,
           "dnn_rank": 5,
-          "classical_rank": 12,
-          "rank_gap": 7
+          "classical_rank": 21,
+          "rank_gap": 16
         },
         {
           "feature": "stint_number",
           "dnn_importance": 0.07614431381225586,
-          "classical_importance": -0.020125787437396313,
+          "classical_importance": 0.017654162700327193,
           "dnn_rank": 6,
-          "classical_rank": 45,
-          "rank_gap": 39
+          "classical_rank": 6,
+          "rank_gap": 0
         },
         {
           "feature": "gap_roll3_mean",
           "dnn_importance": 0.06316636800765991,
-          "classical_importance": 0.0,
+          "classical_importance": 0.02470544673403513,
           "dnn_rank": 7,
-          "classical_rank": 13,
-          "rank_gap": 6
+          "classical_rank": 5,
+          "rank_gap": 2
         },
         {
           "feature": "compound_soft",
           "dnn_importance": 0.049385440349578855,
-          "classical_importance": 0.0,
+          "classical_importance": 0.017334401694903377,
           "dnn_rank": 8,
-          "classical_rank": 19,
-          "rank_gap": 11
+          "classical_rank": 7,
+          "rank_gap": 1
         },
         {
           "feature": "is_fresh_tyre",
           "dnn_importance": 0.0487812340259552,
-          "classical_importance": 0.0182838371405294,
+          "classical_importance": 0.016839737285517076,
           "dnn_rank": 9,
-          "classical_rank": 4,
-          "rank_gap": 5
+          "classical_rank": 8,
+          "rank_gap": 1
         },
         {
           "feature": "team_red_bull_racing",
           "dnn_importance": 0.04383748769760132,
-          "classical_importance": 0.03667859062426458,
+          "classical_importance": 0.002628765000565614,
           "dnn_rank": 10,
-          "classical_rank": 2,
-          "rank_gap": 8
+          "classical_rank": 23,
+          "rank_gap": 13
         },
         {
           "feature": "gap_roll3_std",
           "dnn_importance": 0.04102720618247986,
-          "classical_importance": 0.0,
+          "classical_importance": 0.0159795285245793,
           "dnn_rank": 11,
-          "classical_rank": 10,
-          "rank_gap": 1
+          "classical_rank": 11,
+          "rank_gap": 0
         },
         {
           "feature": "wind_speed",
           "dnn_importance": 0.02586209774017334,
-          "classical_importance": 0.0,
+          "classical_importance": 0.005239401938822818,
           "dnn_rank": 12,
-          "classical_rank": 11,
-          "rank_gap": 1
+          "classical_rank": 17,
+          "rank_gap": 5
         },
         {
           "feature": "team_alphatauri",
           "dnn_importance": 0.023135066032409668,
-          "classical_importance": 0.0,
+          "classical_importance": 0.016380007987506783,
           "dnn_rank": 13,
-          "classical_rank": 33,
-          "rank_gap": 20
+          "classical_rank": 10,
+          "rank_gap": 3
         },
         {
           "feature": "driver_tsu",
           "dnn_importance": 0.013452333211898804,
-          "classical_importance": 0.0,
+          "classical_importance": 0.006218046367827501,
           "dnn_rank": 14,
-          "classical_rank": 42,
-          "rank_gap": 28
+          "classical_rank": 16,
+          "rank_gap": 2
         },
         {
           "feature": "team_haas_f1_team",
           "dnn_importance": 0.011117368936538696,
-          "classical_importance": 0.0,
+          "classical_importance": 0.0005284082132184676,
           "dnn_rank": 15,
-          "classical_rank": 37,
-          "rank_gap": 22
+          "classical_rank": 27,
+          "rank_gap": 12
         },
         {
           "feature": "team_mclaren",
           "dnn_importance": 0.01101951003074646,
-          "classical_importance": 0.0,
+          "classical_importance": 0.0020574682682943713,
           "dnn_rank": 16,
-          "classical_rank": 21,
-          "rank_gap": 5
+          "classical_rank": 25,
+          "rank_gap": 9
         },
         {
           "feature": "driver_ver",
           "dnn_importance": 0.010563260316848755,
-          "classical_importance": 0.0,
+          "classical_importance": 0.0002180554658280931,
           "dnn_rank": 17,
-          "classical_rank": 26,
-          "rank_gap": 9
+          "classical_rank": 28,
+          "rank_gap": 11
         },
         {
           "feature": "driver_gas",
           "dnn_importance": 0.010163301229476928,
-          "classical_importance": 0.0,
+          "classical_importance": 0.007436986906053799,
           "dnn_rank": 18,
-          "classical_rank": 22,
-          "rank_gap": 4
+          "classical_rank": 15,
+          "rank_gap": 3
         },
         {
           "feature": "driver_mag",
           "dnn_importance": 0.009452658891677856,
-          "classical_importance": 0.0,
+          "classical_importance": -0.0014722761022593067,
           "dnn_rank": 19,
-          "classical_rank": 38,
-          "rank_gap": 19
+          "classical_rank": 40,
+          "rank_gap": 21
         },
         {
           "feature": "driver_bot",
           "dnn_importance": 0.008461195230484008,
-          "classical_importance": 0.0,
+          "classical_importance": 0.013770671236425914,
           "dnn_rank": 20,
-          "classical_rank": 25,
-          "rank_gap": 5
+          "classical_rank": 12,
+          "rank_gap": 8
         },
         {
           "feature": "driver_ham",
           "dnn_importance": 0.0072074294090271,
-          "classical_importance": 0.0,
+          "classical_importance": -0.0028132158251597205,
           "dnn_rank": 21,
-          "classical_rank": 39,
-          "rank_gap": 18
+          "classical_rank": 42,
+          "rank_gap": 21
         },
         {
           "feature": "driver_alo",
           "dnn_importance": 0.005523788928985596,
-          "classical_importance": 0.0,
+          "classical_importance": 0.002933156325481212,
           "dnn_rank": 22,
-          "classical_rank": 24,
-          "rank_gap": 2
+          "classical_rank": 22,
+          "rank_gap": 0
         },
         {
           "feature": "driver_nor",
           "dnn_importance": 0.005444937944412231,
-          "classical_importance": 0.0,
+          "classical_importance": 0.0012058599622051358,
           "dnn_rank": 23,
-          "classical_rank": 31,
-          "rank_gap": 8
+          "classical_rank": 26,
+          "rank_gap": 3
         },
         {
           "feature": "driver_hul",
           "dnn_importance": 0.005154162645339966,
-          "classical_importance": 0.0,
+          "classical_importance": -0.0014370080061404389,
           "dnn_rank": 24,
-          "classical_rank": 40,
-          "rank_gap": 16
+          "classical_rank": 39,
+          "rank_gap": 15
         },
         {
           "feature": "driver_sar",
           "dnn_importance": 0.004947739839553833,
-          "classical_importance": 0.0,
+          "classical_importance": -0.006089222605421485,
           "dnn_rank": 25,
-          "classical_rank": 34,
-          "rank_gap": 9
+          "classical_rank": 45,
+          "rank_gap": 20
         },
         {
           "feature": "driver_dev",
           "dnn_importance": 0.0046833276748657225,
-          "classical_importance": 0.0,
+          "classical_importance": 0.013551703389347214,
           "dnn_rank": 26,
-          "classical_rank": 14,
-          "rank_gap": 12
+          "classical_rank": 13,
+          "rank_gap": 13
         },
         {
           "feature": "field_median_lag1",
           "dnn_importance": 0.0037917256355285644,
-          "classical_importance": 0.0,
+          "classical_importance": 0.002554764180191038,
           "dnn_rank": 27,
-          "classical_rank": 5,
-          "rank_gap": 22
+          "classical_rank": 24,
+          "rank_gap": 3
         },
         {
           "feature": "team_mercedes",
           "dnn_importance": 0.0037845194339752196,
-          "classical_importance": 0.0,
+          "classical_importance": -0.0003578544351764301,
           "dnn_rank": 28,
-          "classical_rank": 27,
-          "rank_gap": 1
+          "classical_rank": 37,
+          "rank_gap": 9
         },
         {
           "feature": "team_ferrari",
           "dnn_importance": 0.0018266260623931885,
-          "classical_importance": 0.0,
+          "classical_importance": -0.0020177212220012673,
           "dnn_rank": 29,
-          "classical_rank": 43,
-          "rank_gap": 14
+          "classical_rank": 41,
+          "rank_gap": 12
         },
         {
           "feature": "track_status",
           "dnn_importance": 0.0,
           "classical_importance": 0.0,
           "dnn_rank": 30,
-          "classical_rank": 6,
-          "rank_gap": 24
+          "classical_rank": 29,
+          "rank_gap": 1
         },
         {
           "feature": "driver_oco",
           "dnn_importance": 0.0,
           "classical_importance": 0.0,
           "dnn_rank": 31,
-          "classical_rank": 15,
-          "rank_gap": 16
+          "classical_rank": 30,
+          "rank_gap": 1
         },
         {
           "feature": "humidity",
           "dnn_importance": 0.0,
           "classical_importance": 0.0,
           "dnn_rank": 32,
-          "classical_rank": 20,
-          "rank_gap": 12
+          "classical_rank": 31,
+          "rank_gap": 1
         },
         {
           "feature": "driver_pia",
@@ -918,7 +918,7 @@
           "dnn_importance": 0.0,
           "classical_importance": 0.0,
           "dnn_rank": 34,
-          "classical_rank": 35,
+          "classical_rank": 33,
           "rank_gap": 1
         },
         {
@@ -926,7 +926,7 @@
           "dnn_importance": 0.0,
           "classical_importance": 0.0,
           "dnn_rank": 35,
-          "classical_rank": 36,
+          "classical_rank": 34,
           "rank_gap": 1
         },
         {
@@ -934,80 +934,80 @@
           "dnn_importance": 0.0,
           "classical_importance": 0.0,
           "dnn_rank": 36,
-          "classical_rank": 44,
-          "rank_gap": 8
+          "classical_rank": 35,
+          "rank_gap": 1
         },
         {
           "feature": "driver_sai",
           "dnn_importance": -0.0003397822380065918,
-          "classical_importance": 0.0,
+          "classical_importance": -0.0009047524611403346,
           "dnn_rank": 37,
-          "classical_rank": 41,
-          "rank_gap": 4
+          "classical_rank": 38,
+          "rank_gap": 1
         },
         {
           "feature": "field_pace_trend",
           "dnn_importance": -0.001982671022415161,
-          "classical_importance": 0.0,
+          "classical_importance": -0.0003524759531985611,
           "dnn_rank": 38,
-          "classical_rank": 9,
-          "rank_gap": 29
+          "classical_rank": 36,
+          "rank_gap": 2
         },
         {
           "feature": "team_alpine",
           "dnn_importance": -0.0023038923740386964,
-          "classical_importance": 0.0,
+          "classical_importance": 0.007519306400617998,
           "dnn_rank": 39,
-          "classical_rank": 29,
-          "rank_gap": 10
+          "classical_rank": 14,
+          "rank_gap": 25
         },
         {
           "feature": "driver_per",
           "dnn_importance": -0.003066915273666382,
-          "classical_importance": 0.0,
+          "classical_importance": -0.003942127941335494,
           "dnn_rank": 40,
-          "classical_rank": 17,
-          "rank_gap": 23
+          "classical_rank": 43,
+          "rank_gap": 3
         },
         {
           "feature": "driver_rus",
           "dnn_importance": -0.003278195858001709,
-          "classical_importance": 0.0,
+          "classical_importance": 0.004175692125455632,
           "dnn_rank": 41,
-          "classical_rank": 18,
-          "rank_gap": 23
+          "classical_rank": 19,
+          "rank_gap": 22
         },
         {
           "feature": "driver_zho",
           "dnn_importance": -0.004094815254211426,
-          "classical_importance": 0.0,
+          "classical_importance": -0.005128490849101575,
           "dnn_rank": 42,
-          "classical_rank": 23,
-          "rank_gap": 19
+          "classical_rank": 44,
+          "rank_gap": 2
         },
         {
           "feature": "team_aston_martin",
           "dnn_importance": -0.0041182518005371095,
-          "classical_importance": 0.0,
+          "classical_importance": 0.01640190472082135,
           "dnn_rank": 43,
-          "classical_rank": 16,
-          "rank_gap": 27
+          "classical_rank": 9,
+          "rank_gap": 34
         },
         {
           "feature": "team_williams",
           "dnn_importance": -0.005642217397689819,
-          "classical_importance": 0.0,
+          "classical_importance": 0.004664727749972642,
           "dnn_rank": 44,
-          "classical_rank": 30,
-          "rank_gap": 14
+          "classical_rank": 18,
+          "rank_gap": 26
         },
         {
           "feature": "driver_str",
           "dnn_importance": -0.0059706330299377445,
-          "classical_importance": 0.0,
+          "classical_importance": 0.003293263007974434,
           "dnn_rank": 45,
-          "classical_rank": 28,
-          "rank_gap": 17
+          "classical_rank": 20,
+          "rank_gap": 25
         }
       ],
       "shap": {
@@ -1201,135 +1201,175 @@
         "classical": {
           "ranking": [
             {
-              "feature": "tracktemp_dev_x_tyrelife",
-              "mean_abs_shap": 0.6824273698431238
-            },
-            {
               "feature": "stint_number",
-              "mean_abs_shap": 0.6691290068102709
+              "mean_abs_shap": 0.4683310878262066
             },
             {
-              "feature": "gap_expanding",
-              "mean_abs_shap": 0.4146349046607486
+              "feature": "tracktemp_dev_x_tyrelife",
+              "mean_abs_shap": 0.4584243424787944
             },
             {
               "feature": "tyre_life",
-              "mean_abs_shap": 0.22291198768017834
-            },
-            {
-              "feature": "track_status",
-              "mean_abs_shap": 0.18864078139600265
-            },
-            {
-              "feature": "gap_roll3_mean",
-              "mean_abs_shap": 0.12731902554168398
-            },
-            {
-              "feature": "team_red_bull_racing",
-              "mean_abs_shap": 0.06926392146937102
-            },
-            {
-              "feature": "is_fresh_tyre",
-              "mean_abs_shap": 0.0531436517543222
+              "mean_abs_shap": 0.347919638398427
             },
             {
               "feature": "field_median_lag1",
-              "mean_abs_shap": 0.05185530020598697
-            },
-            {
-              "feature": "driver_oco",
-              "mean_abs_shap": 0.03305741298628053
+              "mean_abs_shap": 0.27812498667683166
             },
             {
               "feature": "form_vs_baseline",
-              "mean_abs_shap": 0.025247916146628333
+              "mean_abs_shap": 0.1666046336621805
+            },
+            {
+              "feature": "gap_roll3_mean",
+              "mean_abs_shap": 0.09884650314442991
             },
             {
               "feature": "gap_roll3_std",
-              "mean_abs_shap": 0.010864207807092968
+              "mean_abs_shap": 0.07313897868015673
             },
             {
               "feature": "tyrelife_x_soft",
-              "mean_abs_shap": 0.004318244325892019
+              "mean_abs_shap": 0.058210428200240194
             },
             {
-              "feature": "compound_soft",
-              "mean_abs_shap": 0.0013507618113021368
+              "feature": "gap_expanding",
+              "mean_abs_shap": 0.052075797297303134
             },
             {
-              "feature": "field_pace_trend",
-              "mean_abs_shap": 0.0011898802949991748
+              "feature": "track_status",
+              "mean_abs_shap": 0.046785572798919026
+            },
+            {
+              "feature": "team_red_bull_racing",
+              "mean_abs_shap": 0.04677279328145382
             },
             {
               "feature": "wind_speed",
-              "mean_abs_shap": 0.0
+              "mean_abs_shap": 0.041363013423961696
             },
             {
-              "feature": "humidity",
-              "mean_abs_shap": 0.0
+              "feature": "is_fresh_tyre",
+              "mean_abs_shap": 0.04048148704034941
             },
             {
-              "feature": "tyrelife_x_medium",
-              "mean_abs_shap": 0.0
+              "feature": "field_pace_trend",
+              "mean_abs_shap": 0.03094514574870986
             },
             {
-              "feature": "driver_dev",
-              "mean_abs_shap": 0.0
+              "feature": "team_alphatauri",
+              "mean_abs_shap": 0.023876284858942137
             },
             {
-              "feature": "team_aston_martin",
-              "mean_abs_shap": 0.0
+              "feature": "team_haas_f1_team",
+              "mean_abs_shap": 0.023701563033211713
             },
             {
-              "feature": "driver_per",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_rus",
-              "mean_abs_shap": 0.0
+              "feature": "compound_soft",
+              "mean_abs_shap": 0.02240483946385674
             },
             {
               "feature": "team_mclaren",
-              "mean_abs_shap": 0.0
+              "mean_abs_shap": 0.022025219980993768
             },
             {
-              "feature": "driver_gas",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_zho",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_alo",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_bot",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_ver",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "team_mercedes",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_str",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "team_alpine",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "team_williams",
-              "mean_abs_shap": 0.0
+              "feature": "team_aston_martin",
+              "mean_abs_shap": 0.021816758847287423
             },
             {
               "feature": "driver_nor",
+              "mean_abs_shap": 0.02157854420624235
+            },
+            {
+              "feature": "driver_ver",
+              "mean_abs_shap": 0.015798057213146102
+            },
+            {
+              "feature": "driver_mag",
+              "mean_abs_shap": 0.01494740173369245
+            },
+            {
+              "feature": "tyrelife_x_medium",
+              "mean_abs_shap": 0.013768293193537095
+            },
+            {
+              "feature": "humidity",
+              "mean_abs_shap": 0.013494369298190636
+            },
+            {
+              "feature": "team_mercedes",
+              "mean_abs_shap": 0.012127775080572785
+            },
+            {
+              "feature": "team_williams",
+              "mean_abs_shap": 0.011915694805012667
+            },
+            {
+              "feature": "compound_medium",
+              "mean_abs_shap": 0.01062478232405402
+            },
+            {
+              "feature": "driver_sar",
+              "mean_abs_shap": 0.010444136989777144
+            },
+            {
+              "feature": "driver_zho",
+              "mean_abs_shap": 0.008667209567572071
+            },
+            {
+              "feature": "driver_alo",
+              "mean_abs_shap": 0.007600848784626655
+            },
+            {
+              "feature": "driver_dev",
+              "mean_abs_shap": 0.007519017647797309
+            },
+            {
+              "feature": "driver_bot",
+              "mean_abs_shap": 0.007208020339395328
+            },
+            {
+              "feature": "driver_hul",
+              "mean_abs_shap": 0.0034607932128476546
+            },
+            {
+              "feature": "driver_per",
+              "mean_abs_shap": 0.0025619928020192374
+            },
+            {
+              "feature": "driver_rus",
+              "mean_abs_shap": 0.0021810153738758826
+            },
+            {
+              "feature": "driver_ham",
+              "mean_abs_shap": 0.0021563533304030636
+            },
+            {
+              "feature": "team_alpine",
+              "mean_abs_shap": 0.0019174613527494439
+            },
+            {
+              "feature": "team_ferrari",
+              "mean_abs_shap": 0.0015296827901245106
+            },
+            {
+              "feature": "driver_tsu",
+              "mean_abs_shap": 0.0012939170047139704
+            },
+            {
+              "feature": "driver_gas",
+              "mean_abs_shap": 0.0012265938538044946
+            },
+            {
+              "feature": "driver_sai",
+              "mean_abs_shap": 0.00048302983906073024
+            },
+            {
+              "feature": "driver_str",
+              "mean_abs_shap": 0.00018003482192215236
+            },
+            {
+              "feature": "driver_oco",
               "mean_abs_shap": 0.0
             },
             {
@@ -1337,53 +1377,13 @@
               "mean_abs_shap": 0.0
             },
             {
-              "feature": "team_alphatauri",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_sar",
-              "mean_abs_shap": 0.0
-            },
-            {
               "feature": "driver_lec",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "team_haas_f1_team",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_mag",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_ham",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_hul",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_sai",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "driver_tsu",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "team_ferrari",
-              "mean_abs_shap": 0.0
-            },
-            {
-              "feature": "compound_medium",
               "mean_abs_shap": 0.0
             }
           ],
-          "note": "Exact Shapley values; TreeExplainer enumerates the ensemble rather than sampling.",
-          "explainer": "TreeExplainer",
-          "exact": true
+          "note": "Approximate Shapley values sampled with nsamples=60 over a k-means background of 25 points. Ranks and signs are meaningful; magnitudes carry sampling noise and are not directly comparable to TreeExplainer's exact values.",
+          "explainer": "KernelExplainer",
+          "exact": false
         }
       },
       "fairness": {
@@ -1441,7 +1441,7 @@
           "row_index": 89,
           "lap": 51,
           "dnn_prediction": 95.9444808959961,
-          "classical_prediction": 97.17194594594595,
+          "classical_prediction": 97.78458825864047,
           "feature_values": {
             "field_median_lag1": 97.60399627685547,
             "stint_number": 4.5,
@@ -1571,10 +1571,10 @@
             "form_vs_baseline"
           ],
           "trust": {
-            "trust_score": 0.4301,
+            "trust_score": 0.2206,
             "components": {
-              "confidence": 0.4002,
-              "model_agreement": 0.4002,
+              "confidence": 0.1008,
+              "model_agreement": 0.1008,
               "explanation_stability": 0.5
             },
             "weights": {
@@ -1583,12 +1583,12 @@
               "explanation_stability": 0.3
             },
             "band": {
-              "label": "LOW",
-              "meaning": "Treat as a prompt to look at the evidence, not as a recommendation. The models disagree, or the explanations do."
+              "label": "DO NOT ACT",
+              "meaning": "The prediction sits on the decision boundary and/or the two model families contradict each other. This carries no more information than a coin flip."
             },
             "inputs": {
               "dnn_prediction": 95.9444808959961,
-              "classical_prediction": 97.17194594594595,
+              "classical_prediction": 97.78458825864047,
               "shap_top3": [
                 "stint_number",
                 "gap_roll3_std",
@@ -1747,7 +1747,7 @@
             "started_above_threshold": false
           },
           "counterfactual_sentence": "No value of tyre age between 1 and 22 flips this recommendation with the rest of the race state unchanged - the call is not sensitive to tyre age alone.",
-          "narrative": "Expected lap time 95.944s - 3.360s faster than an average lap. Stint number (4.5) is a major factor making this lap faster; consistency of the recent pace gap (4.429) is a moderate factor making this lap faster; current form against this driver's baseline (-2.849) is a moderate factor making this lap faster. Trust in this prediction: LOW.",
+          "narrative": "Expected lap time 95.944s - 3.360s faster than an average lap. Stint number (4.5) is a major factor making this lap faster; consistency of the recent pace gap (4.429) is a moderate factor making this lap faster; current form against this driver's baseline (-2.849) is a moderate factor making this lap faster. Trust in this prediction: DO NOT ACT.",
           "figures": {
             "shap_waterfall": "xai_target_laptime_fastest_predicted_lap_shap_waterfall.png",
             "lime": "xai_target_laptime_fastest_predicted_lap_lime.png",
@@ -1758,7 +1758,7 @@
           "row_index": 92,
           "lap": 54,
           "dnn_prediction": 97.75664520263672,
-          "classical_prediction": 98.9938,
+          "classical_prediction": 98.06235459449262,
           "feature_values": {
             "field_median_lag1": 97.77799987792969,
             "stint_number": 4.5,
@@ -1888,10 +1888,10 @@
             "form_vs_baseline"
           ],
           "trust": {
-            "trust_score": 0.4269,
+            "trust_score": 0.7454,
             "components": {
-              "confidence": 0.3955,
-              "model_agreement": 0.3955,
+              "confidence": 0.8506,
+              "model_agreement": 0.8506,
               "explanation_stability": 0.5
             },
             "weights": {
@@ -1900,12 +1900,12 @@
               "explanation_stability": 0.3
             },
             "band": {
-              "label": "LOW",
-              "meaning": "Treat as a prompt to look at the evidence, not as a recommendation. The models disagree, or the explanations do."
+              "label": "MODERATE",
+              "meaning": "Usable as one input among several. Read the SHAP factors before acting; one of the three components is weak."
             },
             "inputs": {
               "dnn_prediction": 97.75664520263672,
-              "classical_prediction": 98.9938,
+              "classical_prediction": 98.06235459449262,
               "shap_top3": [
                 "stint_number",
                 "form_vs_baseline",
@@ -2064,7 +2064,7 @@
             "started_above_threshold": false
           },
           "counterfactual_sentence": "The recommendation flips when tyre age reaches 19.4 (currently 11, a increase of 8.404), holding everything else fixed.",
-          "narrative": "Expected lap time 97.757s - 1.548s faster than an average lap. Stint number (4.5) is a major factor making this lap faster; current form against this driver's baseline (-1.665) is a major factor making this lap faster; track temperature acting on tyre age (-12.2) is a moderate factor making this lap faster. Trust in this prediction: LOW.",
+          "narrative": "Expected lap time 97.757s - 1.548s faster than an average lap. Stint number (4.5) is a major factor making this lap faster; current form against this driver's baseline (-1.665) is a major factor making this lap faster; track temperature acting on tyre age (-12.2) is a moderate factor making this lap faster. Trust in this prediction: MODERATE.",
           "figures": {
             "shap_waterfall": "xai_target_laptime_median_predicted_lap_shap_waterfall.png",
             "lime": "xai_target_laptime_median_predicted_lap_lime.png",
@@ -2075,7 +2075,7 @@
           "row_index": 178,
           "lap": 55,
           "dnn_prediction": 102.29130554199219,
-          "classical_prediction": 97.17194594594595,
+          "classical_prediction": 102.22279539507338,
           "feature_values": {
             "field_median_lag1": 97.77999877929688,
             "stint_number": 4.0,
@@ -2205,10 +2205,10 @@
             "stint_number"
           ],
           "trust": {
-            "trust_score": 0.15,
+            "trust_score": 0.8266,
             "components": {
-              "confidence": 0.0,
-              "model_agreement": 0.0,
+              "confidence": 0.9665,
+              "model_agreement": 0.9665,
               "explanation_stability": 0.5
             },
             "weights": {
@@ -2217,12 +2217,12 @@
               "explanation_stability": 0.3
             },
             "band": {
-              "label": "DO NOT ACT",
-              "meaning": "The prediction sits on the decision boundary and/or the two model families contradict each other. This carries no more information than a coin flip."
+              "label": "HIGH",
+              "meaning": "Both model families agree, the prediction is far from the boundary, and SHAP and LIME tell the same story. Safe to act on."
             },
             "inputs": {
               "dnn_prediction": 102.29130554199219,
-              "classical_prediction": 97.17194594594595,
+              "classical_prediction": 102.22279539507338,
               "shap_top3": [
                 "form_vs_baseline",
                 "driver_zho",
@@ -2381,7 +2381,7 @@
             "started_above_threshold": true
           },
           "counterfactual_sentence": "No value of tyre age between 1 and 22 flips this recommendation with the rest of the race state unchanged - the call is not sensitive to tyre age alone.",
-          "narrative": "Expected lap time 102.291s - 2.987s slower than an average lap. Current form against this driver's baseline (3.268) is a major factor making this lap slower; driver identity (zho) (1) is a moderate factor making this lap slower; stint number (4) is a moderate factor making this lap faster. Trust in this prediction: DO NOT ACT.",
+          "narrative": "Expected lap time 102.291s - 2.987s slower than an average lap. Current form against this driver's baseline (3.268) is a major factor making this lap slower; driver identity (zho) (1) is a moderate factor making this lap slower; stint number (4) is a moderate factor making this lap faster. Trust in this prediction: HIGH.",
           "figures": {
             "shap_waterfall": "xai_target_laptime_slowest_predicted_lap_shap_waterfall.png",
             "lime": "xai_target_laptime_slowest_predicted_lap_lime.png",
@@ -2391,13 +2391,13 @@
       },
       "trust_summary": {
         "n": 3,
-        "mean": 0.3357,
-        "min": 0.15,
-        "max": 0.4301,
+        "mean": 0.5975,
+        "min": 0.2206,
+        "max": 0.8266,
         "bands": {
-          "HIGH": 0,
-          "MODERATE": 0,
-          "LOW": 2,
+          "HIGH": 1,
+          "MODERATE": 1,
+          "LOW": 0,
           "DO NOT ACT": 1
         }
       },
@@ -2437,100 +2437,100 @@
         "dnn": [
           {
             "feature": "tyre_life",
-            "importance": 0.3636871508379888,
-            "std": 0.13983118581195184,
-            "undefined_reason": null
-          },
-          {
-            "feature": "tyrelife_x_soft",
-            "importance": 0.24916201117318432,
-            "std": 0.20764093819561716,
+            "importance": 0.18435754189944137,
+            "std": 0.17246200045176682,
             "undefined_reason": null
           },
           {
             "feature": "gap_roll3_mean",
-            "importance": 0.19217877094972066,
-            "std": 0.1941563831083424,
+            "importance": 0.08212290502793296,
+            "std": 0.04455635615997857,
             "undefined_reason": null
           },
           {
-            "feature": "tracktemp_dev_x_tyrelife",
-            "importance": 0.14525139664804465,
-            "std": 0.13053990441952987,
-            "undefined_reason": null
-          },
-          {
-            "feature": "form_vs_baseline",
-            "importance": 0.03407821229050277,
-            "std": 0.03554846540767159,
+            "feature": "tyrelife_x_soft",
+            "importance": 0.0217877094972067,
+            "std": 0.021844932732980063,
             "undefined_reason": null
           },
           {
             "feature": "field_median_lag1",
-            "importance": -3.3306690738754695e-17,
-            "std": 0.008286255292844292,
+            "importance": 0.0005586592178770999,
+            "std": 0.0016759776536313,
+            "undefined_reason": null
+          },
+          {
+            "feature": "form_vs_baseline",
+            "importance": -0.0072625698324022435,
+            "std": 0.007088590804720399,
             "undefined_reason": null
           },
           {
             "feature": "field_pace_trend",
-            "importance": -0.0067039106145251656,
-            "std": 0.010540761041404022,
+            "importance": -0.0094972067039106,
+            "std": 0.010614525139664802,
+            "undefined_reason": null
+          },
+          {
+            "feature": "tracktemp_dev_x_tyrelife",
+            "importance": -0.08044692737430167,
+            "std": 0.11713739689465616,
             "undefined_reason": null
           },
           {
             "feature": "compound_soft",
-            "importance": -0.029050279329608953,
-            "std": 0.022596366945426483,
+            "importance": -0.19888268156424582,
+            "std": 0.07881650095440626,
             "undefined_reason": null
           }
         ],
         "classical": [
           {
             "feature": "field_median_lag1",
-            "importance": 0.22625698324022342,
-            "std": 0.17335097409509556,
-            "undefined_reason": null
-          },
-          {
-            "feature": "gap_roll3_mean",
-            "importance": 0.1620111731843575,
-            "std": 0.21814909250262846,
+            "importance": 0.2446927374301675,
+            "std": 0.17511627439968772,
             "undefined_reason": null
           },
           {
             "feature": "form_vs_baseline",
-            "importance": 0.10893854748603346,
-            "std": 0.11966918602998221,
+            "importance": 0.13296089385474857,
+            "std": 0.1380871791172045,
+            "undefined_reason": null
+          },
+          {
+            "feature": "gap_roll3_mean",
+            "importance": 0.11955307262569828,
+            "std": 0.1619957611625205,
             "undefined_reason": null
           },
           {
             "feature": "tyrelife_x_soft",
-            "importance": 0.04972067039106139,
-            "std": 0.06607547656073132,
+            "importance": 0.06033519553072619,
+            "std": 0.06194822916482283,
             "undefined_reason": null
           },
           {
             "feature": "tracktemp_dev_x_tyrelife",
-            "importance": 0.012849162011173153,
-            "std": 0.006633710663149648,
+            "importance": 0.013966480446927342,
+            "std": 0.007176107585846427,
             "undefined_reason": null
           },
           {
             "feature": "field_pace_trend",
-            "importance": 0.0011173184357541554,
-            "std": 0.012933895980771187,
+            "importance": 0.013407821229050243,
+            "std": 0.013729838801613978,
             "undefined_reason": null
           },
           {
             "feature": "compound_soft",
-            "importance": -0.005027932960893877,
-            "std": 0.003910614525139665,
+            "importance": 0.0005586592178770333,
+            "std": 0.0016759776536312847,
             "undefined_reason": null
           },
           {
             "feature": "tyre_life",
-            "importance": -0.006703910614525177,
-            "std": 0.004870278149207441,
+            "importance": -0.0050279329608939,
+            "std": 0.0058325734686650995,
             "undefined_reason": null
           }
         ]
@@ -2538,64 +2538,64 @@
       "importance_comparison": [
         {
           "feature": "tyre_life",
-          "dnn_importance": 0.3636871508379888,
-          "classical_importance": -0.006703910614525177,
+          "dnn_importance": 0.18435754189944137,
+          "classical_importance": -0.0050279329608939,
           "dnn_rank": 1,
           "classical_rank": 8,
           "rank_gap": 7
         },
         {
-          "feature": "tyrelife_x_soft",
-          "dnn_importance": 0.24916201117318432,
-          "classical_importance": 0.04972067039106139,
-          "dnn_rank": 2,
-          "classical_rank": 4,
-          "rank_gap": 2
-        },
-        {
           "feature": "gap_roll3_mean",
-          "dnn_importance": 0.19217877094972066,
-          "classical_importance": 0.1620111731843575,
-          "dnn_rank": 3,
-          "classical_rank": 2,
-          "rank_gap": 1
-        },
-        {
-          "feature": "tracktemp_dev_x_tyrelife",
-          "dnn_importance": 0.14525139664804465,
-          "classical_importance": 0.012849162011173153,
-          "dnn_rank": 4,
-          "classical_rank": 5,
-          "rank_gap": 1
-        },
-        {
-          "feature": "form_vs_baseline",
-          "dnn_importance": 0.03407821229050277,
-          "classical_importance": 0.10893854748603346,
-          "dnn_rank": 5,
+          "dnn_importance": 0.08212290502793296,
+          "classical_importance": 0.11955307262569828,
+          "dnn_rank": 2,
           "classical_rank": 3,
-          "rank_gap": 2
+          "rank_gap": 1
+        },
+        {
+          "feature": "tyrelife_x_soft",
+          "dnn_importance": 0.0217877094972067,
+          "classical_importance": 0.06033519553072619,
+          "dnn_rank": 3,
+          "classical_rank": 4,
+          "rank_gap": 1
         },
         {
           "feature": "field_median_lag1",
-          "dnn_importance": -3.3306690738754695e-17,
-          "classical_importance": 0.22625698324022342,
-          "dnn_rank": 6,
+          "dnn_importance": 0.0005586592178770999,
+          "classical_importance": 0.2446927374301675,
+          "dnn_rank": 4,
           "classical_rank": 1,
-          "rank_gap": 5
+          "rank_gap": 3
+        },
+        {
+          "feature": "form_vs_baseline",
+          "dnn_importance": -0.0072625698324022435,
+          "classical_importance": 0.13296089385474857,
+          "dnn_rank": 5,
+          "classical_rank": 2,
+          "rank_gap": 3
         },
         {
           "feature": "field_pace_trend",
-          "dnn_importance": -0.0067039106145251656,
-          "classical_importance": 0.0011173184357541554,
-          "dnn_rank": 7,
+          "dnn_importance": -0.0094972067039106,
+          "classical_importance": 0.013407821229050243,
+          "dnn_rank": 6,
           "classical_rank": 6,
-          "rank_gap": 1
+          "rank_gap": 0
+        },
+        {
+          "feature": "tracktemp_dev_x_tyrelife",
+          "dnn_importance": -0.08044692737430167,
+          "classical_importance": 0.013966480446927342,
+          "dnn_rank": 7,
+          "classical_rank": 5,
+          "rank_gap": 2
         },
         {
           "feature": "compound_soft",
-          "dnn_importance": -0.029050279329608953,
-          "classical_importance": -0.005027932960893877,
+          "dnn_importance": -0.19888268156424582,
+          "classical_importance": 0.0005586592178770333,
           "dnn_rank": 8,
           "classical_rank": 7,
           "rank_gap": 1
@@ -2605,36 +2605,36 @@
         "dnn": {
           "ranking": [
             {
-              "feature": "tracktemp_dev_x_tyrelife",
-              "mean_abs_shap": 0.12317764358544986
+              "feature": "tyre_life",
+              "mean_abs_shap": 0.11431335798343116
             },
             {
-              "feature": "tyre_life",
-              "mean_abs_shap": 0.1134104828483929
+              "feature": "tracktemp_dev_x_tyrelife",
+              "mean_abs_shap": 0.11323126492196461
             },
             {
               "feature": "tyrelife_x_soft",
-              "mean_abs_shap": 0.04455491345245623
+              "mean_abs_shap": 0.03183228738072775
             },
             {
               "feature": "compound_soft",
-              "mean_abs_shap": 0.02282858704479184
+              "mean_abs_shap": 0.020711284239081914
             },
             {
               "feature": "gap_roll3_mean",
-              "mean_abs_shap": 0.016199803779224163
+              "mean_abs_shap": 0.016185332025919368
             },
             {
               "feature": "field_median_lag1",
-              "mean_abs_shap": 0.014686394777609888
+              "mean_abs_shap": 0.006576379331012603
             },
             {
               "feature": "form_vs_baseline",
-              "mean_abs_shap": 0.006366779473728467
+              "mean_abs_shap": 0.0048097652939226776
             },
             {
               "feature": "field_pace_trend",
-              "mean_abs_shap": 0.0051473747833900236
+              "mean_abs_shap": 0.003542655418273543
             }
           ],
           "note": "Approximate Shapley values sampled with nsamples=200 over a k-means background of 25 points. Ranks and signs are meaningful; magnitudes carry sampling noise and are not directly comparable to TreeExplainer's exact values.",
@@ -2645,35 +2645,35 @@
           "ranking": [
             {
               "feature": "tyre_life",
-              "mean_abs_shap": 0.11355614414245407
+              "mean_abs_shap": 0.11344413403331567
             },
             {
               "feature": "tracktemp_dev_x_tyrelife",
-              "mean_abs_shap": 0.09634327916130425
+              "mean_abs_shap": 0.11147833517395621
             },
             {
               "feature": "form_vs_baseline",
-              "mean_abs_shap": 0.07520326708606863
+              "mean_abs_shap": 0.07815454460474622
             },
             {
               "feature": "field_median_lag1",
-              "mean_abs_shap": 0.06323856802238616
+              "mean_abs_shap": 0.060573165472456135
             },
             {
               "feature": "tyrelife_x_soft",
-              "mean_abs_shap": 0.05302900626093095
+              "mean_abs_shap": 0.05211650692080371
             },
             {
               "feature": "gap_roll3_mean",
-              "mean_abs_shap": 0.048826456925390754
+              "mean_abs_shap": 0.04529462607010517
             },
             {
               "feature": "field_pace_trend",
-              "mean_abs_shap": 0.04299499414071752
+              "mean_abs_shap": 0.04342203385385922
             },
             {
               "feature": "compound_soft",
-              "mean_abs_shap": 0.004070915229833174
+              "mean_abs_shap": 0.003690438044764825
             }
           ],
           "note": "Exact Shapley values; TreeExplainer enumerates the ensemble rather than sampling.",
@@ -2691,8 +2691,8 @@
         "highest_ranked_identity_feature": null,
         "race_state_attribution_share": 1.0,
         "top_race_state_features": [
-          "tracktemp_dev_x_tyrelife",
           "tyre_life",
+          "tracktemp_dev_x_tyrelife",
           "tyrelife_x_soft",
           "compound_soft",
           "gap_roll3_mean"
@@ -2701,106 +2701,106 @@
       },
       "examples": {
         "lowest_pit_probability": {
-          "row_index": 179,
-          "lap": 56,
-          "dnn_prediction": 4.3209593059145845e-06,
-          "classical_prediction": 0.10223539792143534,
+          "row_index": 43,
+          "lap": 47,
+          "dnn_prediction": 8.623659232398495e-05,
+          "classical_prediction": 0.023549932955796077,
           "feature_values": {
-            "tyre_life": 5.0,
-            "tracktemp_dev_x_tyrelife": -6.046445369720459,
-            "form_vs_baseline": 5.111054420471191,
-            "field_median_lag1": 97.86000061035156,
-            "field_pace_trend": 0.07999999821186066,
-            "tyrelife_x_soft": 5.0,
-            "gap_roll3_mean": 3.722583293914795,
+            "tyre_life": 7.0,
+            "tracktemp_dev_x_tyrelife": -6.365023612976074,
+            "form_vs_baseline": -1.6932228803634644,
+            "field_median_lag1": 97.58899688720703,
+            "field_pace_trend": 0.16300000250339508,
+            "tyrelife_x_soft": 7.0,
+            "gap_roll3_mean": -1.4049999713897705,
             "compound_soft": 1.0
           },
           "shap_dnn": [
             {
-              "feature": "form_vs_baseline",
-              "shap_value": -0.018548804189511565,
-              "direction": "decreases"
-            },
-            {
               "feature": "tyre_life",
-              "shap_value": -0.017074700249527366,
+              "shap_value": -0.02157812473491873,
               "direction": "decreases"
             },
             {
               "feature": "gap_roll3_mean",
-              "shap_value": -0.008885213407280445,
+              "shap_value": -0.015843515616208188,
               "direction": "decreases"
             },
             {
               "feature": "compound_soft",
-              "shap_value": -0.007701135226007202,
+              "shap_value": -0.011190999954456738,
               "direction": "decreases"
             },
             {
               "feature": "tyrelife_x_soft",
-              "shap_value": 0.0055185433635494135,
+              "shap_value": 0.00931581724705682,
               "direction": "increases"
             },
             {
+              "feature": "form_vs_baseline",
+              "shap_value": -0.006696364371359061,
+              "direction": "decreases"
+            },
+            {
               "feature": "tracktemp_dev_x_tyrelife",
-              "shap_value": -0.004183108217412446,
+              "shap_value": -0.005286017957416013,
               "direction": "decreases"
             }
           ],
           "shap_top3": [
-            "form_vs_baseline",
             "tyre_life",
-            "gap_roll3_mean"
+            "gap_roll3_mean",
+            "compound_soft"
           ],
           "lime": {
             "explainer": "LimeTabularExplainer",
             "num_samples": 2000,
             "contributions": [
               {
-                "condition": "tyre_life <= 5.00",
-                "weight": -0.06228836438020707,
+                "condition": "gap_roll3_mean <= -0.52",
+                "weight": -0.04701696147833939,
                 "direction": "decreases"
               },
               {
-                "condition": "gap_roll3_mean > 0.71",
-                "weight": 0.04658105547404075,
-                "direction": "increases"
+                "condition": "field_pace_trend > 0.12",
+                "weight": -0.039192594644798205,
+                "direction": "decreases"
+              },
+              {
+                "condition": "5.00 < tyre_life <= 8.00",
+                "weight": -0.03757106557292899,
+                "direction": "decreases"
               },
               {
                 "condition": "0.00 < compound_soft <= 1.00",
-                "weight": -0.03130631206583683,
-                "direction": "decreases"
-              },
-              {
-                "condition": "form_vs_baseline > 0.36",
-                "weight": -0.02047080059174731,
+                "weight": -0.03339763420158885,
                 "direction": "decreases"
               },
               {
                 "condition": "tracktemp_dev_x_tyrelife <= -2.15",
-                "weight": -0.0197106009356393,
+                "weight": -0.020647587472466082,
                 "direction": "decreases"
               },
               {
-                "condition": "field_median_lag1 <= 98.01",
-                "weight": -0.016083220876502758,
+                "condition": "form_vs_baseline <= -0.47",
+                "weight": -0.010429304302628567,
                 "direction": "decreases"
               }
             ],
-            "intercept": 0.08529473363953131,
-            "local_r2": 0.13099366217802044,
+            "intercept": 0.10086420914369976,
+            "local_r2": 0.1498161723517556,
             "note": "Weights are coefficients of a local linear surrogate fitted to 2000 perturbations around this row, not Shapley values. `local_r2` reports how well that surrogate reproduced the real model nearby - a low value means the linear explanation is a poor stand-in."
           },
           "lime_top3": [
-            "tyre_life",
             "gap_roll3_mean",
-            "compound_soft"
+            "field_pace_trend",
+            "tyre_life"
           ],
           "trust": {
-            "trust_score": 0.8193,
+            "trust_score": 0.8429,
             "components": {
-              "confidence": 1.0,
-              "model_agreement": 0.8978,
+              "confidence": 0.9998,
+              "model_agreement": 0.9765,
               "explanation_stability": 0.5
             },
             "weights": {
@@ -2813,17 +2813,17 @@
               "meaning": "Both model families agree, the prediction is far from the boundary, and SHAP and LIME tell the same story. Safe to act on."
             },
             "inputs": {
-              "dnn_prediction": 4.3209593059145845e-06,
-              "classical_prediction": 0.10223539792143534,
+              "dnn_prediction": 8.623659232398495e-05,
+              "classical_prediction": 0.023549932955796077,
               "shap_top3": [
-                "form_vs_baseline",
-                "tyre_life",
-                "gap_roll3_mean"
-              ],
-              "lime_top3": [
                 "tyre_life",
                 "gap_roll3_mean",
                 "compound_soft"
+              ],
+              "lime_top3": [
+                "gap_roll3_mean",
+                "field_pace_trend",
+                "tyre_life"
               ],
               "target_std": null
             }
@@ -2831,8 +2831,8 @@
           "counterfactual": {
             "method": "single-feature bisection scan",
             "feature": "tyre_life",
-            "original_value": 5.0,
-            "original_prediction": 4.3209593059145845e-06,
+            "original_value": 7.0,
+            "original_prediction": 8.623659232398495e-05,
             "threshold": 0.5,
             "searched_range": [
               1.0,
@@ -2907,73 +2907,73 @@
                 22.0
               ],
               "prediction": [
-                4.2932845190080116e-07,
-                5.310829465088318e-07,
-                6.569547394974506e-07,
-                8.126592661028553e-07,
-                9.876069952952093e-07,
-                1.1900707477252581e-06,
-                1.4542799817718333e-06,
-                1.790337137208553e-06,
-                2.2040530893718824e-06,
-                2.713371031859424e-06,
-                3.340383045724593e-06,
-                4.112285751034506e-06,
-                5.06255582877202e-06,
-                6.232425221242011e-06,
-                7.672614628972951e-06,
-                9.445618161407765e-06,
-                1.1628304491750896e-05,
-                1.431536929885624e-05,
-                1.7623351595830172e-05,
-                2.1695721443393268e-05,
-                2.6709099984145723e-05,
-                3.288091829745099e-05,
-                4.047883703606203e-05,
-                4.9802987632574514e-05,
-                6.048920477041975e-05,
-                7.346827624132857e-05,
-                8.923192217480391e-05,
-                0.00010837748413905501,
-                0.0001316303969360888,
-                0.000159871531650424,
-                0.00019417055591475219,
-                0.00023281131871044636,
-                0.0002773138112388551,
-                0.0003303205012343824,
-                0.00039345459663309157,
-                0.0004665888845920563,
-                0.0005231624818406999,
-                0.000586590962484479,
-                0.0006577050080522895,
-                0.0007374337874352932,
-                0.0008268199162557721,
-                0.0009270297596231103,
-                0.0010393739212304354,
-                0.0011713693384081125,
-                0.001324402866885066,
-                0.001497398829087615,
-                0.0016929542180150747,
-                0.0019139996729791164,
-                0.0021638430189341307,
-                0.0025040286127477884,
-                0.0029041075613349676,
-                0.003367894096300006,
-                0.0039054558146744967,
-                0.004528429359197617,
-                0.005250252783298492,
-                0.006086431443691254,
-                0.007054837886244059,
-                0.00817605759948492,
-                0.009473771788179874,
-                0.010975181125104427
+                2.457923528709216e-06,
+                3.0819198855169816e-06,
+                3.860414381051669e-06,
+                4.783155418408569e-06,
+                5.884065103600733e-06,
+                7.235574230435304e-06,
+                8.916520528146066e-06,
+                1.0989219845214393e-05,
+                1.3543736713472754e-05,
+                1.669205812504515e-05,
+                2.057219171547331e-05,
+                2.5354256649734452e-05,
+                3.124788781860843e-05,
+                3.85114508389961e-05,
+                4.746343256556429e-05,
+                5.849601438967511e-05,
+                7.209301111288369e-05,
+                8.885015995474532e-05,
+                0.00010950188880087808,
+                0.000134953239466995,
+                0.0001663190923864022,
+                0.00020497365039773285,
+                0.00025134682073257864,
+                0.00030501867877319455,
+                0.0003701472596731037,
+                0.0004491758008953184,
+                0.0005450682365335524,
+                0.0006614190060645342,
+                0.0008025862043723464,
+                0.0009738531080074608,
+                0.0011816240148618817,
+                0.0014336596941575408,
+                0.0017393592279404402,
+                0.002110343426465988,
+                0.0025754242669790983,
+                0.003106879536062479,
+                0.0037472161930054426,
+                0.004517057444900274,
+                0.00546227116137743,
+                0.006613490637391806,
+                0.008005390875041485,
+                0.009505688212811947,
+                0.011121095158159733,
+                0.01304489467293024,
+                0.015130528248846531,
+                0.017543697729706764,
+                0.020333781838417053,
+                0.023556966334581375,
+                0.027276841923594475,
+                0.031565140932798386,
+                0.036502305418252945,
+                0.04151780530810356,
+                0.04662691056728363,
+                0.05213386192917824,
+                0.057787053287029266,
+                0.06427805125713348,
+                0.07181493937969208,
+                0.08015981316566467,
+                0.08938100188970566,
+                0.09954819083213806
               ]
             },
             "note": "No crossing of 0.5 exists anywhere in the observed range of tyre_life ([1.000, 22.000]) with the rest of the race state fixed. The recommendation is not flippable by this feature alone.",
             "started_above_threshold": false
           },
           "counterfactual_sentence": "No value of tyre age between 1 and 22 flips this recommendation with the rest of the race state unchanged - the call is not sensitive to tyre age alone.",
-          "narrative": "Recommend STAYING OUT - model confidence <1% (0.00%). Current form against this driver's baseline (5.111) is a major factor pushing against stopping; tyre age (5) is a major factor pushing against stopping; recent pace gap to the field (3.723) is a moderate factor pushing against stopping. Trust in this recommendation: HIGH.",
+          "narrative": "Recommend STAYING OUT - model confidence <1% (0.01%). Tyre age (7) is a major factor pushing against stopping; recent pace gap to the field (-1.405) is a moderate factor pushing against stopping; soft compound (1) is a moderate factor pushing against stopping. Trust in this recommendation: HIGH.",
           "figures": {
             "shap_waterfall": "xai_target_pit_next_lap_lowest_pit_probability_shap_waterfall.png",
             "lime": "xai_target_pit_next_lap_lowest_pit_probability_lime.png",
@@ -2983,8 +2983,8 @@
         "closest_to_decision_boundary": {
           "row_index": 34,
           "lap": 48,
-          "dnn_prediction": 0.2040387988090515,
-          "classical_prediction": 0.3379385829452475,
+          "dnn_prediction": 0.21131646633148193,
+          "classical_prediction": 0.3435790853005488,
           "feature_values": {
             "tyre_life": 21.0,
             "tracktemp_dev_x_tyrelife": -19.09507179260254,
@@ -2998,32 +2998,32 @@
           "shap_dnn": [
             {
               "feature": "tyre_life",
-              "shap_value": 0.23600886750392702,
+              "shap_value": 0.2294805366618766,
               "direction": "increases"
             },
             {
               "feature": "tracktemp_dev_x_tyrelife",
-              "shap_value": -0.15146858111698244,
+              "shap_value": -0.1440882225216451,
               "direction": "decreases"
             },
             {
               "feature": "gap_roll3_mean",
-              "shap_value": 0.05751370399096902,
+              "shap_value": 0.042296430302891985,
               "direction": "increases"
             },
             {
               "feature": "tyrelife_x_soft",
-              "shap_value": -0.03696875233370882,
+              "shap_value": -0.026944881866075753,
               "direction": "decreases"
             },
             {
               "feature": "compound_soft",
-              "shap_value": 0.030423522562732664,
+              "shap_value": 0.024933860757757612,
               "direction": "increases"
             },
             {
-              "feature": "field_pace_trend",
-              "shap_value": 0.016188314121212133,
+              "feature": "field_median_lag1",
+              "shap_value": 0.01585764126135008,
               "direction": "increases"
             }
           ],
@@ -3038,50 +3038,50 @@
             "contributions": [
               {
                 "condition": "tyre_life > 12.00",
-                "weight": 0.0986458208969225,
+                "weight": 0.11029907192780522,
                 "direction": "increases"
               },
               {
                 "condition": "tyrelife_x_soft <= 0.00",
-                "weight": -0.06773213575142815,
+                "weight": -0.06257969663635457,
                 "direction": "decreases"
               },
               {
-                "condition": "field_pace_trend <= -0.12",
-                "weight": 0.06114794370449684,
+                "condition": "gap_roll3_mean > 0.71",
+                "weight": 0.045587458370599514,
                 "direction": "increases"
               },
               {
-                "condition": "gap_roll3_mean > 0.71",
-                "weight": 0.04268966527724059,
+                "condition": "field_pace_trend <= -0.12",
+                "weight": 0.03947795410927141,
                 "direction": "increases"
               },
               {
                 "condition": "compound_soft <= 0.00",
-                "weight": 0.033812044438312004,
+                "weight": 0.03217573087956805,
                 "direction": "increases"
               },
               {
                 "condition": "tracktemp_dev_x_tyrelife <= -2.15",
-                "weight": -0.021964792377044184,
+                "weight": -0.021163216692513698,
                 "direction": "decreases"
               }
             ],
-            "intercept": 0.02175329163613341,
-            "local_r2": 0.3194903820156966,
+            "intercept": 0.02392580718710747,
+            "local_r2": 0.4373913469536824,
             "note": "Weights are coefficients of a local linear surrogate fitted to 2000 perturbations around this row, not Shapley values. `local_r2` reports how well that surrogate reproduced the real model nearby - a low value means the linear explanation is a poor stand-in."
           },
           "lime_top3": [
             "tyre_life",
             "tyrelife_x_soft",
-            "field_pace_trend"
+            "gap_roll3_mean"
           ],
           "trust": {
-            "trust_score": 0.5566,
+            "trust_score": 0.6413,
             "components": {
-              "confidence": 0.5919,
-              "model_agreement": 0.8661,
-              "explanation_stability": 0.2
+              "confidence": 0.5774,
+              "model_agreement": 0.8677,
+              "explanation_stability": 0.5
             },
             "weights": {
               "confidence": 0.4,
@@ -3093,8 +3093,8 @@
               "meaning": "Usable as one input among several. Read the SHAP factors before acting; one of the three components is weak."
             },
             "inputs": {
-              "dnn_prediction": 0.2040387988090515,
-              "classical_prediction": 0.3379385829452475,
+              "dnn_prediction": 0.21131646633148193,
+              "classical_prediction": 0.3435790853005488,
               "shap_top3": [
                 "tyre_life",
                 "tracktemp_dev_x_tyrelife",
@@ -3103,7 +3103,7 @@
               "lime_top3": [
                 "tyre_life",
                 "tyrelife_x_soft",
-                "field_pace_trend"
+                "gap_roll3_mean"
               ],
               "target_std": null
             }
@@ -3112,7 +3112,7 @@
             "method": "single-feature bisection scan",
             "feature": "tyre_life",
             "original_value": 21.0,
-            "original_prediction": 0.2040387988090515,
+            "original_prediction": 0.21131646633148193,
             "threshold": 0.5,
             "searched_range": [
               1.0,
@@ -3187,73 +3187,73 @@
                 22.0
               ],
               "prediction": [
-                2.6655351348381373e-07,
-                3.4099343793059234e-07,
-                4.362216259323759e-07,
-                5.580444621955394e-07,
-                7.138884825508285e-07,
-                9.132547234003141e-07,
-                1.178004367829999e-06,
-                1.539994855193072e-06,
-                2.013223593166913e-06,
-                2.6318716663809028e-06,
-                3.440621185291093e-06,
-                4.497900135902455e-06,
-                5.8950176935468335e-06,
-                7.757817002129741e-06,
-                1.0209245374426246e-05,
-                1.3435303117148578e-05,
-                1.7680755263427272e-05,
-                2.326770845684223e-05,
-                3.062003088416532e-05,
-                4.029550473205745e-05,
-                5.362514275475405e-05,
-                7.159323286032304e-05,
-                9.558128658682108e-05,
-                0.00012760565732605755,
-                0.00017035804921761155,
-                0.00022743074805475771,
-                0.0003036173584405333,
-                0.0004053161828778684,
-                0.0005410608137026429,
-                0.0007222348940558732,
-                0.0009640169446356595,
-                0.0012866350589320064,
-                0.0017170354258269072,
-                0.0022910817060619593,
-                0.0030385383870452642,
-                0.003996039740741253,
-                0.005253677722066641,
-                0.006904373876750469,
-                0.009068996645510197,
-                0.011904124170541763,
-                0.015611592680215836,
-                0.020012913271784782,
-                0.024578915908932686,
-                0.03015459142625332,
-                0.036947205662727356,
-                0.04519861936569214,
-                0.05518722161650658,
-                0.065473772585392,
-                0.07377939671278,
-                0.0830434188246727,
-                0.09481917321681976,
-                0.10806796699762344,
-                0.12291660904884338,
-                0.13948635756969452,
-                0.15788769721984863,
-                0.17821381986141205,
-                0.19980497658252716,
-                0.21935109794139862,
-                0.23931829631328583,
-                0.26049649715423584
+                2.4222637875936925e-05,
+                3.0482193324132822e-05,
+                3.788563844864257e-05,
+                4.686336615122855e-05,
+                5.796842015115544e-05,
+                7.170474418671802e-05,
+                8.858638466335833e-05,
+                0.00010906318493653089,
+                0.00013427244266495109,
+                0.000165307690622285,
+                0.0002034483040915802,
+                0.0002478630340192467,
+                0.0003019707219209522,
+                0.00036788612487725914,
+                0.0004481829528231174,
+                0.0005459964158944786,
+                0.000665142317302525,
+                0.0008102672873064876,
+                0.0009870256762951612,
+                0.0012022966984659433,
+                0.001464448869228363,
+                0.0017352474387735128,
+                0.0020432265009731054,
+                0.002405734034255147,
+                0.002832378726452589,
+                0.003334430744871497,
+                0.003925123251974583,
+                0.004619973711669445,
+                0.005437154788523912,
+                0.006397952325642109,
+                0.00752725126221776,
+                0.008761176839470863,
+                0.010094521567225456,
+                0.011484392918646336,
+                0.013063103891909122,
+                0.014855572953820229,
+                0.016943220049142838,
+                0.0194416381418705,
+                0.022300107404589653,
+                0.025567898526787758,
+                0.029300177469849586,
+                0.033558525145053864,
+                0.03841128200292587,
+                0.04431461915373802,
+                0.05119149014353752,
+                0.05906957760453224,
+                0.0680730864405632,
+                0.07833467423915863,
+                0.08999376744031906,
+                0.10319386422634125,
+                0.11807889491319656,
+                0.13478828966617584,
+                0.1521916389465332,
+                0.16951289772987366,
+                0.18544642627239227,
+                0.19754554331302643,
+                0.20906676352024078,
+                0.22107477486133575,
+                0.23356883227825165,
+                0.24569502472877502
               ]
             },
             "note": "No crossing of 0.5 exists anywhere in the observed range of tyre_life ([1.000, 22.000]) with the rest of the race state fixed. The recommendation is not flippable by this feature alone.",
             "started_above_threshold": false
           },
           "counterfactual_sentence": "No value of tyre age between 1 and 22 flips this recommendation with the rest of the race state unchanged - the call is not sensitive to tyre age alone.",
-          "narrative": "Recommend STAYING OUT - model confidence 20%. Tyre age (21) is a major factor pushing towards a stop; track temperature acting on tyre age (-19.1) is a major factor pushing against stopping; recent pace gap to the field (1.411) is a minor factor pushing towards a stop. Trust in this recommendation: MODERATE.",
+          "narrative": "Recommend STAYING OUT - model confidence 21%. Tyre age (21) is the dominant factor pushing towards a stop; track temperature acting on tyre age (-19.1) is a major factor pushing against stopping; recent pace gap to the field (1.411) is a minor factor pushing towards a stop. Trust in this recommendation: MODERATE.",
           "figures": {
             "shap_waterfall": "xai_target_pit_next_lap_closest_to_decision_boundary_shap_waterfall.png",
             "lime": "xai_target_pit_next_lap_closest_to_decision_boundary_lime.png",
@@ -3263,9 +3263,9 @@
       },
       "trust_summary": {
         "n": 2,
-        "mean": 0.688,
-        "min": 0.5566,
-        "max": 0.8193,
+        "mean": 0.7421,
+        "min": 0.6413,
+        "max": 0.8429,
         "bands": {
           "HIGH": 1,
           "MODERATE": 1,
@@ -3283,13 +3283,13 @@
             "changed_features": {
               "tracktemp_dev_x_tyrelife": {
                 "from": -19.09507179260254,
-                "to": -1.362557137,
-                "delta": 17.73251465560254
+                "to": -5.667506996,
+                "delta": 13.427564796602539
               },
-              "form_vs_baseline": {
-                "from": 0.6898244619369507,
-                "to": 0.317508533,
-                "delta": -0.3723159289369507
+              "compound_soft": {
+                "from": 0.0,
+                "to": 0.4,
+                "delta": 0.4
               }
             },
             "n_changes": 2,
@@ -3299,32 +3299,22 @@
             "changed_features": {
               "tracktemp_dev_x_tyrelife": {
                 "from": -19.09507179260254,
-                "to": -1.075677278,
-                "delta": 18.01939451460254
-              },
-              "form_vs_baseline": {
-                "from": 0.6898244619369507,
-                "to": 0.481600337,
-                "delta": -0.2082241249369507
+                "to": 2.399246387,
+                "delta": 21.494318179602537
               }
             },
-            "n_changes": 2,
+            "n_changes": 1,
             "new_outcome": 1
           },
           {
             "changed_features": {
               "tracktemp_dev_x_tyrelife": {
                 "from": -19.09507179260254,
-                "to": -13.006608826,
-                "delta": 6.088462966602538
-              },
-              "field_median_lag1": {
-                "from": 97.43199920654297,
-                "to": 97.633,
-                "delta": 0.20100079345702682
+                "to": -4.449678335,
+                "delta": 14.64539345760254
               }
             },
-            "n_changes": 2,
+            "n_changes": 1,
             "new_outcome": 1
           }
         ],
