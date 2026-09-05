@@ -58,6 +58,17 @@ ML_METADATA_DIR = ARTIFACTS_DIR / "metadata"
 ML_MODEL_REGISTRY_JSON = ML_METADATA_DIR / "model_registry.json"
 ARTIFACT_MANIFEST_JSON = ARTIFACTS_DIR / "manifest.json"
 
+# Task 7 — Deep Learning. Models live under the existing models/ tree rather
+# than a parallel one, and metrics/figures/reports share Task 6's directories
+# so the frontend's artifact serving needs no new mount.
+DL_MODELS_DIR = ML_ARTIFACTS_DIR / "dl"
+DL_METRICS_JSON = ML_METRICS_DIR / "dl_metrics.json"
+DL_HISTORY_JSON = ML_METRICS_DIR / "dl_training_history.json"
+DL_COMPARISON_JSON = ML_METRICS_DIR / "dl_vs_classical.json"
+
+# Task 8 — Explainable AI.
+XAI_RESULTS_JSON = ML_METADATA_DIR / "xai_results.json"
+
 
 def ensure_dirs() -> None:
     """Create every artifact/data directory this project writes to."""
@@ -74,5 +85,6 @@ def ensure_dirs() -> None:
         ML_FIGURES_DIR,
         ML_REPORTS_DIR,
         ML_METADATA_DIR,
+        DL_MODELS_DIR,
     ):
         path.mkdir(parents=True, exist_ok=True)
