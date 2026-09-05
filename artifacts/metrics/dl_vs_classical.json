@@ -1,0 +1,271 @@
+{
+  "generated_at": "2026-09-05T01:37:39.616809+00:00",
+  "dataset_source": {
+    "source": "real_fastf1",
+    "year": 2023,
+    "event": "Bahrain",
+    "session": "R",
+    "fetched_at": "2026-08-30T12:34:08.172714+00:00",
+    "n_laps": 1055,
+    "n_drivers": 20
+  },
+  "note": "The classical rows are Task 6's own committed holdout metrics, read from artifacts/metrics/. Both families are evaluated on the identical chronological holdout produced by app.intelligence.ml.splits.",
+  "targets": {
+    "target_laptime": {
+      "task": "regression",
+      "selection_metric": "mae",
+      "task6_best_model": "decision_tree",
+      "comparison": [
+        {
+          "model": "dnn_mlp",
+          "family": "deep",
+          "metrics": {
+            "mae": 0.5153831058078342,
+            "rmse": 0.8895285211904014,
+            "r2": 0.47861973494433874,
+            "mape": 0.521825814638619,
+            "n": 180
+          }
+        },
+        {
+          "model": "linear_regression",
+          "family": "classical",
+          "metrics": {
+            "mae": 0.7900968753200531,
+            "rmse": 1.141441062668266,
+            "r2": 0.14149703141275993,
+            "mape": 0.8036520886411271,
+            "n": 180
+          }
+        },
+        {
+          "model": "decision_tree",
+          "family": "classical",
+          "metrics": {
+            "mae": 0.8673476599610876,
+            "rmse": 1.33075044521226,
+            "r2": -0.1668850011117824,
+            "mape": 0.8797226224171808,
+            "n": 180
+          }
+        },
+        {
+          "model": "random_forest",
+          "family": "classical",
+          "metrics": {
+            "mae": 0.9253493148742166,
+            "rmse": 1.2670569038087496,
+            "r2": -0.05785722468192511,
+            "mape": 0.9419029351153172,
+            "n": 180
+          }
+        },
+        {
+          "model": "svr",
+          "family": "classical",
+          "metrics": {
+            "mae": 0.7814539478981232,
+            "rmse": 1.0290236008487383,
+            "r2": 0.3022730658092154,
+            "mape": 0.7970065589359275,
+            "n": 180
+          }
+        },
+        {
+          "model": "xgboost",
+          "family": "classical",
+          "metrics": {
+            "mae": 1.0858447513156468,
+            "rmse": 1.441168384547523,
+            "r2": -0.36856134696928633,
+            "mape": 1.1055933127862565,
+            "n": 180
+          }
+        }
+      ],
+      "verdict": "**The deep network wins on mae** (0.5154), against 5 of Task 6's classical models evaluated on the same chronological holdout."
+    },
+    "target_pit_next_lap": {
+      "task": "classification",
+      "selection_metric": "roc_auc",
+      "task6_best_model": "random_forest",
+      "comparison": [
+        {
+          "model": "dnn_mlp",
+          "family": "deep",
+          "metrics": {
+            "accuracy": 0.9944444444444445,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "roc_auc": 0.9217877094972067,
+            "pr_auc": 0.06666666666666667,
+            "confusion_matrix": [
+              [
+                179,
+                0
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "confusion_matrix_labels": [
+              0,
+              1
+            ],
+            "undefined_reason": null,
+            "n": 180,
+            "n_positive": 1
+          }
+        },
+        {
+          "model": "logistic_regression",
+          "family": "classical",
+          "metrics": {
+            "accuracy": 0.4,
+            "precision": 0.009174311926605505,
+            "recall": 1.0,
+            "f1": 0.01818181818181818,
+            "roc_auc": 0.9832402234636871,
+            "pr_auc": 0.25,
+            "confusion_matrix": [
+              [
+                71,
+                108
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "confusion_matrix_labels": [
+              0,
+              1
+            ],
+            "undefined_reason": null,
+            "n": 180,
+            "n_positive": 1
+          }
+        },
+        {
+          "model": "decision_tree",
+          "family": "classical",
+          "metrics": {
+            "accuracy": 0.3888888888888889,
+            "precision": 0.009009009009009009,
+            "recall": 1.0,
+            "f1": 0.017857142857142856,
+            "roc_auc": 0.8491620111731844,
+            "pr_auc": 0.01818181818181818,
+            "confusion_matrix": [
+              [
+                69,
+                110
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "confusion_matrix_labels": [
+              0,
+              1
+            ],
+            "undefined_reason": null,
+            "n": 180,
+            "n_positive": 1
+          }
+        },
+        {
+          "model": "random_forest",
+          "family": "classical",
+          "metrics": {
+            "accuracy": 0.8666666666666667,
+            "precision": 0.04,
+            "recall": 1.0,
+            "f1": 0.07692307692307693,
+            "roc_auc": 0.9832402234636871,
+            "pr_auc": 0.25,
+            "confusion_matrix": [
+              [
+                155,
+                24
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "confusion_matrix_labels": [
+              0,
+              1
+            ],
+            "undefined_reason": null,
+            "n": 180,
+            "n_positive": 1
+          }
+        },
+        {
+          "model": "svm",
+          "family": "classical",
+          "metrics": {
+            "accuracy": 0.9944444444444445,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "roc_auc": 0.8044692737430168,
+            "pr_auc": 0.027777777777777776,
+            "confusion_matrix": [
+              [
+                179,
+                0
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "confusion_matrix_labels": [
+              0,
+              1
+            ],
+            "undefined_reason": null,
+            "n": 180,
+            "n_positive": 1
+          }
+        },
+        {
+          "model": "xgboost",
+          "family": "classical",
+          "metrics": {
+            "accuracy": 0.9944444444444445,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "roc_auc": 0.9776536312849162,
+            "pr_auc": 0.2,
+            "confusion_matrix": [
+              [
+                179,
+                0
+              ],
+              [
+                1,
+                0
+              ]
+            ],
+            "confusion_matrix_labels": [
+              0,
+              1
+            ],
+            "undefined_reason": null,
+            "n": 180,
+            "n_positive": 1
+          }
+        }
+      ],
+      "verdict": "**Task 6's classical `logistic_regression` wins on roc_auc** (0.9832 vs the deep network's 0.9218). Reported as measured. With 815 training rows from a single race session, a tree ensemble's inductive bias suits this problem better than a network's; deep learning's advantage requires substantially more data than exists here."
+    }
+  }
+}

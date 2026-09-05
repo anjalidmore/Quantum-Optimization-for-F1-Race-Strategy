@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-30T16:42:27.079280+00:00",
+  "generated_at": "2026-09-05T01:46:15.653002+00:00",
   "task": "Task 6 - Machine Learning Model Development",
   "models": [
     {
@@ -161,7 +161,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-08-30T16:42:27.078837+00:00",
+      "trained_at": "2026-09-05T01:46:15.652393+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -329,7 +329,7 @@
       "is_selected_best": true,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-08-30T16:42:27.078906+00:00",
+      "trained_at": "2026-09-05T01:46:15.652460+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -455,32 +455,32 @@
       "metrics": {
         "cv": {
           "mae": {
-            "mean": 1.3817047349139688,
-            "std": 0.3140119906267339,
+            "mean": 1.3817047349139693,
+            "std": 0.3140119906267356,
             "n_folds": 4
           },
           "rmse": {
-            "mean": 1.7623564209307732,
-            "std": 0.49234350306817576,
+            "mean": 1.7623564209307718,
+            "std": 0.4923435030681746,
             "n_folds": 4
           },
           "r2": {
-            "mean": 0.2140594456416325,
-            "std": 0.19711833365715334,
+            "mean": 0.21405944564163273,
+            "std": 0.19711833365715545,
             "n_folds": 4
           },
           "mape": {
-            "mean": 1.389009017294758,
-            "std": 0.3025971623919646,
+            "mean": 1.3890090172947582,
+            "std": 0.30259716239196627,
             "n_folds": 4
           },
           "n_folds_total": 4
         },
         "test": {
-          "mae": 0.9253493148742157,
-          "rmse": 1.267056903808749,
-          "r2": -0.05785722468192378,
-          "mape": 0.9419029351153161,
+          "mae": 0.9253493148742153,
+          "rmse": 1.2670569038087485,
+          "r2": -0.057857224681923114,
+          "mape": 0.9419029351153158,
           "n": 180
         }
       },
@@ -497,7 +497,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-08-30T16:42:27.078952+00:00",
+      "trained_at": "2026-09-05T01:46:15.652508+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -666,7 +666,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-08-30T16:42:27.078995+00:00",
+      "trained_at": "2026-09-05T01:46:15.652552+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -835,7 +835,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": "available",
-      "trained_at": "2026-08-30T16:42:27.079037+00:00",
+      "trained_at": "2026-09-05T01:46:15.652596+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -993,7 +993,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-08-30T16:42:27.079080+00:00",
+      "trained_at": "2026-09-05T01:46:15.652638+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1152,7 +1152,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-08-30T16:42:27.079127+00:00",
+      "trained_at": "2026-09-05T01:46:15.652678+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1311,7 +1311,7 @@
       "is_selected_best": true,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-08-30T16:42:27.079169+00:00",
+      "trained_at": "2026-09-05T01:46:15.652720+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1471,7 +1471,7 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": null,
-      "trained_at": "2026-08-30T16:42:27.079211+00:00",
+      "trained_at": "2026-09-05T01:46:15.652759+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
@@ -1631,11 +1631,244 @@
       "is_selected_best": false,
       "synthetic_data_warning": false,
       "xgboost_status": "available",
-      "trained_at": "2026-08-30T16:42:27.079265+00:00",
+      "trained_at": "2026-09-05T01:46:15.652802+00:00",
       "software_versions": {
         "python": "3.14.6",
         "scikit_learn": "1.9.0"
       }
+    },
+    {
+      "model_name": "dnn_mlp",
+      "family": "deep",
+      "task_source": "Task 7 - Deep Learning",
+      "target": "target_laptime",
+      "task": "target_laptime",
+      "task_type": "regression",
+      "is_selected_best": false,
+      "features": [
+        "field_median_lag1",
+        "stint_number",
+        "gap_expanding",
+        "track_status",
+        "tracktemp_dev_x_tyrelife",
+        "form_vs_baseline",
+        "field_pace_trend",
+        "gap_roll3_std",
+        "wind_speed",
+        "tyrelife_x_soft",
+        "tyre_life",
+        "gap_roll3_mean",
+        "team_red_bull_racing",
+        "driver_dev",
+        "driver_oco",
+        "team_aston_martin",
+        "driver_per",
+        "driver_rus",
+        "compound_soft",
+        "humidity",
+        "team_mclaren",
+        "driver_gas",
+        "driver_zho",
+        "driver_alo",
+        "driver_bot",
+        "driver_ver",
+        "team_mercedes",
+        "driver_str",
+        "team_alpine",
+        "is_fresh_tyre",
+        "team_williams",
+        "driver_nor",
+        "driver_pia",
+        "team_alphatauri",
+        "driver_sar",
+        "driver_lec",
+        "tyrelife_x_medium",
+        "team_haas_f1_team",
+        "driver_mag",
+        "driver_ham",
+        "driver_hul",
+        "driver_sai",
+        "driver_tsu",
+        "team_ferrari",
+        "compound_medium"
+      ],
+      "architecture": {
+        "name": "laptime_mlp",
+        "layers": [
+          {
+            "name": "hidden_1",
+            "type": "Dense",
+            "units": 32,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_1",
+            "type": "Dropout",
+            "rate": 0.1
+          },
+          {
+            "name": "hidden_2",
+            "type": "Dense",
+            "units": 16,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_2",
+            "type": "Dropout",
+            "rate": 0.1
+          },
+          {
+            "name": "laptime_seconds",
+            "type": "Dense",
+            "units": 1,
+            "activation": "linear"
+          }
+        ],
+        "total_parameters": 2017,
+        "optimizer": "Adam",
+        "loss": "mse"
+      },
+      "hyperparameters": {
+        "hidden_units": [
+          32,
+          16
+        ],
+        "dropout": 0.1,
+        "learning_rate": 0.001,
+        "batch_size": 32
+      },
+      "metrics": {
+        "test": {
+          "mae": 0.5153831058078342,
+          "rmse": 0.8895285211904014,
+          "r2": 0.47861973494433874,
+          "mape": 0.521825814638619,
+          "n": 180
+        }
+      },
+      "artifact": "models/dl/target_laptime.keras",
+      "framework": "keras",
+      "model_format": ".keras",
+      "format_note": "Reference spec names .h5; Keras 3 cannot reload HDF5 models saved this way, so .keras is used.",
+      "training_rows": 815,
+      "test_rows": 180,
+      "dataset": {
+        "source": "real_fastf1",
+        "year": 2023,
+        "event": "Bahrain",
+        "session": "R",
+        "fetched_at": "2026-08-30T12:34:08.172714+00:00",
+        "n_laps": 1055,
+        "n_drivers": 20
+      },
+      "trained_at": "2026-09-05T01:47:56.519910+00:00"
+    },
+    {
+      "model_name": "dnn_mlp",
+      "family": "deep",
+      "task_source": "Task 7 - Deep Learning",
+      "target": "target_pit_next_lap",
+      "task": "target_pit_next_lap",
+      "task_type": "classification",
+      "is_selected_best": false,
+      "features": [
+        "tyre_life",
+        "tracktemp_dev_x_tyrelife",
+        "form_vs_baseline",
+        "field_median_lag1",
+        "field_pace_trend",
+        "tyrelife_x_soft",
+        "gap_roll3_mean",
+        "compound_soft"
+      ],
+      "architecture": {
+        "name": "pit_decision_mlp",
+        "layers": [
+          {
+            "name": "hidden_1",
+            "type": "Dense",
+            "units": 16,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_1",
+            "type": "Dropout",
+            "rate": 0.2
+          },
+          {
+            "name": "hidden_2",
+            "type": "Dense",
+            "units": 8,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_2",
+            "type": "Dropout",
+            "rate": 0.2
+          },
+          {
+            "name": "pit_probability",
+            "type": "Dense",
+            "units": 1,
+            "activation": "sigmoid"
+          }
+        ],
+        "total_parameters": 289,
+        "optimizer": "Adam",
+        "loss": "binary_crossentropy"
+      },
+      "hyperparameters": {
+        "hidden_units": [
+          16,
+          8
+        ],
+        "dropout": 0.2,
+        "learning_rate": 0.001,
+        "batch_size": 32
+      },
+      "metrics": {
+        "test": {
+          "accuracy": 0.9944444444444445,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "roc_auc": 0.9217877094972067,
+          "pr_auc": 0.06666666666666667,
+          "confusion_matrix": [
+            [
+              179,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          "confusion_matrix_labels": [
+            0,
+            1
+          ],
+          "undefined_reason": null,
+          "n": 180,
+          "n_positive": 1
+        }
+      },
+      "artifact": "models/dl/target_pit_next_lap.keras",
+      "framework": "keras",
+      "model_format": ".keras",
+      "format_note": "Reference spec names .h5; Keras 3 cannot reload HDF5 models saved this way, so .keras is used.",
+      "training_rows": 815,
+      "test_rows": 180,
+      "dataset": {
+        "source": "real_fastf1",
+        "year": 2023,
+        "event": "Bahrain",
+        "session": "R",
+        "fetched_at": "2026-08-30T12:34:08.172714+00:00",
+        "n_laps": 1055,
+        "n_drivers": 20
+      },
+      "trained_at": "2026-09-05T01:47:56.519918+00:00"
     }
   ]
 }

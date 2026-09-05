@@ -1,0 +1,147 @@
+{
+  "generated_at": "2026-09-05T01:37:39.616215+00:00",
+  "task": "Task 7 - Deep Learning Model Development",
+  "dataset_source": {
+    "source": "real_fastf1",
+    "year": 2023,
+    "event": "Bahrain",
+    "session": "R",
+    "fetched_at": "2026-08-30T12:34:08.172714+00:00",
+    "n_laps": 1055,
+    "n_drivers": 20
+  },
+  "models": {
+    "target_laptime": {
+      "task": "regression",
+      "test_metrics": {
+        "mae": 0.5153831058078342,
+        "rmse": 0.8895285211904014,
+        "r2": 0.47861973494433874,
+        "mape": 0.521825814638619,
+        "n": 180
+      },
+      "architecture": {
+        "name": "laptime_mlp",
+        "layers": [
+          {
+            "name": "hidden_1",
+            "type": "Dense",
+            "units": 32,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_1",
+            "type": "Dropout",
+            "rate": 0.1
+          },
+          {
+            "name": "hidden_2",
+            "type": "Dense",
+            "units": 16,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_2",
+            "type": "Dropout",
+            "rate": 0.1
+          },
+          {
+            "name": "laptime_seconds",
+            "type": "Dense",
+            "units": 1,
+            "activation": "linear"
+          }
+        ],
+        "total_parameters": 2017,
+        "optimizer": "Adam",
+        "loss": "mse"
+      },
+      "hyperparameters": {
+        "hidden_units": [
+          32,
+          16
+        ],
+        "dropout": 0.1,
+        "learning_rate": 0.001,
+        "batch_size": 32
+      },
+      "n_train": 815,
+      "n_test": 180
+    },
+    "target_pit_next_lap": {
+      "task": "classification",
+      "test_metrics": {
+        "accuracy": 0.9944444444444445,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 0.9217877094972067,
+        "pr_auc": 0.06666666666666667,
+        "confusion_matrix": [
+          [
+            179,
+            0
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        "confusion_matrix_labels": [
+          0,
+          1
+        ],
+        "undefined_reason": null,
+        "n": 180,
+        "n_positive": 1
+      },
+      "architecture": {
+        "name": "pit_decision_mlp",
+        "layers": [
+          {
+            "name": "hidden_1",
+            "type": "Dense",
+            "units": 16,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_1",
+            "type": "Dropout",
+            "rate": 0.2
+          },
+          {
+            "name": "hidden_2",
+            "type": "Dense",
+            "units": 8,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_2",
+            "type": "Dropout",
+            "rate": 0.2
+          },
+          {
+            "name": "pit_probability",
+            "type": "Dense",
+            "units": 1,
+            "activation": "sigmoid"
+          }
+        ],
+        "total_parameters": 289,
+        "optimizer": "Adam",
+        "loss": "binary_crossentropy"
+      },
+      "hyperparameters": {
+        "hidden_units": [
+          16,
+          8
+        ],
+        "dropout": 0.2,
+        "learning_rate": 0.001,
+        "batch_size": 32
+      },
+      "n_train": 815,
+      "n_test": 180
+    }
+  }
+}

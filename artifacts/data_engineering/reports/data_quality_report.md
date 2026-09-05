@@ -1,6 +1,6 @@
 # Data Quality Report
 
-_Generated 2026-08-30 12:34 UTC._
+_Generated 2026-09-05 01:24 UTC._
 
 | Table | Rows | Cols | Completeness | Duplicates | Constant cols | Quality score |
 |-------|------|------|--------------|------------|---------------|---------------|

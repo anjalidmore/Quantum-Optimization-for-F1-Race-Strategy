@@ -1,0 +1,28 @@
+{
+  "target": "target_pit_next_lap",
+  "features": [
+    "tyre_life",
+    "tracktemp_dev_x_tyrelife",
+    "form_vs_baseline",
+    "field_median_lag1",
+    "field_pace_trend",
+    "tyrelife_x_soft",
+    "gap_roll3_mean",
+    "compound_soft"
+  ],
+  "numeric_mask": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    false
+  ],
+  "model_file": "target_pit_next_lap.keras",
+  "scaler_file": "target_pit_next_lap_scaler.joblib",
+  "target_scaler_file": null,
+  "format": ".keras",
+  "format_note": "Reference spec names .h5; Keras 3 cannot reload HDF5 models saved this way, so the native .keras archive is used instead."
+}
