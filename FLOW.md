@@ -45,6 +45,29 @@ verified in this repository — not on what was planned.
  │     artifacts/metrics/*.json, artifacts/reports/*.md                │
  │     artifacts/metadata/model_registry.json                          │
  └────────────────────────────────┬────────────────────────────────────┘
+                                  │
+                                  ▼
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │ STAGE 7 · Deep learning                                     [REAL]  │
+ │   app/intelligence/dl/pipeline.py                                   │
+ │   imports ml.splits + ml.evaluation directly, so DL and classical   │
+ │   numbers are produced by the SAME code                             │
+ │   Keras MLPs (torch backend): linear head / sigmoid head            │
+ │   → artifacts/models/dl/*.keras                                     │
+ │     artifacts/metrics/dl_{metrics,training_history,vs_classical}    │
+ │     model_registry.json extended (not duplicated)                   │
+ └────────────────────────────────┬────────────────────────────────────┘
+                                  │
+                                  ▼
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │ STAGE 8 · Explainable AI                                    [REAL]  │
+ │   app/intelligence/xai/pipeline.py                                  │
+ │   explains Task 6's PERSISTED pipelines + Task 7's saved networks    │
+ │   permutation importance · SHAP (Tree exact / Kernel sampled) ·      │
+ │   LIME · counterfactual scan + DiCE · trust score · fairness         │
+ │   → artifacts/metadata/xai_results.json                             │
+ │     artifacts/reports/xai_*.md, artifacts/figures/xai_*.png         │
+ └────────────────────────────────┬────────────────────────────────────┘
                                   │  app/services/model_cache.py (load once, cache)
                                   ▼
  ┌─────────────────────────────────────────────────────────────────────┐
@@ -67,6 +90,21 @@ verified in this repository — not on what was planned.
  │   dedicated KR / Expert System / Search pages  [NOT BUILT]          │
  └─────────────────────────────────────────────────────────────────────┘
 ```
+
+## Why Task 7 and 8 sit where they do
+
+**Task 7 does not branch off** — it reads the same Task 5 contract Task 6 reads, and
+imports Task 6's `splits.py` and `evaluation.py` rather than copying them. That is
+deliberate: the deep-versus-classical comparison is only meaningful if both sides are
+scored by the same code on the same holdout. The comparison table's classical rows are
+read from `artifacts/metrics/*.json` — Task 6's own committed numbers, the same ones the
+Machine Learning dashboard shows.
+
+**Task 8 depends on both and trains nothing.** It loads Task 6's persisted `.joblib`
+pipeline through `ModelCache` — the exact model the API serves — and Task 7's saved
+`.keras` network, then explains both. If either is missing it raises
+`ExplainerUnavailableError` rather than substituting a stand-in, so an explanation is
+always an explanation *of the deployed model*.
 
 ## The side branch: symbolic engines
 
@@ -98,9 +136,11 @@ two triggered rule ids and a search cost.
 | Task 4 Cleaning & EDA | **Real** | full cleaning audit; cleaned CSVs regenerate byte-identically |
 | Task 5 Feature engineering | **Real, but a stub in `build_all.py`** | see below |
 | Task 6 Machine learning | **Real** | 10 models trained in 25 s; metrics reproduce to ~1e-14 |
+| Task 7 Deep learning | **Real** | 2 Keras MLPs, fully-enumerated grid over the same folds, saved as `.keras` |
+| Task 8 Explainable AI | **Real** | SHAP + LIME + counterfactuals + trust + fairness, all on the persisted models |
 | API | **Real** | all endpoints verified live; values traced to artifacts |
-| Frontend | **Partial** | 5 pages build and render; 3 engine pages not built |
-| Tasks 7–10, Quantum | **Not started** | listed as planned in README §16 |
+| Frontend | **Partial** | 7 pages build and render; 3 symbolic-engine pages not built |
+| Tasks 9–10, Quantum | **Not started** | listed as planned in the README status table |
 
 ### The one thing to be careful about
 

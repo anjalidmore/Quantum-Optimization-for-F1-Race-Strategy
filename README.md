@@ -27,9 +27,10 @@ Formula 1 race strategy is a real sequential decision problem: when should a dri
 
 1. **Fetch real race data** — a genuine FastF1 session (2023 Bahrain Grand Prix), not a toy dataset, via a reproducible synthetic fallback when offline.
 2. **Clean and engineer features** — leakage-checked, causally-justified features selected by an automated funnel (variance filtering → correlation pruning → VIF → importance ranking).
-3. **Train and compare 10 models** — 5 regression + 5 classification algorithms, evaluated with a time-aware (lap-forward) cross-validation strategy that never trains on the future.
+3. **Train and compare 10 models** — 5 regression + 5 classification algorithms, evaluated with a time-aware (lap-forward) cross-validation strategy that never trains on the future, then **two Keras deep networks** on the identical folds so the comparison is like-for-like.
 4. **Serve real predictions** — a FastAPI backend that caches trained pipelines and combines the ML output with a rule-based expert system (Task 2) and an A\*/UCS search over pit strategies (Task 3).
-5. **Show it, honestly** — a Next.js dashboard where every number, chart, and prediction is read live from a generated artifact or a real model call. Nothing is hard-coded or fabricated; when a model can't answer something, the UI says so.
+5. **Explain every prediction** — SHAP attributions, LIME surrogates, counterfactuals and a trust score, so a race engineer sees *why* a call was made and how much to believe it.
+6. **Show it, honestly** — a Next.js dashboard where every number, chart, and prediction is read live from a generated artifact or a real model call. Nothing is hard-coded or fabricated; when a model can't answer something, the UI says so.
 
 This started as a 10-part computational-intelligence coursework specification (knowledge representation → expert systems → search → data engineering → feature engineering → ML → deep learning → XAI → integration → evaluation). Tasks 1–6 are implemented as one integrated application; see [Project Status](#project-status) below for what's done vs. planned.
 
@@ -139,9 +140,9 @@ See [`docs/architecture.md`](docs/architecture.md#synthetic-vs-real-data) for wh
 ## Testing
 
 ```bash
-pytest tests/          # 120 tests: data contracts, leakage checks, chronological
-                        # splits, model training/persistence, API, and the
-                        # original Task 1-4 suites
+pytest tests/          # data contracts, leakage checks, chronological splits,
+                        # model training/persistence, deep learning, explainability,
+                        # API, and the original Task 1-4 suites
 ruff check app/ scripts/ tests/    # lint
 cd frontend && npm run lint && npm run build   # frontend lint + type-check
 ```
@@ -157,15 +158,15 @@ cd frontend && npm run lint && npm run build   # frontend lint + type-check
 - ✓ Data preparation & EDA (real + synthetic FastF1 pipelines)
 - ✓ Feature engineering & automated feature selection
 - ✓ Machine learning (10 models, time-aware validation, persisted pipelines)
+- ✓ **Deep learning (Task 7)** — Keras MLPs per target, tuned on the same folds and compared against the classical models on the identical holdout
+- ✓ **Explainable AI (Task 8)** — SHAP, LIME, counterfactuals, a defined trust score, and a fairness assessment of driver/team identity influence
 - ✓ FastAPI backend with cached model serving
-- ✓ Race Strategy Simulator, Machine Learning dashboard, Data & Analysis, and Project Evidence pages
+- ✓ Race Strategy Simulator, Machine Learning, Deep Learning, Explainability, Data & Analysis, and Project Evidence pages
 
 ### In Progress
 - → Broadening real-data training beyond a single race session
 
 ### Planned
-- ○ Deep learning models (Task 7)
-- ○ SHAP/LIME explainability and trust scores (Task 8)
 - ○ Full system integration polish (Task 9)
 - ○ Formal responsible-AI evaluation (Task 10)
 
