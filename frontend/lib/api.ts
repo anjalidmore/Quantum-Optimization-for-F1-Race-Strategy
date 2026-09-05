@@ -173,6 +173,133 @@ export type StrategyResponse = {
   data_source: string;
 };
 
+// --- Task 7 (Deep Learning) -------------------------------------------------
+export type DlModel = {
+  model_name: string;
+  family: string;
+  target: string;
+  task: string;
+  architecture: { name: string; total_parameters: number; layers: any[]; optimizer: string; loss: string };
+  hyperparameters: Record<string, any>;
+  metrics: { test: Record<string, any> };
+  model_format: string;
+  format_note: string;
+  training_rows: number;
+  test_rows: number;
+};
+export type DlComparison = {
+  generated_at: string;
+  note: string;
+  dataset_source: DatasetSource;
+  targets: Record<
+    string,
+    {
+      task: string;
+      selection_metric: string;
+      task6_best_model: string | null;
+      comparison: { model: string; family: string; metrics: Record<string, any> }[];
+      verdict: string;
+    }
+  >;
+};
+export type DlHistory = Record<
+  string,
+  {
+    epochs_run: number;
+    best_epoch: number;
+    early_stopping_patience: number;
+    max_epochs: number;
+    hyperparameters: Record<string, any>;
+    history: Record<string, number[]>;
+  }
+>;
+export type DlArtifacts = {
+  figures: string[];
+  models: string[];
+  reports: string[];
+  model_format: string;
+  format_note: string;
+};
+
+// --- Task 8 (Explainable AI) ------------------------------------------------
+export type TrustBand = { label: string; meaning: string };
+export type XaiSummary = {
+  generated_at: string;
+  dataset_source: DatasetSource;
+  targets: Record<
+    string,
+    {
+      task: string;
+      classical_model_explained: string;
+      n_features: number;
+      n_identity_features: number;
+      identity_attribution_share: number;
+      concentration_ratio: number | null;
+      trust: { n: number; mean: number | null; min: number | null; max: number | null; bands: Record<string, number> };
+      explained_rows: string[];
+    }
+  >;
+};
+export type ShapAttribution = { feature: string; shap_value: number; direction: string };
+export type XaiExplanation = {
+  target: string;
+  classical_model_explained: string;
+  rows: Record<
+    string,
+    {
+      row_index: number;
+      lap: number;
+      prediction: number;
+      classical_prediction: number;
+      narrative: string;
+      counterfactual_sentence: string;
+      trust_score: number;
+      trust_band: TrustBand;
+      top_factors: ShapAttribution[];
+    }
+  >;
+};
+export type XaiFairness = Record<
+  string,
+  {
+    n_features: number;
+    n_identity_features: number;
+    identity_features: string[];
+    identity_attribution_share: number;
+    expected_share_if_uniform: number;
+    concentration_ratio: number | null;
+    race_state_attribution_share: number;
+    top_race_state_features: string[];
+    reading: string;
+    figure?: string;
+  }
+>;
+export type XaiShap = {
+  target: string;
+  deep_network: { ranking: { feature: string; mean_abs_shap: number }[]; note: string; explainer: string; exact: boolean };
+  classical: { ranking: { feature: string; mean_abs_shap: number }[]; note: string; explainer: string | null; model: string };
+  figure?: string;
+  available_rows: string[];
+};
+export type XaiTrust = {
+  target: string;
+  formula: string;
+  weights: Record<string, number>;
+  bands: Record<string, string>;
+  summary: { n: number; mean: number | null; bands: Record<string, number> };
+  rows: Record<
+    string,
+    {
+      row_index: number;
+      lap: number;
+      trust_score: number;
+      components: Record<string, number>;
+      band: TrustBand;
+      narrative: string;
+    }
+  >;
+};
+
 export const api = {
   health: () => getJson<HealthResponse>("/api/health"),
   models: () => getJson<Registry>("/api/ml/models"),
@@ -193,4 +320,26 @@ export const api = {
       features
     ),
   strategyPredict: (raceState: RaceState) => postJson<StrategyResponse>("/api/strategy/predict", raceState),
+
+  // Task 7 — Deep Learning
+  dlModels: () => getJson<{ models: DlModel[] }>("/api/dl/models"),
+  dlMetrics: () => getJson<Record<string, any>>("/api/dl/metrics"),
+  dlComparison: () => getJson<DlComparison>("/api/dl/comparison"),
+  dlHistory: () => getJson<DlHistory>("/api/dl/history"),
+  dlArtifacts: () => getJson<DlArtifacts>("/api/dl/artifacts"),
+  dlPredictLaptime: (features: Record<string, number>) =>
+    postJson<{ model: string; target: string; prediction: number; model_format: string; data_source: string }>(
+      "/api/dl/predict/laptime",
+      features
+    ),
+
+  // Task 8 — Explainable AI
+  xaiSummary: () => getJson<XaiSummary>("/api/xai/summary"),
+  xaiExplanation: (target: string) => getJson<XaiExplanation>(`/api/xai/explanation?target=${target}`),
+  xaiShap: (target: string) => getJson<XaiShap>(`/api/xai/shap?target=${target}`),
+  xaiTrust: (target: string) => getJson<XaiTrust>(`/api/xai/trust-score?target=${target}`),
+  xaiFairness: () => getJson<XaiFairness>("/api/xai/fairness"),
+  xaiFeatureImportance: (target: string) =>
+    getJson<Record<string, any>>(`/api/xai/feature-importance?target=${target}`),
+  xaiCounterfactual: (target: string) => getJson<Record<string, any>>(`/api/xai/counterfactual?target=${target}`),
 };
