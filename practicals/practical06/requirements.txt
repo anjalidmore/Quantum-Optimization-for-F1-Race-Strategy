@@ -1,0 +1,18 @@
+# Phase 3 / Task 7 — Deep Learning Model Development
+#
+# Keras 3 is backend-agnostic. TensorFlow publishes no wheel for Python 3.14
+# (verified: `pip index versions tensorflow` returns no distribution), so the
+# PyTorch backend is used. The Keras API in src/f1dl/ is identical either way —
+# set KERAS_BACKEND=tensorflow on a Python version where TF is available and
+# the same code runs unchanged.
+keras>=3.5
+torch>=2.4
+
+# Task 5 contract loading, baselines, metrics
+pandas>=2.0
+numpy>=1.24
+scikit-learn>=1.3
+joblib>=1.3
+matplotlib>=3.7
+
+pytest>=7.4

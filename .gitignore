@@ -28,3 +28,7 @@ node_modules/
 practicals/practical0*/outputs/
 !practicals/practical04/outputs/clean/fastf1_laps_clean.csv
 !practicals/practical05/outputs/
+
+# Keras/torch caches
+*.keras.tmp
+.keras/
