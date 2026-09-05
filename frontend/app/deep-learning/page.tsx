@@ -185,7 +185,7 @@ export default async function DeepLearningPage() {
             const keys =
               t.task === "regression"
                 ? ["mae", "rmse", "r2", "mape"]
-                : ["roc_auc", "pr_auc", "f1", "precision", "recall", "accuracy"];
+                : ["pr_auc", "roc_auc", "precision", "recall", "f1", "accuracy"];
             return (
               <div key={target} className="card overflow-x-auto">
                 <h3 className="font-semibold text-white mb-3">{TARGET_LABEL[target] ?? target}</h3>
@@ -228,6 +228,15 @@ export default async function DeepLearningPage() {
                     ))}
                   </tbody>
                 </table>
+                {t.task === "classification" && (
+                  <p className="text-xs text-amber-400/70 mt-3">
+                    ⚠ The holdout contains <strong>1 pit event in 180 laps</strong>. Precision, recall and
+                    F1 on a single positive carry almost no information; the decision threshold was tuned
+                    on 635 out-of-fold predictions containing 36 positives, where it moved F1 from 0.0000
+                    to 0.3143. Ranking is by <strong>PR-AUC</strong>, not ROC-AUC, which stays high at this
+                    prevalence for a model that never fires.
+                  </p>
+                )}
                 {figure(`dl_${target}_model_comparison.png`) && (
                   <div className="mt-4">
                     <ArtifactImage

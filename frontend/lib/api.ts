@@ -65,6 +65,8 @@ export type RegistryModel = {
 
 export type Registry = { generated_at: string; task: string; models: RegistryModel[] };
 
+// Rows carry per-task fields (cv_mae / cv_pr_auc / decision_threshold / …), so
+// this stays permissive rather than two near-duplicate interfaces.
 export type ComparisonRow = Record<string, any>;
 export type Comparison = { regression: ComparisonRow[]; classification: ComparisonRow[] };
 

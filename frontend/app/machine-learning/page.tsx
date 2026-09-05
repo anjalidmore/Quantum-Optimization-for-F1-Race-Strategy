@@ -234,9 +234,17 @@ export default async function MachineLearningPage() {
               <tr>
                 <th>Model</th>
                 <th>Status</th>
+                <th title="Primary selection metric — ROC-AUC is misleading at a 4.8% positive rate">
+                  CV PR-AUC*
+                </th>
                 <th>CV ROC-AUC</th>
-                <th>CV PR-AUC</th>
                 <th>CV F1</th>
+                <th title="Tuned on out-of-fold predictions, not left at sklearn's default 0.5">
+                  Threshold
+                </th>
+                <th>Test precision</th>
+                <th>Test recall</th>
+                <th>Test F1</th>
                 <th>Test ROC-AUC</th>
                 <th>Selected</th>
               </tr>
@@ -246,19 +254,37 @@ export default async function MachineLearningPage() {
                 <tr key={r.model}>
                   <td className="text-white">{r.model}</td>
                   <td className="text-white/50">{r.status === "skipped" ? `skipped — ${r.reason}` : "trained"}</td>
+                  <td className="text-white">{fmt(r.cv_pr_auc)}</td>
                   <td>{fmt(r.cv_roc_auc)}</td>
-                  <td>{fmt(r.cv_pr_auc)}</td>
                   <td>{fmt(r.cv_f1)}</td>
-                  <td>{r.test_roc_auc === null ? "undefined*" : fmt(r.test_roc_auc)}</td>
+                  <td>{r.decision_threshold === undefined || r.decision_threshold === null ? "—" : fmt(r.decision_threshold)}</td>
+                  <td>{fmt(r.test_precision)}</td>
+                  <td>{fmt(r.test_recall)}</td>
+                  <td>{fmt(r.test_f1)}</td>
+                  <td>{r.test_roc_auc === null ? "undefined†" : fmt(r.test_roc_auc)}</td>
                   <td>{r.selected ? "✅" : ""}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="text-xs text-white/40 mt-2">
-            *undefined = the holdout test set contains only one class (no pit events in that period), so
-            ROC-AUC/PR-AUC cannot be computed there.
-          </p>
+          <div className="text-xs text-white/40 mt-2 space-y-1">
+            <p>
+              *Models are selected on <strong>CV PR-AUC</strong>, not ROC-AUC. Pit events are 4.8% of laps,
+              and at that prevalence ROC-AUC stays high for a model that never fires — it measures ranking,
+              not usefulness. PR-AUC asks how many of the flagged laps are real pit windows.
+            </p>
+            <p>
+              Decision thresholds are tuned on pooled out-of-fold CV predictions rather than left at
+              sklearn&rsquo;s default 0.5, which is only optimal for balanced classes with equal error costs.
+              Neither holds here.
+            </p>
+            <p className="text-amber-400/70">
+              ⚠ The holdout contains <strong>1 pit event in 180 laps</strong>. Test precision/recall/F1 on a
+              single positive example carry almost no information — read the CV columns, which cover 36
+              positives across the folds. Broadening evaluation to multiple races is tracked in the backlog.
+            </p>
+            <p>†undefined = the holdout contains only one class, so the metric cannot be computed there.</p>
+          </div>
         </div>
 
         {clfFeatures.length > 0 && (
