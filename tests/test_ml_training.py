@@ -2,6 +2,13 @@
 
 These run the actual pipeline once (module-scoped fixture) and assert on its
 real outputs — no mocked models, no hand-typed metric values.
+
+The pipeline writes into a ``tmp_path``-derived directory rather than the
+tracked ``artifacts/`` tree. Before that, running ``pytest`` retrained Task 6
+and overwrote ten committed files, so a clean clone went dirty just from
+running the documented test command — which trains contributors to reflexively
+``git checkout -- artifacts/`` and is exactly how a real artifact change gets
+discarded by accident.
 """
 from __future__ import annotations
 
@@ -10,7 +17,7 @@ import math
 import numpy as np
 import pytest
 
-from app.core.paths import ML_MODELS_LAPTIME_DIR, ML_MODELS_PIT_DIR
+from app.core.paths import ArtifactPaths
 from app.intelligence.ml import classification as clf_mod
 from app.intelligence.ml import regression as reg_mod
 from app.intelligence.ml.persistence import load_pipeline
@@ -18,8 +25,14 @@ from app.intelligence.ml.pipeline import train_all
 
 
 @pytest.fixture(scope="module")
-def training_summary():
-    return train_all()
+def training_output(tmp_path_factory):
+    """A throwaway artifact root for this module's pipeline run."""
+    return ArtifactPaths(root=tmp_path_factory.mktemp("task6_artifacts"))
+
+
+@pytest.fixture(scope="module")
+def training_summary(training_output):
+    return train_all(output_root=training_output.root)
 
 
 def test_pipeline_selects_a_best_model_for_each_task(training_summary):
@@ -63,9 +76,9 @@ def test_classification_cv_metrics_are_finite_where_defined(training_summary):
                 assert math.isfinite(value)
 
 
-def test_saved_regression_pipelines_load_and_predict_with_correct_shape():
+def test_saved_regression_pipelines_load_and_predict_with_correct_shape(training_output):
     for spec in reg_mod.REGRESSION_MODEL_SPECS:
-        path = ML_MODELS_LAPTIME_DIR / f"{spec.name}.joblib"
+        path = training_output.models_laptime / f"{spec.name}.joblib"
         assert path.exists(), f"missing persisted artifact for {spec.name}"
         pipeline = load_pipeline(path)
         # Build a tiny synthetic frame matching the pipeline's expected columns.
@@ -78,8 +91,8 @@ def test_saved_regression_pipelines_load_and_predict_with_correct_shape():
         assert np.all(np.isfinite(preds))
 
 
-def test_saved_pipeline_is_deterministic_same_input_same_prediction():
-    path = ML_MODELS_LAPTIME_DIR / "linear_regression.joblib"
+def test_saved_pipeline_is_deterministic_same_input_same_prediction(training_output):
+    path = training_output.models_laptime / "linear_regression.joblib"
     pipeline_a = load_pipeline(path)
     pipeline_b = load_pipeline(path)
 
@@ -93,9 +106,9 @@ def test_saved_pipeline_is_deterministic_same_input_same_prediction():
     np.testing.assert_array_equal(preds_a, preds_b)
 
 
-def test_saved_classification_pipelines_load_and_predict_proba():
+def test_saved_classification_pipelines_load_and_predict_proba(training_output):
     for spec in clf_mod.CLASSIFICATION_MODEL_SPECS:
-        path = ML_MODELS_PIT_DIR / f"{spec.name}.joblib"
+        path = training_output.models_pit / f"{spec.name}.joblib"
         assert path.exists(), f"missing persisted artifact for {spec.name}"
         pipeline = load_pipeline(path)
         cols = pipeline.named_steps["preprocess"].feature_names_in_

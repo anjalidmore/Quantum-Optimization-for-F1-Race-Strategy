@@ -11,7 +11,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
-from app.core.paths import ML_REPORTS_DIR
+from app.core.paths import ArtifactPaths
 
 
 def _fmt(x, digits=4):
@@ -337,11 +337,12 @@ consume alongside rule-based and search-based reasoning.
     return path
 
 
-def generate_all(dataset, reg: dict, clf: dict) -> list[Path]:
+def generate_all(dataset, reg: dict, clf: dict, out: ArtifactPaths | None = None) -> list[Path]:
+    reports_dir = (out or ArtifactPaths.default()).reports
     paths = [
-        write_regression_report(dataset, reg, ML_REPORTS_DIR / "regression_report.md"),
-        write_classification_report(dataset, clf, ML_REPORTS_DIR / "classification_report.md"),
-        write_model_selection_report(reg, clf, ML_REPORTS_DIR / "model_selection_report.md"),
+        write_regression_report(dataset, reg, reports_dir / "regression_report.md"),
+        write_classification_report(dataset, clf, reports_dir / "classification_report.md"),
+        write_model_selection_report(reg, clf, reports_dir / "model_selection_report.md"),
     ]
-    paths.append(write_ml_evaluation_report(dataset, reg, clf, ML_REPORTS_DIR / "ml_evaluation_report.md"))
+    paths.append(write_ml_evaluation_report(dataset, reg, clf, reports_dir / "ml_evaluation_report.md"))
     return paths

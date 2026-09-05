@@ -28,13 +28,9 @@ import numpy as np
 import pandas as pd
 
 from app.core.paths import (
-    ARTIFACT_MANIFEST_JSON,
-    ML_FIGURES_DIR,
-    ML_METRICS_DIR,
-    ML_MODELS_LAPTIME_DIR,
-    ML_MODELS_PIT_DIR,
     REPO_ROOT,
     TASK5_FEATURES_CSV,
+    ArtifactPaths,
     ensure_dirs,
 )
 from app.intelligence.ml import classification as clf_mod
@@ -74,13 +70,13 @@ def _split(dataset, target: str):
     return features, holdout, folds, X_dev, y_dev, X_test, y_test
 
 
-def _run_regression(dataset) -> dict:
+def _run_regression(dataset, out: ArtifactPaths) -> dict:
     features, holdout, folds, X_dev, y_dev, X_test, y_test = _split(dataset, REGRESSION_TARGET)
     contract = dataset.contract
 
     results: list[ModelResult] = []
     per_model_artifacts: dict[str, dict] = {}
-    ML_MODELS_LAPTIME_DIR.mkdir(parents=True, exist_ok=True)
+    out.models_laptime.mkdir(parents=True, exist_ok=True)
 
     for spec in reg_mod.REGRESSION_MODEL_SPECS:
         log.info("Training regression model: %s", spec.name)
@@ -104,7 +100,7 @@ def _run_regression(dataset) -> dict:
         y_pred_test = search.final_pipeline.predict(X_test)
         test_metrics = regression_metrics(y_test, y_pred_test)
 
-        artifact_path = ML_MODELS_LAPTIME_DIR / f"{spec.name}.joblib"
+        artifact_path = out.models_laptime / f"{spec.name}.joblib"
         save_pipeline(search.final_pipeline, artifact_path)
 
         importance = reg_mod.extract_feature_importance(spec, search.final_pipeline, features)
@@ -161,13 +157,13 @@ def _run_regression(dataset) -> dict:
     }
 
 
-def _run_classification(dataset) -> dict:
+def _run_classification(dataset, out: ArtifactPaths) -> dict:
     features, holdout, folds, X_dev, y_dev, X_test, y_test = _split(dataset, CLASSIFICATION_TARGET)
     contract = dataset.contract
 
     results: list[ModelResult] = []
     per_model_artifacts: dict[str, dict] = {}
-    ML_MODELS_PIT_DIR.mkdir(parents=True, exist_ok=True)
+    out.models_pit.mkdir(parents=True, exist_ok=True)
 
     for spec in clf_mod.CLASSIFICATION_MODEL_SPECS:
         log.info("Training classification model: %s", spec.name)
@@ -195,7 +191,7 @@ def _run_classification(dataset) -> dict:
             y_proba_test = None
         test_metrics = classification_metrics(y_test, y_pred_test, y_proba_test)
 
-        artifact_path = ML_MODELS_PIT_DIR / f"{spec.name}.joblib"
+        artifact_path = out.models_pit / f"{spec.name}.joblib"
         save_pipeline(search.final_pipeline, artifact_path)
 
         importance = clf_mod.extract_feature_importance(spec, search.final_pipeline, features)
@@ -253,8 +249,28 @@ def _run_classification(dataset) -> dict:
     }
 
 
-def _rel(path) -> str:
-    return str(Path(path).resolve().relative_to(REPO_ROOT))
+def _rel(path, root: Path | None = None) -> str:
+    """Manifest paths, relative to the repository root.
+
+    The frontend joins these onto the API's ``/artifacts`` mount, so they must
+    never be absolute. When output is redirected outside the repo (the test
+    suite's ``tmp_path``), repo-relative is undefined — fall back to a path
+    relative to the artifact root, which keeps the value relative and keeps the
+    "no absolute paths in the manifest" invariant true in both cases.
+    """
+    resolved = Path(path).resolve()
+    try:
+        return str(resolved.relative_to(REPO_ROOT))
+    except ValueError:
+        base = (root or ArtifactPaths.default().root).resolve()
+        try:
+            return str(Path("artifacts") / resolved.relative_to(base))
+        except ValueError:
+            return resolved.name
+
+
+def _rel_out(out: ArtifactPaths, path) -> str:
+    return _rel(path, out.root)
 
 
 def _json_safe(obj):
@@ -281,31 +297,31 @@ def _write_json(payload: dict, path: Path) -> None:
         json.dump(_json_safe(payload), f, indent=2)
 
 
-def _generate_regression_figures(reg: dict) -> list[str]:
+def _generate_regression_figures(reg: dict, out: ArtifactPaths) -> list[str]:
     written = []
-    written.append(_rel(viz.regression_model_comparison(reg["comparison"], ML_FIGURES_DIR / "regression_model_comparison.png")))
+    written.append(_rel_out(out, viz.regression_model_comparison(reg["comparison"], out.figures / "regression_model_comparison.png")))
 
     best_name = reg["best_model"]
     if best_name:
         best = reg["artifacts"][best_name]
         y_test = reg["y_test"]
         y_pred = best["y_pred_test"]
-        written.append(_rel(viz.prediction_vs_actual(y_test, y_pred, best_name, ML_FIGURES_DIR / "prediction_vs_actual.png")))
-        written.append(_rel(viz.residual_distribution(y_test, y_pred, best_name, ML_FIGURES_DIR / "residuals.png")))
+        written.append(_rel_out(out, viz.prediction_vs_actual(y_test, y_pred, best_name, out.figures / "prediction_vs_actual.png")))
+        written.append(_rel_out(out, viz.residual_distribution(y_test, y_pred, best_name, out.figures / "residuals.png")))
         written.append(
-            _rel(viz.residuals_vs_predictions(y_test, y_pred, best_name, ML_FIGURES_DIR / "residuals_vs_predictions.png"))
+            _rel_out(out, viz.residuals_vs_predictions(y_test, y_pred, best_name, out.figures / "residuals_vs_predictions.png"))
         )
         if best["importance"]:
             written.append(
-                _rel(viz.feature_importance_chart(best["importance"], best_name, ML_FIGURES_DIR / "feature_importance.png"))
+                _rel_out(out, viz.feature_importance_chart(best["importance"], best_name, out.figures / "feature_importance.png"))
             )
     return written
 
 
-def _generate_classification_figures(clf: dict) -> list[str]:
+def _generate_classification_figures(clf: dict, out: ArtifactPaths) -> list[str]:
     written = []
     written.append(
-        _rel(viz.classification_model_comparison(clf["comparison"], ML_FIGURES_DIR / "classification_model_comparison.png"))
+        _rel_out(out, viz.classification_model_comparison(clf["comparison"], out.figures / "classification_model_comparison.png"))
     )
 
     y_test = clf["y_test"]
@@ -317,8 +333,8 @@ def _generate_classification_figures(clf: dict) -> list[str]:
             roc_curves[name] = (y_test, proba)
             pr_curves[name] = (y_test, proba)
     if roc_curves:
-        written.append(_rel(viz.roc_curves(roc_curves, ML_FIGURES_DIR / "roc_curves.png")))
-        written.append(_rel(viz.precision_recall_curves(pr_curves, ML_FIGURES_DIR / "precision_recall_curves.png")))
+        written.append(_rel_out(out, viz.roc_curves(roc_curves, out.figures / "roc_curves.png")))
+        written.append(_rel_out(out, viz.precision_recall_curves(pr_curves, out.figures / "precision_recall_curves.png")))
 
     best_name = clf["best_model"]
     if best_name:
@@ -326,7 +342,7 @@ def _generate_classification_figures(clf: dict) -> list[str]:
         written.append(
             _rel(
                 viz.confusion_matrix_plot(
-                    best["test_metrics"]["confusion_matrix"], best_name, ML_FIGURES_DIR / "confusion_matrix.png"
+                    best["test_metrics"]["confusion_matrix"], best_name, out.figures / "confusion_matrix.png"
                 )
             )
         )
@@ -334,7 +350,7 @@ def _generate_classification_figures(clf: dict) -> list[str]:
             written.append(
                 _rel(
                     viz.feature_importance_chart(
-                        best["importance"], best_name, ML_FIGURES_DIR / "classification_feature_importance.png"
+                        best["importance"], best_name, out.figures / "classification_feature_importance.png"
                     )
                 )
             )
@@ -342,18 +358,18 @@ def _generate_classification_figures(clf: dict) -> list[str]:
             written.append(
                 _rel(
                     viz.probability_distribution(
-                        y_test, best["y_proba_test"], best_name, ML_FIGURES_DIR / "probability_distribution.png"
+                        y_test, best["y_proba_test"], best_name, out.figures / "probability_distribution.png"
                     )
                 )
             )
     return written
 
 
-def _registry_entries(reg: dict, clf: dict, dataset) -> list[ModelRegistryEntry]:
+def _registry_entries(reg: dict, clf: dict, dataset, out: ArtifactPaths) -> list[ModelRegistryEntry]:
     entries = []
     for task_result, models_dir, xgb_status_fn in (
-        (reg, ML_MODELS_LAPTIME_DIR, reg_mod),
-        (clf, ML_MODELS_PIT_DIR, clf_mod),
+        (reg, out.models_laptime, reg_mod),
+        (clf, out.models_pit, clf_mod),
     ):
         comparison_by_name = {row["model"]: row for row in task_result["comparison"]}
         for result in task_result["results"]:
@@ -390,14 +406,22 @@ def _registry_entries(reg: dict, clf: dict, dataset) -> list[ModelRegistryEntry]
     return entries
 
 
-def train_all() -> dict:
+def train_all(output_root: Path | None = None) -> dict:
     """Run the full Task 6 pipeline and write every artifact. Returns a
-    JSON-safe summary dict (also used directly by the test suite)."""
+    JSON-safe summary dict (also used directly by the test suite).
+
+    ``output_root`` redirects every write - models, metrics, figures, reports,
+    registry and manifest - beneath one directory. It defaults to the committed
+    ``artifacts/`` layout, so production behaviour is unchanged; the test suite
+    passes a ``tmp_path`` so running the tests no longer rewrites tracked files.
+    """
+    out = ArtifactPaths.default() if output_root is None else ArtifactPaths(root=Path(output_root))
+    out.ensure()
     ensure_dirs()
     dataset = load_and_validate()
 
-    reg = _run_regression(dataset)
-    clf = _run_classification(dataset)
+    reg = _run_regression(dataset, out)
+    clf = _run_classification(dataset, out)
 
     _write_json(
         {
@@ -408,7 +432,7 @@ def train_all() -> dict:
             "comparison": reg["comparison"],
             "best_model": reg["best_model"],
         },
-        ML_METRICS_DIR / "regression_metrics.json",
+        out.metrics / "regression_metrics.json",
     )
     _write_json(
         {
@@ -419,27 +443,27 @@ def train_all() -> dict:
             "comparison": clf["comparison"],
             "best_model": clf["best_model"],
         },
-        ML_METRICS_DIR / "classification_metrics.json",
+        out.metrics / "classification_metrics.json",
     )
     _write_json(
         {
             "regression": {name: art["fold_metrics"] for name, art in reg["artifacts"].items()},
             "classification": {name: art["fold_metrics"] for name, art in clf["artifacts"].items()},
         },
-        ML_METRICS_DIR / "cv_fold_metrics.json",
+        out.metrics / "cv_fold_metrics.json",
     )
     _write_json(
         {"regression": reg["comparison"], "classification": clf["comparison"]},
-        ML_METRICS_DIR / "model_comparison.json",
+        out.metrics / "model_comparison.json",
     )
 
-    reg_figures = _generate_regression_figures(reg)
-    clf_figures = _generate_classification_figures(clf)
+    reg_figures = _generate_regression_figures(reg, out)
+    clf_figures = _generate_classification_figures(clf, out)
 
-    registry_entries = _registry_entries(reg, clf, dataset)
-    write_registry(registry_entries)
+    registry_entries = _registry_entries(reg, clf, dataset, out)
+    write_registry(registry_entries, out.model_registry_json)
 
-    report_paths = reports_mod.generate_all(dataset, reg, clf)
+    report_paths = reports_mod.generate_all(dataset, reg, clf, out)
 
     manifest = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -448,12 +472,12 @@ def train_all() -> dict:
         "synthetic_data_warning": not dataset.contract.is_real_data,
         "best_regression_model": reg["best_model"],
         "best_classification_model": clf["best_model"],
-        "models": [_rel(p) for p in sorted(ML_MODELS_LAPTIME_DIR.glob("*.joblib"))] + [_rel(p) for p in sorted(ML_MODELS_PIT_DIR.glob("*.joblib"))],
-        "metrics": [_rel(p) for p in sorted(ML_METRICS_DIR.glob("*.json"))],
+        "models": [_rel_out(out, p) for p in sorted(out.models_laptime.glob("*.joblib"))] + [_rel_out(out, p) for p in sorted(out.models_pit.glob("*.joblib"))],
+        "metrics": [_rel_out(out, p) for p in sorted(out.metrics.glob("*.json"))],
         "figures": reg_figures + clf_figures,
-        "reports": [_rel(p) for p in report_paths],
+        "reports": [_rel_out(out, p) for p in report_paths],
     }
-    _write_json(manifest, ARTIFACT_MANIFEST_JSON)
+    _write_json(manifest, out.manifest_json)
 
     log.info("Task 6 pipeline complete. Best regression model: %s | Best classification model: %s", reg["best_model"], clf["best_model"])
 

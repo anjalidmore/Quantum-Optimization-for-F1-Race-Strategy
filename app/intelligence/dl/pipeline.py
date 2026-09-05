@@ -22,19 +22,17 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timezone
+from pathlib import Path
 
 import numpy as np
 
 from app.core.paths import (
-    DL_COMPARISON_JSON,
-    DL_HISTORY_JSON,
     DL_METRICS_JSON,
     DL_MODELS_DIR,
-    ML_FIGURES_DIR,
     ML_METRICS_DIR,
     ML_MODEL_REGISTRY_JSON,
-    ML_REPORTS_DIR,
     PROCESSED_DATA_SOURCE_JSON,
+    ArtifactPaths,
     ensure_dirs,
 )
 from app.intelligence.dl import models as models_mod
@@ -89,11 +87,17 @@ def _task6_best(target: str) -> str | None:
     return None
 
 
-def train_all(force: bool = False, quick: bool = False) -> dict:
+def train_all(force: bool = False, quick: bool = False, output_root: Path | None = None) -> dict:
     """Train both deep networks end to end. Returns the results dict that the
-    reports, registry and API all read from."""
+    reports, registry and API all read from.
+
+    ``output_root`` redirects every write beneath one directory, defaulting to
+    the committed ``artifacts/`` layout. The test suite passes a ``tmp_path``
+    so running the tests does not rewrite tracked files.
+    """
+    out = ArtifactPaths.default() if output_root is None else ArtifactPaths(root=Path(output_root))
+    out.ensure()
     ensure_dirs()
-    DL_MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
     training.set_seeds()
     dataset = load_and_validate()
@@ -158,12 +162,12 @@ def train_all(force: bool = False, quick: bool = False) -> dict:
             dl_metrics = classification_metrics(
                 y_test, (test_pred >= 0.5).astype(int), y_proba=test_pred)
 
-        persistence.save(fit.model, fit.scaler, features, mask, target, DL_MODELS_DIR, fit.y_scaler)
+        persistence.save(fit.model, fit.scaler, features, mask, target, out.models_dl, fit.y_scaler)
 
         fig = visualize.plot_history(
             fit.history,
             f"Task 7 - {target} ({'lap-time regression' if task == 'regression' else 'pit-decision classification'})",
-            ML_FIGURES_DIR / f"dl_{target}_training_history.png",
+            out.figures / f"dl_{target}_training_history.png",
             best_epoch=fit.best_epoch,
         )
 
@@ -186,7 +190,7 @@ def train_all(force: bool = False, quick: bool = False) -> dict:
         if rows:
             cmp_fig = visualize.plot_model_comparison(
                 rows, primary, f"Task 7 - {target}: deep network vs Task 6 classical models",
-                ML_FIGURES_DIR / f"dl_{target}_model_comparison.png",
+                out.figures / f"dl_{target}_model_comparison.png",
                 lower_is_better=(task == "regression"),
             )
 
@@ -250,7 +254,7 @@ def train_all(force: bool = False, quick: bool = False) -> dict:
             },
         }
 
-    _write_artifacts(results, source)
+    _write_artifacts(results, source, out)
     return results
 
 
@@ -285,10 +289,10 @@ def _verdict(task, primary, comparison, dl_metrics, best_classical, n_train,
     )
 
 
-def _write_artifacts(results: dict, source: dict) -> None:
-    DL_METRICS_JSON.parent.mkdir(parents=True, exist_ok=True)
+def _write_artifacts(results: dict, source: dict, out: ArtifactPaths) -> None:
+    out.metrics.mkdir(parents=True, exist_ok=True)
 
-    DL_METRICS_JSON.write_text(json.dumps({
+    out.dl_metrics_json.write_text(json.dumps({
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "task": "Task 7 - Deep Learning Model Development",
         "dataset_source": source,
@@ -304,7 +308,7 @@ def _write_artifacts(results: dict, source: dict) -> None:
         },
     }, indent=2))
 
-    DL_HISTORY_JSON.write_text(json.dumps({
+    out.dl_history_json.write_text(json.dumps({
         t: {
             "epochs_run": r["epochs_run"],
             "best_epoch": r["best_epoch"],
@@ -315,7 +319,7 @@ def _write_artifacts(results: dict, source: dict) -> None:
         } for t, r in results.items()
     }, indent=2))
 
-    DL_COMPARISON_JSON.write_text(json.dumps({
+    out.dl_comparison_json.write_text(json.dumps({
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "dataset_source": source,
         "note": (
@@ -334,19 +338,30 @@ def _write_artifacts(results: dict, source: dict) -> None:
         },
     }, indent=2))
 
-    _extend_registry(results)
-    _write_reports(results)
+    _extend_registry(results, out)
+    _write_reports(results, out)
 
 
-def _extend_registry(results: dict) -> None:
+def _extend_registry(results: dict, out: ArtifactPaths | None = None) -> None:
     """Add Task 7 entries to the **existing** model registry rather than
     creating a parallel one, so the API and dashboard have a single source of
     truth for 'what models exist'."""
-    if ML_MODEL_REGISTRY_JSON.exists():
-        registry = json.loads(ML_MODEL_REGISTRY_JSON.read_text())
+    out = out or ArtifactPaths.default()
+    registry_path = out.model_registry_json
+    if registry_path.exists():
+        registry = json.loads(registry_path.read_text())
     else:
         registry = {"generated_at": datetime.now(timezone.utc).isoformat(), "models": []}
 
+    # Preserve the original trained_at for a target that is already registered.
+    # restore_registry_entries() runs on every build_all skip path, and stamping
+    # a fresh timestamp there would make a no-op rebuild dirty the tracked
+    # registry - the exact churn this phase is removing elsewhere.
+    previous_trained_at = {
+        m.get("target"): m.get("trained_at")
+        for m in registry.get("models", [])
+        if m.get("family") == "deep" and m.get("trained_at")
+    }
     registry["models"] = [m for m in registry.get("models", []) if m.get("family") != "deep"]
 
     for target, r in results.items():
@@ -377,19 +392,20 @@ def _extend_registry(results: dict) -> None:
             "training_rows": r["n_train"],
             "test_rows": r["n_test"],
             "dataset": r["dataset_source"],
-            "trained_at": datetime.now(timezone.utc).isoformat(),
+            "trained_at": previous_trained_at.get(target) or datetime.now(timezone.utc).isoformat(),
         })
 
-    ML_MODEL_REGISTRY_JSON.write_text(json.dumps(registry, indent=2))
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    registry_path.write_text(json.dumps(registry, indent=2))
 
 
-def _write_reports(results: dict) -> None:
+def _write_reports(results: dict, out: ArtifactPaths) -> None:
     from app.intelligence.dl import reports as reports_mod
-    reports_mod.evaluation_report(results, ML_REPORTS_DIR / "dl_evaluation_report.md")
-    reports_mod.hyperparameter_report(results, ML_REPORTS_DIR / "dl_hyperparameter_report.md")
+    reports_mod.evaluation_report(results, out.reports / "dl_evaluation_report.md")
+    reports_mod.hyperparameter_report(results, out.reports / "dl_hyperparameter_report.md")
 
 
-def restore_registry_entries() -> int:
+def restore_registry_entries(output_root: Path | None = None) -> int:
     """Rebuild Task 7's registry rows from the committed artifacts, without
     retraining.
 
@@ -402,13 +418,14 @@ def restore_registry_entries() -> int:
 
     Returns the number of entries restored.
     """
-    if not DL_METRICS_JSON.exists():
+    out = ArtifactPaths.default() if output_root is None else ArtifactPaths(root=Path(output_root))
+    if not out.dl_metrics_json.exists():
         return 0
 
-    metrics = json.loads(DL_METRICS_JSON.read_text())
+    metrics = json.loads(out.dl_metrics_json.read_text())
     results: dict = {}
     for target, m in metrics.get("models", {}).items():
-        spec_path = DL_MODELS_DIR / f"{target}_spec.json"
+        spec_path = out.models_dl / f"{target}_spec.json"
         if not spec_path.exists():
             continue
         spec = json.loads(spec_path.read_text())
@@ -424,7 +441,7 @@ def restore_registry_entries() -> int:
         }
 
     if results:
-        _extend_registry(results)
+        _extend_registry(results, out)
     return len(results)
 
 

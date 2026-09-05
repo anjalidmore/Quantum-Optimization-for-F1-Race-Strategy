@@ -15,14 +15,14 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timezone
+from pathlib import Path
 
 import numpy as np
 
 from app.core.paths import (
-    ML_FIGURES_DIR,
-    ML_REPORTS_DIR,
     PROCESSED_DATA_SOURCE_JSON,
     XAI_RESULTS_JSON,
+    ArtifactPaths,
     ensure_dirs,
 )
 from app.intelligence.xai import (
@@ -54,8 +54,10 @@ def _data_source() -> dict:
     return {"source": "unknown", "reason": f"no marker at {PROCESSED_DATA_SOURCE_JSON}"}
 
 
-def explain_target(target: str, quick: bool = False, with_figures: bool = True) -> dict:
+def explain_target(target: str, quick: bool = False, with_figures: bool = True,
+                   out: ArtifactPaths | None = None) -> dict:
     """Compute the full Task 8 analysis for one target."""
+    out = out or ArtifactPaths.default()
     t = loading.load_target(target)
     log.info("Task 8: explaining %s - %d features (%d identity), %d test rows",
              target, len(t.features), t.n_identity, len(t.X_test))
@@ -132,13 +134,13 @@ def explain_target(target: str, quick: bool = False, with_figures: bool = True) 
                 "shap_waterfall": visualize.shap_waterfall(
                     shap_row, shap_dnn["base_value"], p_dnn,
                     f"{target} - {label.replace('_', ' ')} (deep network)",
-                    ML_FIGURES_DIR / f"xai_{target}_{label}_shap_waterfall.png").name,
+                    out.figures / f"xai_{target}_{label}_shap_waterfall.png").name,
                 "lime": visualize.lime_plot(
                     lm, f"{target} - {label.replace('_', ' ')} (LIME local surrogate)",
-                    ML_FIGURES_DIR / f"xai_{target}_{label}_lime.png").name,
+                    out.figures / f"xai_{target}_{label}_lime.png").name,
                 "counterfactual": visualize.counterfactual_curve(
                     cf, f"{target} - {label.replace('_', ' ')}: sweeping {scan_name}",
-                    ML_FIGURES_DIR / f"xai_{target}_{label}_counterfactual.png").name,
+                    out.figures / f"xai_{target}_{label}_counterfactual.png").name,
             }
 
         examples[label] = {
@@ -174,13 +176,13 @@ def explain_target(target: str, quick: bool = False, with_figures: bool = True) 
         figures = {
             "shap_summary_dnn": visualize.shap_summary(
                 shap_dnn, t.X_test, f"{target} - SHAP summary (deep network)",
-                ML_FIGURES_DIR / f"xai_{target}_shap_summary.png").name,
+                out.figures / f"xai_{target}_shap_summary.png").name,
             "importance": visualize.importance_comparison(
                 imp_cmp, f"{target} - permutation importance: deep network vs {t.classical_name}",
-                ML_FIGURES_DIR / f"xai_{target}_importance_comparison.png").name,
+                out.figures / f"xai_{target}_importance_comparison.png").name,
             "fairness": visualize.fairness_plot(
                 fair, f"{target} - identity vs race-state attribution",
-                ML_FIGURES_DIR / f"xai_{target}_fairness.png").name,
+                out.figures / f"xai_{target}_fairness.png").name,
         }
 
     return {
@@ -230,12 +232,19 @@ def _classical_shap(t) -> dict | None:
         return None
 
 
-def run_all(quick: bool = False) -> dict:
-    """Compute Task 8 for every target and write the committed artifacts."""
-    ensure_dirs()
-    results = {target: explain_target(target, quick=quick) for target in TARGETS}
+def run_all(quick: bool = False, output_root: Path | None = None) -> dict:
+    """Compute Task 8 for every target and write the committed artifacts.
 
-    rep = ML_REPORTS_DIR
+    ``output_root`` redirects every write beneath one directory, defaulting to
+    the committed ``artifacts/`` layout, so the test suite can run without
+    rewriting tracked files.
+    """
+    out = ArtifactPaths.default() if output_root is None else ArtifactPaths(root=Path(output_root))
+    out.ensure()
+    ensure_dirs()
+    results = {target: explain_target(target, quick=quick, out=out) for target in TARGETS}
+
+    rep = out.reports
     reports.shap_report(results, rep / "xai_shap_report.md")
     reports.lime_report(results, rep / "xai_lime_report.md")
     reports.counterfactual_report(results, rep / "xai_counterfactual_report.md")
@@ -243,8 +252,8 @@ def run_all(quick: bool = False) -> dict:
     reports.fairness_report(results, rep / "xai_fairness_report.md")
     reports.dashboard(results, rep / "xai_explainability_dashboard.md")
 
-    XAI_RESULTS_JSON.parent.mkdir(parents=True, exist_ok=True)
-    XAI_RESULTS_JSON.write_text(json.dumps(
+    out.xai_results_json.parent.mkdir(parents=True, exist_ok=True)
+    out.xai_results_json.write_text(json.dumps(
         {"generated_at": datetime.now(timezone.utc).isoformat(),
          "task": "Task 8 - Explainable AI",
          "dataset_source": _data_source(),
