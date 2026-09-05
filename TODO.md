@@ -11,6 +11,11 @@ is speculative.
 
 **Priority counts:** 33 entries — 9 High · 14 Medium · 10 Low
 
+**Updated 2026-09-05 (Phase 1 remediation):** 9 entries closed — see
+[`todo-complete.md`](todo-complete.md). Closed entries are struck through below rather than deleted, so
+the record of what was wrong stays readable. One entry (the Next.js advisories) is blocked pending a
+decision on a major-version bump.
+
 **Updated 2026-09-05 (second pass):** Tasks 7 and 8 are now implemented, so their "not started"
 entries are gone and are replaced by what building them actually surfaced. Two earlier entries are
 also closed by work done since: CI now exists (`.github/workflows/ci.yml`) and so does `LICENSE`.
@@ -69,7 +74,10 @@ entries above.
 
 ## Security
 
-### [Priority: High] API allows every origin, method and header, with no authentication
+### ~~[Priority: High] API allows every origin, method and header, with no authentication~~ — ✅ CLOSED (Phase 1)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** `app/api/main.py:29-34` sets `allow_origins=["*"]`, `allow_methods=["*"]`,
 `allow_headers=["*"]`, and no endpoint requires a credential. While the API runs on localhost, any
@@ -83,7 +91,7 @@ prediction endpoints and the whole `artifacts/` tree are open to the internet.
 3. Before any non-local deployment, add an auth dependency (API key header at minimum) to the routers in
    `app/api/routers/`.
 
-### [Priority: High] Frontend ships dependencies with 2 high-severity advisories
+### [Priority: High] Frontend ships dependencies with high-severity advisories — ⏸ BLOCKED, decision required
 
 **Why:** `npm audit` on `frontend/` reports 2 high-severity vulnerabilities: Next.js 14.2.35 carries 11
 advisories (SSRF via rewrites and Server Actions, cache poisoning of RSC responses, cache confusion,
@@ -91,13 +99,23 @@ middleware bypass, DoS, unauthenticated disclosure of internal Server Function e
 postcss has XSS and arbitrary-file-read issues. The SSRF and disclosure advisories matter as soon as this
 is hosted anywhere.
 
-**How (short):**
-1. `cd frontend && npm audit` to review, then upgrade `next` in `frontend/package.json` — the clean fix is
-   `next@16`, which is a breaking change, so budget for the App Router migration.
-2. If the major bump has to wait, move to the latest 14.2.x patch and re-audit.
-3. Re-run `npm run build` and check all 6 routes still compile.
+**Phase 1 finding — the premise changed.** There is **no patch bump available**: 14.2.35 is already the
+latest 14.2.x. `npm audit --json` reports that for all five advisories the only `fixAvailable` is
+`next@16.3.4` / `eslint-config-next@16.3.4`, both `isSemVerMajor: true`. The count has also grown from 2
+to **5** high-severity since this entry was written. Awaiting a decision on the major bump.
 
-### [Priority: Medium] The whole artifacts tree is served unauthenticated as static files
+**Interim:** `npm audit --audit-level=high` now runs in CI as a non-gating step, so the count is visible
+on every PR. See [`todo-complete.md`](todo-complete.md#-deferred--decision-required).
+
+**How (short):**
+1. Decide on `next@16`. The five pages are already App Router server components, which is most of the
+   usual migration work, so the risk is moderate — but it needs a build-and-click pass over all 8 routes.
+2. Once done, remove `continue-on-error: true` from the npm audit step in `.github/workflows/ci.yml`.
+
+### ~~[Priority: Medium] The whole artifacts tree is served unauthenticated as static files~~ — ✅ CLOSED (Phase 1)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** `app/api/main.py:43` mounts `artifacts/` at `/artifacts` with no filtering. Today that directory
 holds only figures and reports, but it also holds `*.joblib` model files — anyone who can reach the API
@@ -109,7 +127,10 @@ can download the trained models. Combined with the CORS wildcard, this is exfilt
 2. Explicitly exclude `artifacts/models/` and `artifacts/metadata/` from static serving.
 3. Add a test in `tests/test_api.py` asserting `GET /artifacts/models/laptime/decision_tree.joblib` 404s.
 
-### [Priority: Medium] `run.sh` kills arbitrary processes on ports 8000 and 3000
+### ~~[Priority: Medium] `run.sh` kills arbitrary processes on ports 8000 and 3000~~ — ✅ CLOSED (Phase 1)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** `run.sh:54` issues `kill "$pid"` against whatever is listening on those ports, with no prompt and
 no check that the process belongs to this project. A contributor running an unrelated dev server on :3000
@@ -121,7 +142,10 @@ loses it, silently, with unsaved state.
 2. Alternatively read `BACKEND_PORT`/`FRONTEND_PORT` from the environment so a contributor can move off
    the conflict instead of killing it.
 
-### [Priority: Low] `msgpack` 1.1.2 has a known advisory
+### ~~[Priority: Low] `msgpack` 1.1.2 has a known advisory~~ — ✅ CLOSED (Phase 1)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** `pip-audit` reports PYSEC-2026-3625 against msgpack 1.1.2, fixed in 1.2.1. It arrives
 transitively via `fastf1` → `signalrcore` and is only exercised when fetching live sessions, so exposure
@@ -131,7 +155,10 @@ is small — but it is the only flagged Python dependency and the fix is trivial
 1. Add `msgpack>=1.2.1` to `requirements.txt`.
 2. Re-run `pip-audit` to confirm a clean report.
 
-### [Priority: Low] No secret-scanning or dependency-audit automation
+### ~~[Priority: Low] No secret-scanning or dependency-audit automation~~ — ✅ CLOSED (Phase 1)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** This audit found no secrets in the working tree or in the full git history across all branches,
 and no `.env` or credential file was ever committed — a genuinely clean result. But nothing prevents the
@@ -145,7 +172,10 @@ next commit from introducing one, and `pip-audit`/`npm audit` are run only when 
 
 ## Testing
 
-### [Priority: High] A non-hermetic test run silently deleted Task 7's registry rows
+### ~~[Priority: High] A non-hermetic test run silently deleted Task 7's registry rows~~ — ✅ CLOSED (Phase 1)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** Because `pytest` retrains Task 6, and Task 6's `write_registry` overwrote the shared registry
 wholesale, running the test suite deleted the Task 7 entries — leaving `/api/dl/models` returning 404
@@ -158,7 +188,10 @@ The underlying cause — tests that mutate committed state — is not.
 2. Add a test asserting the registry still contains both families after a Task 6 retrain, so a future
    whole-file writer cannot reintroduce this silently.
 
-### [Priority: High] The test suite is not hermetic — it rewrites committed artifacts
+### ~~[Priority: High] The test suite is not hermetic — it rewrites committed artifacts~~ — ✅ CLOSED (Phase 1)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** Running `pytest` retrains models and overwrites 10 tracked files under `artifacts/`
 (`metrics/*.json`, `reports/*.md`, `manifest.json`, `metadata/model_registry.json`). A clean clone goes
@@ -207,7 +240,10 @@ response shape would surface only as a blank page at runtime.
 2. Add a Playwright smoke test that boots the API, loads all 5 routes and asserts no error boundary
    renders.
 
-### [Priority: Medium] Nothing tests the "no fabricated results" contract
+### ~~[Priority: Medium] Nothing tests the "no fabricated results" contract~~ — ✅ CLOSED (Phase 1)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** The contract in `docs/PROJECT_REPORT.md` §8 — that every displayed value traces to a generated
 artifact — is the project's central claim. It was verified manually in this audit by mutating
@@ -219,7 +255,10 @@ future hard-coded fallback would pass CI.
    artifact, point `app/core/paths.py` at it, and assert `/api/ml/metrics` returns the sentinel.
 2. Assert the reverse too — that deleting the artifact produces an explicit error rather than a default.
 
-### [Priority: Low] Test suite emits 133 warnings, including 69 pandas `SettingWithCopyWarning`
+### ~~[Priority: Low] Test suite emits 133 warnings, including 69 pandas `SettingWithCopyWarning`~~ — ✅ CLOSED (Phase 1)
+
+**See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
+
 
 **Why:** Real signal is buried. Three of these (`app/intelligence/data/pipeline.py:139`, `:155`, `:181`)
 indicate assignments to a DataFrame slice that may or may not propagate — behaviour that changes in pandas

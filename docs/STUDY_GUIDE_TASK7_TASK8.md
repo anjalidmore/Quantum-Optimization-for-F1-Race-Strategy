@@ -320,3 +320,180 @@ concentration < 1  → race-state features dominate (the desired outcome)
 * **Why permutation importance?** The only metric comparable across a forest and a network.
 * **Why `TreeExplainer` for one model and `KernelExplainer` for the other?** Exact when possible, model-agnostic when necessary.
 * **Why both SHAP and LIME?** Their disagreement is a signal, and the trust score uses it.
+
+---
+
+# Appendix A — Engineering concepts from the Phase 1 remediation
+
+Added while closing the security and test-infrastructure entries in `TODO.md`. Same
+format as the primers above: the concept first, then **how it showed up here and what we
+did about it** — so each one can be explained from real evidence rather than theory.
+
+## A.1 Test hermeticity
+
+**The concept.** A test is *hermetic* if running it leaves the world exactly as it found
+it: same files, same database, same clock-independent result. Non-hermetic tests fail in
+three characteristic ways:
+
+1. **Order dependence** — test B passes only because test A ran first and left something
+   behind.
+2. **Repeat-run divergence** — the second run differs from the first.
+3. **State pollution** — the test mutates something a human cares about, outside the test.
+
+The third is the sneakiest, because nothing fails. Everything is green while the test is
+quietly editing your source of truth.
+
+**How it showed up here.** Running `pytest` retrained Task 6 and overwrote **ten tracked
+files** under `artifacts/` — four metrics JSON, four Markdown reports, `manifest.json` and
+`model_registry.json`. A clean clone went dirty just from running the documented test
+command.
+
+Two concrete harms followed, and the second one actually happened:
+
+- It **trains contributors to run `git checkout -- artifacts/` reflexively**, which is
+  precisely how a real artifact change gets discarded by accident.
+- It **destroyed data.** Task 7 extends the *shared* model registry; Task 6's
+  `write_registry` overwrote that file wholesale. So running the test suite deleted Task
+  7's registry rows, leaving `/api/dl/models` returning 404 while the `.keras` files sat
+  untouched on disk. A test suite deleted production metadata, and nothing went red.
+
+**What we did.** Added `ArtifactPaths` to `app/core/paths.py` — one frozen dataclass
+resolving every output location from a single root — and gave `train_all()` / `run_all()`
+an optional `output_root` that defaults to the committed layout. Production behaviour is
+byte-identical; the tests pass a `tmp_path`. Then we proved it the only way that counts:
+applied the change to a fresh clone and ran the suite **twice**, confirming
+`git status --porcelain artifacts/` was empty both times.
+
+**The structural lesson.** We also added a CI step that fails if `git status --porcelain`
+is non-empty after `pytest`. That is the difference between hermeticity as a *convention*
+(which decays as soon as someone is in a hurry) and as an *invariant* (which cannot decay
+without the build going red). Prefer the second whenever you can express the property
+mechanically.
+
+> **Likely question: "your tests write files — isn't that an integration test, not a unit
+> test?"** Yes, deliberately. Task 6's tests train real models and assert on real metrics;
+> mocking them would test the mock. The problem was never that they write, it was *where*
+> they wrote. Redirecting the output root keeps the integration value and removes the
+> pollution.
+
+## A.2 Why a CORS wildcard is dangerous even "just locally"
+
+**The concept.** The **same-origin policy** stops a page on `evil.com` reading responses
+from `yourbank.com`. **CORS** is the server's way of making exceptions:
+`Access-Control-Allow-Origin` names who may read the response. `allow_origins=["*"]` says
+*everyone*.
+
+The dangerous misconception is "it's fine, it's only on localhost." Your browser can reach
+`127.0.0.1` perfectly well, and so can any page you happen to have open. A tab on some
+unrelated site can issue `fetch('http://127.0.0.1:8000/api/...')` and, with a wildcard,
+**read the response**. Localhost is not a security boundary in a browser; the origin
+policy is, and a wildcard removes it.
+
+Two related points worth knowing:
+- Wildcard origins and credentialed requests are mutually exclusive by spec — the browser
+  refuses `allow_origins=["*"]` together with cookies. That is a hint that `*` was never
+  meant for anything holding data you care about.
+- `allow_methods=["*"]` and `allow_headers=["*"]` widen it further, permitting
+  content types that would otherwise trigger a preflight the server could refuse.
+
+**How it showed up here.** `app/api/main.py` had all three wildcards, *and* mounted the
+entire `artifacts/` tree at `/artifacts` — including `artifacts/models/`. Combined, any
+page in the developer's browser could have enumerated and downloaded every trained model
+(`.joblib`, `.keras`) from the running API. Neither issue is severe alone; together they
+are exfiltration-by-default.
+
+**What we did.** An env-configured origin allow-list defaulting to `localhost:3000`,
+methods narrowed to `GET, POST`, headers to `Content-Type`. Separately, only the six
+directories the dashboard actually reads are mounted; `models/` and `metadata/` have no
+route at all.
+
+**The design lesson — structural over filtered.** We could have kept one mount and
+filtered requests for `models/`. Instead there is simply *no route*. A filter is code that
+can be bypassed by a path the author did not imagine (`../`, percent-encoding, symlinks);
+an absent route cannot be. When you can express a restriction as "this does not exist"
+rather than "this is checked", do. We wrote a test firing traversal attempts at the
+boundary to confirm it.
+
+## A.3 What a supply-chain advisory actually tells you
+
+**The concept.** `pip-audit` and `npm audit` compare your resolved dependency tree against
+vulnerability databases (PyPI Advisory / OSV, and the GitHub Advisory Database). They
+answer exactly one question: *does a package version in your tree appear in an advisory?*
+
+What they emphatically do **not** tell you:
+- **Whether you are exploitable.** An advisory about a code path you never call is still
+  reported. Reachability analysis is a different, harder problem.
+- **Whether the fix is safe.** `fixAvailable` may be a major version with breaking changes.
+- **Whether you are actually safe when clean.** A clean report means "nothing *known*
+  matches", not "no vulnerabilities".
+
+The useful mental model: an audit is a **smoke detector, not a fire inspection**. Act on
+it, but read the finding before you act.
+
+**How it showed up here — two findings with opposite conclusions.**
+
+*Python.* `pip-audit` flagged **msgpack 1.1.2** (PYSEC-2026-3625), reaching us
+transitively via `fastf1 → signalrcore`. Pinning `msgpack>=1.2.1` cleared it. But the fix
+had a **cost the audit did not mention**: `signalrcore` 1.0.2 hard-pins
+`msgpack==1.1.2`, so pip silently resolved *signalrcore itself* down from 1.0.2 to 0.8.8.
+We accepted it after checking `pip check`, confirming `fastf1.livetiming.SignalRClient`
+still imports, and noting this project reads historical sessions rather than live timing —
+and we wrote all of that into `requirements.txt` so the next person inherits the reasoning
+rather than a mystery pin. **A transitive fix can move packages you did not name. Always
+look at what actually got installed.**
+
+*JavaScript.* `npm audit` reported 5 high-severity advisories (Next.js SSRF, cache
+poisoning, unauthenticated disclosure of internal endpoints; postcss XSS and arbitrary
+file read). Here the correct engineering answer was **not to fix it immediately**:
+14.2.35 is already the latest 14.2.x, and `npm audit --json` shows the only `fixAvailable`
+is `next@16.3.4` with `isSemVerMajor: true`. A two-major-version bump is a migration to
+plan, not a reflex — so we made it *visible* (a non-gating CI step) and escalated the
+decision instead of pretending it away.
+
+**The judgment lesson.** Two advisories, two different right answers. "Make the tool go
+quiet" is not the goal; understanding what each finding costs to fix, and being honest
+when you choose not to fix one yet, is.
+
+> **Likely question: "your CI has `continue-on-error` on npm audit — isn't that just
+> disabling the check?"** No, and the distinction matters. The check still runs and still
+> prints on every PR; what it does not do is block merges on something whose only remedy
+> is a major migration. A gate you cannot satisfy gets bypassed permanently within a week;
+> a visible warning with a tracked decision does not. The workflow comment says to remove
+> the flag once the upgrade lands, so it is a marked temporary state rather than a
+> quietly-weakened check.
+
+## A.4 A note on `SettingWithCopyWarning` — and why the obvious fix was wrong
+
+**The concept.** In pandas, indexing sometimes returns a **view** onto the original frame
+and sometimes a **copy** — and which one you get is not always predictable. So when you
+assign into the result of a previous index, pandas cannot promise the write reaches the
+original data, and warns. It is a *correctness* warning, not style: your assignment may
+silently do nothing.
+
+**How it showed up here.** `clean_table()` took a frame, and callers passed slices of
+larger tables. Every column assignment warned — 5 sites, contributing to a 1,084-warning
+test run in which real signal was invisible.
+
+**The fix, and the trap.** The backlog said to use `.loc[:, col] = …`. We tried it and it
+**broke three tests**. Here is why, and it is worth understanding:
+
+- `df[col] = values` **replaces the column**, including its dtype.
+- `df.loc[:, col] = values` assigns **in place**, *preserving the existing dtype*.
+
+The pipeline's whole job at that point is dtype-changing coercion — object → numeric,
+strings → seconds, object → datetime. Under `.loc`, those coercions silently became
+no-ops: the values were cast straight back to the original dtype. The warning went away
+and the function stopped working.
+
+The actual fix was one line — `df = df.copy()` at the top. The function's contract is to
+*return* a cleaned frame, so it should never have written through to the caller's data in
+the first place. Owning the frame removes the ambiguity at the source.
+
+**Two lessons, both general.**
+1. **A warning-suppression that changes behaviour is a bug, not a fix.** If silencing a
+   warning also silences your logic, you have made things worse while making them look
+   better. This is only catchable if your tests assert on *behaviour* (dtypes, computed
+   moments) rather than on "it ran".
+2. **Turn a fixed class of bug into an error.** `pyproject.toml` now has
+   `filterwarnings = ["error::pandas.errors.SettingWithCopyWarning"]`. Once you have paid
+   to fix something, spend the extra minute making it impossible to reintroduce.
