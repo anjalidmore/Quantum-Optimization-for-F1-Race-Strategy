@@ -52,6 +52,19 @@ ruff>=0.6
 # --- Real data (Task 5/6 on genuine FastF1 telemetry instead of the
 #     synthetic demo) ---
 fastf1>=3.5
+# Pinned above fastf1's own floor: msgpack 1.1.2 carries PYSEC-2026-3625 and
+# reaches us transitively via fastf1 -> signalrcore. Only exercised when
+# fetching a live session, but it was the single flagged Python dependency.
+#
+# TRADE-OFF, recorded deliberately: signalrcore 1.0.2 hard-pins msgpack==1.1.2,
+# so satisfying this constraint makes pip resolve signalrcore down to 0.8.8,
+# which has no such pin. Verified after the change: `pip check` reports no
+# broken requirements, `pip-audit` is clean, and fastf1 3.8.3 still imports —
+# including fastf1.livetiming.SignalRClient, the only consumer of signalrcore.
+# This project reads historical sessions rather than live timing, so the older
+# signalrcore is not on any path it exercises. Revisit if signalrcore publishes
+# a release that relaxes the pin.
+msgpack>=1.2.1
 # Needed only to programmatically execute docs/notebooks/task5_feature_engineering.ipynb
 # after fetching real data (see scripts/fetch_real_session.py). Not needed if
 # you re-run the notebook by hand in Jupyter/VS Code instead.
