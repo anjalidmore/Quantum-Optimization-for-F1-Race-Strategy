@@ -21,6 +21,24 @@ joblib>=1.3
 # instead of failing or fabricating results.
 xgboost>=2.0
 
+# --- Deep Learning (Task 7) ---
+# Keras 3 is backend-agnostic. TensorFlow publishes NO wheel for Python 3.14
+# (verified: `pip index versions tensorflow` returns no distribution), so the
+# PyTorch backend is used and app/core/runtime.py sets KERAS_BACKEND=torch.
+# The Keras API in app/intelligence/dl/ is identical on either backend.
+#
+# Import-order note: torch ships its own libomp, and XGBoost segfaults on macOS
+# if it initialises against PyTorch's copy. app/core/runtime.py imports XGBoost
+# first to claim the OpenMP runtime - always go through prepare_dl_runtime()
+# rather than importing keras or torch directly.
+keras>=3.5
+torch>=2.4
+
+# --- Explainable AI (Task 8) ---
+shap>=0.44          # Shapley attributions (TreeExplainer exact, KernelExplainer model-agnostic)
+lime>=0.2           # local linear surrogates, for comparison against SHAP
+dice-ml>=0.11       # diverse counterfactuals (time-bounded; see xai/counterfactual.py)
+
 # --- Backend API ---
 fastapi>=0.110
 uvicorn[standard]>=0.29
