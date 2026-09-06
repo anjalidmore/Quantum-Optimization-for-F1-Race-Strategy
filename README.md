@@ -9,18 +9,6 @@ A full-stack computational-intelligence platform that predicts Formula 1 lap tim
 ![Tests](https://img.shields.io/badge/tests-120%20passing-brightgreen)
 ![Status](https://img.shields.io/badge/status-active%20development-yellow)
 
-## Screenshots
-
-| Dashboard | Race Strategy Simulator |
-|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Strategy Simulator](docs/screenshots/strategy-simulator.png) |
-
-| Machine Learning | Data & Analysis |
-|---|---|
-| ![Machine Learning](docs/screenshots/machine-learning.png) | ![Data Analysis](docs/screenshots/data-analysis.png) |
-
-More in [`docs/screenshots/`](docs/screenshots/), including the [Project Evidence](docs/screenshots/project-evidence.png) page.
-
 ## Overview
 
 Formula 1 race strategy is a real sequential decision problem: when should a driver pit, and for which tyre compound, given tyre age, track temperature, fuel load, and the state of the race? This project builds one coherent system around that question, rather than a pile of separate lab exercises:
