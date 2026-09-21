@@ -92,9 +92,10 @@ def test_dl_artifacts_lists_only_files_that_exist():
     from app.core.paths import ARTIFACTS_DIR
 
     body = client.get("/api/dl/artifacts").json()
-    for rel in body["figures"] + body["models"]:
+    for rel in body["figures"] + body["reports"] + body["models"]:
         assert (ARTIFACTS_DIR / rel).exists(), rel
-    assert body["model_format"] == ".keras"
+    assert body["model_format"] == ".h5"
+    assert body["models_served_over_http"] is False
 
 
 @_dl
@@ -115,7 +116,7 @@ def test_dl_predict_returns_a_real_number_for_a_valid_payload():
     body = r.json()
     assert body["model"] == "dnn_mlp"
     assert isinstance(body["prediction"], float)
-    assert body["model_format"] == ".keras"
+    assert ".h5" in body["model_format"]
     assert body["data_source"]
 
 
@@ -254,7 +255,10 @@ def test_live_explanation_declares_its_reduced_budget():
             continue
         assert e["method"]["nsamples"] < 200, "live budget should be smaller than the batch one"
         assert "LIME is not run" in e["method"]["note"]
-        assert set(e["trust_components"]) == {"confidence", "model_agreement"}
+        # No LIME live, so explanation_stability is absent and the weights renormalise;
+        # lap time has no decision point, so it has no confidence component either.
+        expected = {"model_agreement", "input_validity"} | ({"confidence"} if target == "target_pit_next_lap" else set())
+        assert set(e["trust_components"]) == expected
 
 
 def test_strategy_rejects_a_deep_model_it_cannot_load():

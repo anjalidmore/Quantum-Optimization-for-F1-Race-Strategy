@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
-from app.core.paths import ML_REPORTS_DIR, XAI_RESULTS_JSON
+from app.core.paths import XAI_DIR, XAI_RESULTS_JSON
 from app.intelligence.xai import (
     counterfactual,
     fairness,
@@ -278,7 +278,9 @@ def test_trust_scores_recompute_from_their_own_recorded_inputs():
                 classical_prediction=t["inputs"]["classical_prediction"],
                 shap_top=t["inputs"]["shap_top3"],
                 lime_top=t["inputs"]["lime_top3"],
-                target_std=t["inputs"]["target_std"])
+                target_std=t["inputs"]["target_std"],
+                threshold=t["inputs"]["decision_threshold"] or 0.5,
+                input_validity_share=t["inputs"]["input_validity_share"])
             assert again["trust_score"] == pytest.approx(t["trust_score"]), f"{target}/{label}"
 
 
@@ -292,10 +294,10 @@ def test_fairness_share_recomputes_from_the_committed_shap_ranking():
 
 @_artifacts
 def test_reports_exist_and_are_non_trivial():
-    for name in ("xai_shap_report.md", "xai_lime_report.md", "xai_counterfactual_report.md",
-                 "xai_trust_score_report.md", "xai_fairness_report.md",
-                 "xai_explainability_dashboard.md"):
-        p = ML_REPORTS_DIR / name
+    for name in ("SHAP_Report.md", "LIME_Report.md", "Counterfactual_Report.md",
+                 "Trust_Score_Report.md", "Fairness_Report.md",
+                 "Explainability_Dashboard.md"):
+        p = XAI_DIR / name
         assert p.exists(), f"missing deliverable: {name}"
         assert len(p.read_text()) > 500, f"{name} is suspiciously short"
 

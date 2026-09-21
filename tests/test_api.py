@@ -202,10 +202,10 @@ def test_task_evidence_endpoint_reports_honest_status(client):
     body = r.json()
     assert len(body["tasks"]) == 10
     statuses = {t["id"]: t["status"] for t in body["tasks"]}
-    # Tasks 1-6 have real generated artifacts in this repo; 7-10 do not exist yet.
-    for tid in ("task1", "task2", "task3", "task4", "task5", "task6"):
+    # Tasks 1-8 have real generated artifacts in this repo; 9-10 do not exist yet.
+    for tid in ("task1", "task2", "task3", "task4", "task5", "task6", "task7", "task8"):
         assert statuses[tid] == "completed"
-    for tid in ("task7", "task8", "task9", "task10"):
+    for tid in ("task9", "task10"):
         assert statuses[tid] == "upcoming"
     # Every listed artifact path must actually exist on disk (never a fabricated filename).
     import os
@@ -236,7 +236,8 @@ def test_trained_model_weights_are_not_served_statically(client):
     for path in (
         "/artifacts/models/laptime/decision_tree.joblib",
         "/artifacts/models/pit_decision/random_forest.joblib",
-        "/artifacts/models/dl/target_laptime.keras",
+        "/artifacts/models/deep_learning/laptime/f1_dnn_model.h5",
+        "/artifacts/deep_learning/../models/deep_learning/laptime/f1_dnn_model.h5",
     ):
         assert client.get(path).status_code == 404, f"{path} is still downloadable"
 

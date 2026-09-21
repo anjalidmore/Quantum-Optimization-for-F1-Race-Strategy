@@ -87,11 +87,18 @@ def test_architecture_summary_is_json_serialisable():
     assert s["total_parameters"] > 0
 
 
-def test_search_space_is_fully_enumerated_not_sampled():
-    for space in (tuning.REGRESSION_SPACE, tuning.CLASSIFICATION_SPACE):
-        expected = (len(space.hidden_units) * len(space.dropout)
-                    * len(space.learning_rate) * len(space.batch_size))
-        assert len(space.combinations()) == expected
+def test_search_stages_cover_every_specified_value():
+    # One factor at a time: each stage varies one hyperparameter; every value
+    # the Task 7 specification lists must appear in some stage.
+    for task in ("regression", "classification"):
+        stages = dict(tuning.stages_for(task))
+        assert set(stages["learning_rate"]) == {1e-3, 5e-4, 1e-4}
+        assert set(stages["batch_size"]) == {16, 32, 64}
+        assert set(stages["dropout"]) == {0.2, 0.3, 0.4, 0.5}
+        assert set(stages["optimizer"]) == {"adam", "rmsprop"}
+        assert len(stages["hidden_units"]) == 3
+    assert dict(tuning.stages_for("classification"))["class_weighted"] == [False, True]
+    assert all(len(v) <= 2 for _, v in tuning.stages_for("regression", quick=True))
 
 
 # --------------------------------------------------------------------------
@@ -155,9 +162,11 @@ def test_saved_model_reloads_and_predicts(tmp_path):
 
     m = models.build_regression_mlp(4)
     sc = StandardScaler().fit(np.random.normal(size=(20, 4)))
-    saved = persistence.save(m, sc, list("abcd"), np.ones(4, dtype=bool), "t", tmp_path)
-    assert saved.model_path.suffix == persistence.MODEL_EXTENSION
-    m2, sc2, ys2, spec = persistence.load("t", tmp_path)
+    X = np.random.normal(size=(3, 4)).astype("float32")
+    saved = persistence.save(m, sc, list("abcd"), np.ones(4, dtype=bool), "target_laptime", tmp_path, X_check=X)
+    assert saved.model_path.name == "f1_dnn_model.h5"
+    assert saved.reload_verified, "save() must prove the .h5 reproduces the in-memory model"
+    m2, sc2, ys2, spec = persistence.load("target_laptime", tmp_path)
     assert spec["features"] == list("abcd")
     assert m2.predict(np.random.normal(size=(2, 4)).astype("float32"), verbose=0).shape == (2, 1)
 
@@ -250,7 +259,7 @@ def test_task6_retrain_preserves_task7_registry_entries(tmp_path):
     """Task 7 extends the shared registry rather than keeping a parallel one.
     A Task 6 retrain must not delete its rows — that is exactly what happened
     before ``write_registry`` learned to preserve foreign families, leaving
-    /api/dl/models returning 404 while the .keras files sat on disk.
+    /api/dl/models returning 404 while the model files sat on disk.
     """
     import json
 
@@ -265,9 +274,9 @@ def test_task6_retrain_preserves_task7_registry_entries(tmp_path):
         "models": [
             {"model_name": "old_classical", "family": "classical", "target": "target_laptime"},
             {"model_name": "dnn_mlp", "family": "deep", "target": "target_laptime",
-             "artifact": "models/dl/target_laptime.keras"},
+             "artifact": "models/deep_learning/laptime/f1_dnn_model.h5"},
             {"model_name": "dnn_mlp", "family": "deep", "target": "target_pit_next_lap",
-             "artifact": "models/dl/target_pit_next_lap.keras"},
+             "artifact": "models/deep_learning/pit_decision/f1_dnn_model.h5"},
         ],
     }, indent=2))
 
