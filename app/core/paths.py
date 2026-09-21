@@ -59,16 +59,26 @@ ML_METADATA_DIR = ARTIFACTS_DIR / "metadata"
 ML_MODEL_REGISTRY_JSON = ML_METADATA_DIR / "model_registry.json"
 ARTIFACT_MANIFEST_JSON = ARTIFACTS_DIR / "manifest.json"
 
-# Task 7 — Deep Learning. Models live under the existing models/ tree rather
-# than a parallel one, and metrics/figures/reports share Task 6's directories
-# so the frontend's artifact serving needs no new mount.
-DL_MODELS_DIR = ML_ARTIFACTS_DIR / "dl"
-DL_METRICS_JSON = ML_METRICS_DIR / "dl_metrics.json"
-DL_HISTORY_JSON = ML_METRICS_DIR / "dl_training_history.json"
-DL_COMPARISON_JSON = ML_METRICS_DIR / "dl_vs_classical.json"
+# Task 7 — Deep Learning.
+#   artifacts/models/deep_learning/<laptime|pit_decision>/f1_dnn_model.h5
+#       weights + fitted scalers. Kept inside the private models/ tree beside
+#       Task 6's pipelines, so trained weights are never served over HTTP.
+#   artifacts/deep_learning/
+#       every public Task 7 deliverable: training history, hyperparameter and
+#       evaluation reports, model comparison, metadata and plots.
+DL_MODELS_DIR = ML_ARTIFACTS_DIR / "deep_learning"
+DEEP_LEARNING_DIR = ARTIFACTS_DIR / "deep_learning"
+DL_METRICS_JSON = DEEP_LEARNING_DIR / "evaluation_report.json"
+DL_HISTORY_JSON = DEEP_LEARNING_DIR / "training_history.json"
+DL_COMPARISON_JSON = DEEP_LEARNING_DIR / "model_comparison.json"
 
-# Task 8 — Explainable AI.
-XAI_RESULTS_JSON = ML_METADATA_DIR / "xai_results.json"
+# Short folder name per target, shared by Task 6's models/ layout.
+TARGET_DIRNAME = {"target_laptime": "laptime", "target_pit_next_lap": "pit_decision"}
+
+# Task 8 — Explainable AI. Every Task 8 deliverable lives here; nothing in it
+# is a model weight, so the whole directory is safe to serve.
+XAI_DIR = ARTIFACTS_DIR / "xai"
+XAI_RESULTS_JSON = XAI_DIR / "xai_metadata.json"
 
 
 @dataclass(frozen=True)
@@ -107,7 +117,23 @@ class ArtifactPaths:
 
     @property
     def models_dl(self) -> Path:
-        return self.models / "dl"
+        return self.models / "deep_learning"
+
+    @property
+    def deep_learning(self) -> Path:
+        return self.root / "deep_learning"
+
+    def dl_target(self, target: str) -> Path:
+        """Public per-target Task 7 outputs: history CSV and curves."""
+        return self.deep_learning / TARGET_DIRNAME[target]
+
+    def dl_model_dir(self, target: str) -> Path:
+        """Private per-target Task 7 weights and scalers."""
+        return self.models_dl / TARGET_DIRNAME[target]
+
+    @property
+    def xai(self) -> Path:
+        return self.root / "xai"
 
     @property
     def metrics(self) -> Path:
@@ -135,25 +161,28 @@ class ArtifactPaths:
 
     @property
     def xai_results_json(self) -> Path:
-        return self.metadata / "xai_results.json"
+        return self.xai / "xai_metadata.json"
 
     @property
     def dl_metrics_json(self) -> Path:
-        return self.metrics / "dl_metrics.json"
+        return self.deep_learning / "evaluation_report.json"
 
     @property
     def dl_history_json(self) -> Path:
-        return self.metrics / "dl_training_history.json"
+        return self.deep_learning / "training_history.json"
 
     @property
     def dl_comparison_json(self) -> Path:
-        return self.metrics / "dl_vs_classical.json"
+        return self.deep_learning / "model_comparison.json"
 
     def ensure(self) -> "ArtifactPaths":
         """Create every directory this object names."""
         for path in (
             self.models_laptime, self.models_pit, self.models_dl,
             self.metrics, self.figures, self.reports, self.metadata,
+            self.deep_learning, self.xai,
+            *(self.dl_target(t) for t in TARGET_DIRNAME),
+            *(self.dl_model_dir(t) for t in TARGET_DIRNAME),
         ):
             path.mkdir(parents=True, exist_ok=True)
         return self
@@ -175,5 +204,7 @@ def ensure_dirs() -> None:
         ML_REPORTS_DIR,
         ML_METADATA_DIR,
         DL_MODELS_DIR,
+        DEEP_LEARNING_DIR,
+        XAI_DIR,
     ):
         path.mkdir(parents=True, exist_ok=True)

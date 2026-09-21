@@ -2,20 +2,17 @@
 app.intelligence.dl.reports
 ===========================
 
-Markdown deliverable generators for Task 7.
-
-Every number written here is passed in from a real training run. Nothing is
-templated with an illustrative value - if a metric is undefined it is
-rendered as "undefined" with the reason, never as a plausible-looking number.
+Human-readable Task 7 reports, written beside the machine-readable ones in
+``artifacts/deep_learning/``. Every number is passed in from the run that wrote
+it; an undefined metric is printed as "undefined", never as a stand-in value.
 """
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
 from pathlib import Path
 
 
-def _fmt(v, nd: int = 4) -> str:
+def _f(v, nd: int = 4) -> str:
     if v is None:
         return "_undefined_"
     if isinstance(v, float):
@@ -27,172 +24,99 @@ def _stamp() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
 
+def _write(path: Path, lines: list[str]) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n")
+    return path
+
+
 def hyperparameter_report(results: dict, out_path: Path) -> Path:
-    lines = [
-        "# Task 7 - Hyperparameter Report",
-        "",
-        f"_Generated {_stamp()}._",
-        "",
-        "Every combination below was **fully enumerated**, not sampled, and each was",
-        "scored on the same expanding-window lap-forward folds Task 6 uses. A random",
-        "K-fold search would let the network validate on laps it had already seen the",
-        "future of; the Task 5 contract forbids it explicitly.",
-        "",
-    ]
-
-    for target, res in results.items():
-        space = res["search_space"]
-        lines += [
-            f"## {target}",
-            "",
-            f"**Task:** {res['task']}  |  **Features:** {res['n_features']}  |  "
-            f"**Combinations evaluated:** {space['total_combinations']}  |  "
-            f"**Folds per combination:** {res['n_folds']}  |  "
-            f"**Total training runs:** {space['total_combinations'] * res['n_folds']}",
-            "",
-            "### Search space",
-            "",
-            "| Hyperparameter | Values explored |",
-            "|---|---|",
-            f"| Hidden units | {space['hidden_units']} |",
-            f"| Dropout | {space['dropout']} |",
-            f"| Learning rate | {space['learning_rate']} |",
-            f"| Batch size | {space['batch_size']} |",
-            f"| Max epochs | {res['max_epochs']} (early stopping, patience {res['patience']}) |",
-            "",
-            f"**Selection metric:** {res['selection_metric']} "
-            f"({'lower' if res['task'] == 'regression' else 'higher'} is better), "
-            "averaged across folds.",
-            "",
-            "### All trials",
-            "",
-        ]
-
-        primary = res["selection_metric"]
-        lines += [
-            f"| Hidden units | Dropout | LR | Batch | CV {primary} (mean) | CV {primary} (std) | Mean best epoch |",
-            "|---|---|---|---|---|---|---|",
-        ]
-        for t in res["trials"]:
-            p = t["params"]
-            s = t["cv_summary"].get(primary, {})
-            lines.append(
-                f"| {p['hidden_units']} | {p['dropout']} | {p['learning_rate']} | "
-                f"{p['batch_size']} | {_fmt(s.get('mean'))} | {_fmt(s.get('std'))} | "
-                f"{_fmt(t['mean_epochs_to_best'], 1)} |"
-            )
-
-        chosen = res["best_params"]
-        lines += [
-            "",
-            "### Chosen configuration",
-            "",
-            f"```json\n{json.dumps(chosen, indent=2)}\n```",
-            "",
-            f"**Why:** best mean CV {primary} across {res['n_folds']} expanding-window folds. "
-            f"{res['choice_note']}",
-            "",
-            "---",
-            "",
-        ]
-
-    return _write(out_path, lines)
+    L = ["# Task 7 — Hyperparameter Report", "", f"_Generated {_stamp()}._", "",
+         "Selection used **only** the expanding-window lap-forward folds over the development laps. "
+         "The chronological test laps were not touched until the final evaluation.", "",
+         "Search method: one factor at a time. Each stage varies one hyperparameter while the others hold "
+         "the best values so far; every value listed in the specification is tried and every "
+         "experiment is recorded (the full table is `hyperparameter_report.csv`).", ""]
+    for t, r in results.items():
+        m = r["selection_metric"]
+        L += [f"## {t} ({r['task']})", "",
+              f"Selection metric: **CV {m.upper()}** ({'lower' if m == 'mae' else 'higher'} is better), "
+              f"mean of {r['n_folds']} folds. {len(r['trials'])} distinct configurations trained.", "",
+              "| Exp | Varied | Layers | LR | Batch | Dropout | Optimizer | L2 | "
+              + ("Loss" if r["task"] == "regression" else "Class weighting")
+              + f" | CV {m.upper()} (± sd) | Selected |",
+              "|---|---|---|---:|---:|---:|---|---:|---|---:|:---:|"]
+        best = r["best_params"]
+        for tr in r["trials"]:
+            p = tr["params"]
+            s = tr["cv_summary"].get(m, {})
+            sel = "✅" if {**p, "hidden_units": list(p["hidden_units"])} == best else ""
+            extra = p.get("loss", "") if r["task"] == "regression" else ("balanced" if p.get("class_weighted") else "none")
+            L.append(f"| {tr['experiment']} | {tr['varied']} | {list(p['hidden_units'])} | {p['learning_rate']} | "
+                     f"{p['batch_size']} | {p['dropout']} | {p['optimizer']} | {p['l2']} | {extra} | "
+                     f"{_f(s.get('mean'))} (± {_f(s.get('std'))}) | {sel} |")
+        L += ["", f"**Selected:** `{best}`", "",
+              "Read the ± column before reading a winner into small differences: where two configurations "
+              "differ by less than their fold-to-fold spread, the data cannot separate them.", ""]
+    return _write(out_path, L)
 
 
 def evaluation_report(results: dict, out_path: Path) -> Path:
-    lines = [
-        "# Task 7 - Deep Learning Evaluation Report",
-        "",
-        f"_Generated {_stamp()}._",
-        "",
-        "Deep neural networks for F1 race-state prediction, compared against **Task 6's own",
-        "committed holdout results** - the same numbers the Machine Learning dashboard shows,",
-        "read from `artifacts/metrics/`. The comparison is like-for-like by construction:",
-        "identical feature matrix, identical split code (`app.intelligence.ml.splits`),",
-        "identical metric code (`app.intelligence.ml.evaluation`).",
-        "",
-    ]
-
-    for target, res in results.items():
-        arch = res["architecture"]
-        lines += [
-            f"## {target}",
-            "",
-            f"**Task type:** {res['task']}  |  **Input features:** {res['n_features']}  |  "
-            f"**Training rows:** {res['n_train']}  |  **Test rows:** {res['n_test']}",
-            "",
-            f"**Dataset source:** `{res['dataset_source'].get('source', 'unknown')}`" + (f" ({res['dataset_source'].get('year')} {res['dataset_source'].get('event')} "f"{res['dataset_source'].get('session')})" if res['dataset_source'].get('year') else ""),
-            "",
-            "### Network architecture",
-            "",
-            f"`{arch['name']}` - {arch['total_parameters']:,} trainable parameters, "
-            f"optimizer {arch['optimizer']}, loss `{arch['loss']}`.",
-            "",
-            "| Layer | Type | Detail |",
-            "|---|---|---|",
-        ]
-        for layer in arch["layers"]:
-            detail = ""
-            if "units" in layer:
-                detail = f"{layer['units']} units, {layer['activation']}"
-            elif "rate" in layer:
-                detail = f"rate {layer['rate']}"
-            lines.append(f"| {layer['name']} | {layer['type']} | {detail} |")
-
-        lines += [
-            "",
-            f"**Parameters-to-training-rows ratio:** {arch['total_parameters'] / max(res['n_train'], 1):.2f}",
-            "",
-            f"{res['capacity_note']}",
-            "",
-            "### Overfitting prevention",
-            "",
-            "| Mechanism | Setting | Effect observed |",
-            "|---|---|---|",
-            f"| Dropout | {res['best_params']['dropout']} on every hidden layer | see loss curve |",
-            "| L2 weight decay | 1e-04 on every Dense kernel | see loss curve |",
-            f"| Early stopping | patience {res['patience']} on `val_loss`, best weights restored | "
-            f"stopped at epoch {res['best_epoch']} of {res['epochs_run']} run "
-            f"(cap {res['max_epochs']}) |",
-            "",
-            f"{res['overfit_note']}",
-            "",
-            "### Test-set comparison - DL vs classical",
-            "",
-        ]
-
-        if res["task"] == "regression":
-            lines += [
-                "| Model | MAE (s) | RMSE (s) | R2 | MAPE (%) |",
-                "|---|---:|---:|---:|---:|",
-            ]
-            for row in res["comparison"]:
-                m = row["metrics"]
-                mark = " **<-- deep network**" if row["model"].startswith("dnn") else ""
-                lines.append(
-                    f"| {row['model']}{mark} | {_fmt(m['mae'])} | {_fmt(m['rmse'])} | "
-                    f"{_fmt(m['r2'])} | {_fmt(m['mape'], 2)} |"
-                )
+    L = ["# Task 7 — Deep Learning Evaluation Report", "", f"_Generated {_stamp()}._", "",
+         "Every network below was evaluated **once** on the chronological holdout — the last 20% of laps — "
+         "after its hyperparameters, decision threshold and early-stopping epoch had been fixed on earlier laps.",
+         ""]
+    for t, r in results.items():
+        a, o = r["architecture"], r["overfitting"]
+        L += [f"## {t} — {r['task']}", "",
+              f"Input features: {r['n_features']} · rows: train {r['n_train']}, validation {r['n_validation']}, "
+              f"test {r['n_test']} · test laps {r['final_fit_split']['test_laps'][0]}–"
+              f"{r['final_fit_split']['test_laps'][-1]}", "",
+              "### Architecture", "",
+              "| Layer | Type | Units | Activation | Dropout |", "|---|---|---:|---|---:|"]
+        for lay in a["layers"]:
+            L.append(f"| {lay['name']} | {lay['type']} | {lay.get('units', '')} | {lay.get('activation', '')} | "
+                     f"{lay.get('rate', '')} |")
+        L += ["", f"Total parameters {a['total_parameters']:,} · trainable {a['trainable_parameters']:,} · "
+                  f"optimizer {a['optimizer']} · training loss `{a['loss']}`.", "",
+              f"Hyperparameters: `{r['best_params']}`"
+              + (f" · class weights {r['class_weights_used']}" if r.get("class_weights_used") else ""), "",
+              "### Train / validation / test", ""]
+        if r["task"] == "regression":
+            L += ["| Split | MAE (s) | RMSE (s) | R² |", "|---|---:|---:|---:|"]
+            for name, key in (("Train", "train_metrics"), ("Validation", "validation_metrics"), ("**Test**", "test_metrics")):
+                s = r[key]
+                L.append(f"| {name} | {_f(s['mae'])} | {_f(s['rmse'])} | {_f(s['r2'])} |")
         else:
-            lines += [
-                "| Model | ROC-AUC | PR-AUC | F1 | Precision | Recall | Accuracy |",
-                "|---|---:|---:|---:|---:|---:|---:|",
-            ]
-            for row in res["comparison"]:
-                m = row["metrics"]
-                mark = " **<-- deep network**" if row["model"].startswith("dnn") else ""
-                lines.append(
-                    f"| {row['model']}{mark} | {_fmt(m['roc_auc'])} | {_fmt(m['pr_auc'])} | "
-                    f"{_fmt(m['f1'])} | {_fmt(m['precision'])} | {_fmt(m['recall'])} | "
-                    f"{_fmt(m['accuracy'])} |"
-                )
-
-        lines += ["", "### Verdict", "", res["verdict"], "", "---", ""]
-
-    return _write(out_path, lines)
-
-
-def _write(out_path: Path, lines: list[str]) -> Path:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text("\n".join(lines) + "\n")
-    return out_path
+            thr = (r.get("threshold") or {}).get("threshold")
+            L += [f"Decision threshold {_f(thr)} (tuned on out-of-fold CV predictions, never on the test laps).", "",
+                  "| Split | Pit laps | Accuracy | Precision | Recall | F1 | ROC-AUC | PR-AUC |",
+                  "|---|---:|---:|---:|---:|---:|---:|---:|"]
+            for name, key in (("Train", "train_metrics"), ("Validation", "validation_metrics"), ("**Test**", "test_metrics")):
+                s = r[key]
+                L.append(f"| {name} | {s['n_positive']}/{s['n']} | {_f(s['accuracy'])} | {_f(s['precision'])} | "
+                         f"{_f(s['recall'])} | {_f(s['f1'])} | {_f(s['roc_auc'])} | {_f(s['pr_auc'])} |")
+            cm = r["test_metrics"]["confusion_matrix"]
+            L += ["", f"Test confusion matrix (rows actual, columns predicted; 0 = stay out, 1 = pit): "
+                      f"`{cm}`."]
+            if r["test_metrics"]["n_positive"] < 5:
+                L += ["", f"> ⚠ The chronological test laps contain **{r['test_metrics']['n_positive']} pit event(s)**. "
+                          "Precision, recall, F1 and PR-AUC on so few positives are dominated by chance; the "
+                          "cross-validated figures in `hyperparameter_report.csv` rest on many more pit laps and "
+                          "are the better guide to this model's ranking ability."]
+        L += ["", "### Overfitting", "",
+              f"Verdict: **{o['verdict']}**. {o['epochs_run']} epochs run; early stopping restored epoch "
+              f"{o['best_epoch']}. Validation loss minimum {_f(o['val_loss_min'])} → final {_f(o['val_loss_final'])} "
+              f"({o['val_loss_rise_after_best_pct']:+.1f}%); training loss at the best epoch {_f(o['train_loss_at_best'])}"
+              f" → final {_f(o['train_loss_final'])}. Overfitting emerged after the best epoch: "
+              f"**{'yes' if o['overfitting_emerged_after_best_epoch'] else 'no'}**.", "",
+              "### Comparison with Task 6 (same test laps)", ""]
+        m = r["selection_metric"]
+        keys = ["mae", "rmse", "r2"] if r["task"] == "regression" else ["precision", "recall", "f1", "roc_auc", "pr_auc"]
+        L += ["| Model | " + " | ".join(k.upper() for k in keys) + " |", "|---|" + "---:|" * len(keys)]
+        for row in r["comparison"]:
+            name = row["model"] + (" **(DNN)**" if row["family"] == "deep" else "") + \
+                (" (Task 6 selected)" if row["model"] == r["task6_best_model"] else "")
+            L.append(f"| {name} | " + " | ".join(_f(row["metrics"].get(k)) for k in keys) + " |")
+        L += ["", r["verdict"], "", f"Primary comparison metric: {m.upper()}.", ""]
+    return _write(out_path, L)

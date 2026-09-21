@@ -87,6 +87,9 @@ def fit_fold(
     dropout: float,
     learning_rate: float,
     batch_size: int,
+    optimizer: str = "adam",
+    l2: float = 1e-4,
+    loss: str | None = None,
     max_epochs: int = 200,
     patience: int = 20,
     class_weight: dict | None = None,
@@ -104,11 +107,19 @@ def fit_fold(
         yt = y_scaler.fit_transform(y_train.reshape(-1, 1)).ravel().astype("float32")
         yv = y_scaler.transform(y_val.reshape(-1, 1)).ravel().astype("float32")
 
+    extra = {"loss": loss} if loss else {}
+    # Class weights go into the loss inside the model, NOT into fit(): on this
+    # Keras/torch installation fit(class_weight=...) does not weight the loss
+    # (see models.weighted_binary_crossentropy for the measurement).
     model = build_fn(
         n_features=Xt.shape[1],
         hidden_units=hidden_units,
         dropout=dropout,
+        l2=l2,
         learning_rate=learning_rate,
+        optimizer=optimizer,
+        class_weight=class_weight,
+        **extra,
     )
 
     early = keras.callbacks.EarlyStopping(
@@ -124,7 +135,6 @@ def fit_fold(
         epochs=max_epochs,
         batch_size=batch_size,
         callbacks=[early],
-        class_weight=class_weight,
         shuffle=True,
         verbose=verbose,
     )

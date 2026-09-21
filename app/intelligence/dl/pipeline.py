@@ -25,6 +25,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 from app.core.paths import (
     DL_METRICS_JSON,
@@ -32,6 +33,7 @@ from app.core.paths import (
     ML_METRICS_DIR,
     ML_MODEL_REGISTRY_JSON,
     PROCESSED_DATA_SOURCE_JSON,
+    TARGET_DIRNAME,
     ArtifactPaths,
     ensure_dirs,
 )
@@ -89,6 +91,61 @@ def _task6_best(target: str) -> str | None:
     return None
 
 
+def _scaled(scaler, X: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    Xs = X.astype("float32").copy()
+    if mask.any():
+        Xs[:, mask] = scaler.transform(X[:, mask])
+    return Xs
+
+
+def _metrics(task: str, y_true, pred, threshold: float | None = None) -> dict:
+    if task == "regression":
+        return regression_metrics(y_true, pred)
+    thr = DEFAULT_THRESHOLD if threshold is None else threshold
+    m = classification_metrics(y_true, apply_threshold(pred, thr), y_proba=pred)
+    m["decision_threshold"] = round(float(thr), 4)
+    return m
+
+
+def _diagnose(task: str, history: dict, best_epoch: int, train_m: dict, val_m: dict) -> dict:
+    """Read the saved model's training curves and name the fit.
+
+    Rules (stated so the verdict can be checked against the plot):
+    * overfitting EMERGED during training if, after the best epoch, validation
+      loss rose more than 10% above its minimum while training loss kept falling;
+    * the SAVED model is overfit if its training/validation gap is large —
+      training MAE below 60% of validation MAE (regression), or training PR-AUC
+      above validation PR-AUC by more than 0.25 (classification);
+    * it is underfit if it has not learned the training data — training R2 below
+      0.1 (regression) or training PR-AUC below twice the positive rate
+      (classification).
+    """
+    tl, vl = history["loss"], history["val_loss"]
+    b = best_epoch - 1
+    rise = (vl[-1] - min(vl)) / min(vl) * 100 if min(vl) > 0 else 0.0
+    emerged = rise > 10 and tl[-1] < tl[b]
+    if task == "regression":
+        underfit = (train_m.get("r2") or 0) < 0.1
+        overfit = train_m["mae"] < 0.6 * val_m["mae"]
+        gap = {"train_mae": train_m["mae"], "val_mae": val_m["mae"]}
+    else:
+        pos_rate = val_m["n_positive"] / max(val_m["n"], 1)
+        underfit = (train_m.get("pr_auc") or 0) < 2 * pos_rate
+        overfit = ((train_m.get("pr_auc") or 0) - (val_m.get("pr_auc") or 0)) > 0.25
+        gap = {"train_pr_auc": train_m.get("pr_auc"), "val_pr_auc": val_m.get("pr_auc")}
+    verdict = ("UNDERFITTING" if underfit else
+               "OVERFITTING (large train/validation gap at the saved weights)" if overfit else
+               "REASONABLE FIT")
+    return {
+        "verdict": verdict, "epochs_run": len(vl), "best_epoch": best_epoch,
+        "still_improving_at_stop": best_epoch == len(vl),
+        "val_loss_min": float(min(vl)), "val_loss_final": float(vl[-1]),
+        "val_loss_rise_after_best_pct": float(rise),
+        "train_loss_at_best": float(tl[b]), "train_loss_final": float(tl[-1]),
+        "overfitting_emerged_after_best_epoch": bool(emerged), **gap,
+    }
+
+
 def train_all(force: bool = False, quick: bool = False, output_root: Path | None = None) -> dict:
     """Train both deep networks end to end. Returns the results dict that the
     reports, registry and API all read from.
@@ -96,6 +153,15 @@ def train_all(force: bool = False, quick: bool = False, output_root: Path | None
     ``output_root`` redirects every write beneath one directory, defaulting to
     the committed ``artifacts/`` layout. The test suite passes a ``tmp_path``
     so running the tests does not rewrite tracked files.
+
+    Time-awareness, end to end:
+    * the test set is ``chronological_holdout`` — the last 20% of laps;
+    * hyperparameters are chosen on ``expanding_window_folds`` over the earlier
+      laps, each fold validating on the laps just after its training laps;
+    * the final network trains on the last fold's training laps and early-stops
+      on the block of laps immediately before the test laps. (Before this fix
+      the final network early-stopped on rows that were also in its training
+      set, so its "validation" curve was a training curve.)
     """
     out = ArtifactPaths.default() if output_root is None else ArtifactPaths(root=Path(output_root))
     out.ensure()
@@ -106,8 +172,8 @@ def train_all(force: bool = False, quick: bool = False, output_root: Path | None
     contract = dataset.contract
     source = _data_source()
 
-    max_epochs = 40 if quick else 200
-    patience = 8 if quick else 20
+    max_epochs = 40 if quick else 300
+    patience = 8 if quick else 25
     n_folds = 2 if quick else 4
 
     results: dict = {}
@@ -122,166 +188,132 @@ def train_all(force: bool = False, quick: bool = False, output_root: Path | None
 
         holdout = chronological_holdout(frame, test_fraction=0.2)
         folds = expanding_window_folds(frame.loc[holdout.dev_index], n_folds=n_folds)
-
         build_fn = models_mod.BUILDERS[target]
-        space = tuning.REGRESSION_SPACE if task == "regression" else tuning.CLASSIFICATION_SPACE
-        if quick:
-            space = tuning.SearchSpace(
-                hidden_units=(space.hidden_units[0],), dropout=(space.dropout[0],),
-                learning_rate=(space.learning_rate[0],), batch_size=space.batch_size,
-            )
-
-        class_weight = None
-        if task == "classification":
-            class_weight = training.balanced_class_weight(y[holdout.dev_index])
-
         scale_target = task == "regression"
-        best_params, trials = tuning.search(
-            build_fn, X, y, folds, mask, space,
-            task=task, class_weight=class_weight, scale_target=scale_target,
-            max_epochs=max_epochs, patience=patience, log=log,
-        )
 
-        # Decision threshold from pooled out-of-fold predictions, for the same
-        # reason Task 6 does it: 0.5 left this network predicting "never pit"
-        # for every test lap while scoring ROC-AUC 0.92 and accuracy 0.994.
-        best_trial = next(
-            tr for tr in trials
-            if {**tr.params, "hidden_units": list(tr.params["hidden_units"])}
-            == {**best_params, "hidden_units": list(best_params["hidden_units"])}
-        )
+        best_params, trials = tuning.search(
+            build_fn, X, y, folds, mask, task=task, scale_target=scale_target,
+            max_epochs=max_epochs, patience=patience, quick=quick, log=log)
+        best_trial = next(tr for tr in trials if tr.params == best_params)
+
         threshold_choice = None
         if task == "classification":
-            threshold_choice = tune_threshold(
-                best_trial.oof_y_true, best_trial.oof_y_proba, objective="f1")
-            log.info("  tuned decision threshold: %.4f (%s)",
-                     threshold_choice.threshold, threshold_choice.note)
+            threshold_choice = tune_threshold(best_trial.oof_y_true, best_trial.oof_y_pred, objective="f1")
+            log.info("  decision threshold %.4f — %s", threshold_choice.threshold, threshold_choice.note)
+        thr = threshold_choice.threshold if threshold_choice else None
 
-        final_fold = folds[-1]
+        # ---- final, time-aware fit -------------------------------------------
+        fin = folds[-1]
+        cw = (training.balanced_class_weight(y[fin.train_index])
+              if best_params.get("class_weighted") else None)
         fit = training.fit_fold(
-            build_fn,
-            X[holdout.dev_index], y[holdout.dev_index],
-            X[final_fold.val_index], y[final_fold.val_index],
-            mask,
-            hidden_units=best_params["hidden_units"],
-            dropout=best_params["dropout"],
-            learning_rate=best_params["learning_rate"],
-            batch_size=best_params["batch_size"],
-            max_epochs=max_epochs, patience=patience,
-            class_weight=class_weight, scale_target=scale_target,
+            build_fn, X[fin.train_index], y[fin.train_index], X[fin.val_index], y[fin.val_index], mask,
+            hidden_units=best_params["hidden_units"], dropout=best_params["dropout"],
+            learning_rate=best_params["learning_rate"], batch_size=best_params["batch_size"],
+            optimizer=best_params["optimizer"], l2=best_params["l2"], loss=best_params.get("loss"),
+            class_weight=cw, scale_target=scale_target, max_epochs=max_epochs, patience=patience,
         )
-
-        test_pred = training.predict(fit.model, fit.scaler, X[holdout.test_index], mask, fit.y_scaler)
-        y_test = y[holdout.test_index]
-        if task == "regression":
-            dl_metrics = regression_metrics(y_test, test_pred)
-        else:
-            thr = threshold_choice.threshold if threshold_choice else DEFAULT_THRESHOLD
-            dl_metrics = classification_metrics(
-                y_test, apply_threshold(test_pred, thr), y_proba=test_pred)
-            dl_metrics["decision_threshold"] = round(float(thr), 4)
-            # What the default would have produced, so the change is visible.
+        pred = {name: training.predict(fit.model, fit.scaler, X[idx], mask, fit.y_scaler)
+                for name, idx in (("train", fin.train_index), ("validation", fin.val_index),
+                                  ("test", holdout.test_index))}
+        y_split = {"train": y[fin.train_index], "validation": y[fin.val_index], "test": y[holdout.test_index]}
+        split_metrics = {k: _metrics(task, y_split[k], pred[k], thr) for k in pred}
+        dl_metrics = split_metrics["test"]
+        if task == "classification":
             dl_metrics["at_default_threshold"] = {
-                k: v for k, v in classification_metrics(
-                    y_test, apply_threshold(test_pred, DEFAULT_THRESHOLD), y_proba=test_pred
-                ).items()
-                if k in ("precision", "recall", "f1", "accuracy")
-            }
+                k: v for k, v in _metrics(task, y_split["test"], pred["test"], DEFAULT_THRESHOLD).items()
+                if k in ("precision", "recall", "f1", "accuracy")}
+        diag = _diagnose(task, fit.history, fit.best_epoch, split_metrics["train"], split_metrics["validation"])
+        log.info("  final fit: %d epochs, best %d — %s | test %s", fit.epochs_run, fit.best_epoch,
+                 diag["verdict"], {k: round(v, 4) for k, v in dl_metrics.items()
+                                   if k in ("mae", "rmse", "r2", "precision", "recall", "f1", "roc_auc", "pr_auc")
+                                   and v is not None})
 
-        persistence.save(fit.model, fit.scaler, features, mask, target, out.models_dl, fit.y_scaler)
+        saved = persistence.save(fit.model, fit.scaler, features, mask, target, out.models_dl, fit.y_scaler,
+                                 X_check=_scaled(fit.scaler, X[holdout.test_index], mask))
 
-        fig = visualize.plot_history(
-            fit.history,
-            f"Task 7 - {target} ({'lap-time regression' if task == 'regression' else 'pit-decision classification'})",
-            out.figures / f"dl_{target}_training_history.png",
-            best_epoch=fit.best_epoch,
-        )
+        # ---- per-target deliverables ------------------------------------------
+        tdir = out.dl_target(target)
+        pd.DataFrame({"epoch": np.arange(1, fit.epochs_run + 1), **fit.history}).to_csv(
+            tdir / "training_history.csv", index=False)
+        label = "lap-time regression" if task == "regression" else "pit-decision classification"
+        figures = {"loss_curve": visualize.plot_curve(
+            fit.history, "loss", "loss (training objective)", f"Task 7 DNN — {label}: loss",
+            tdir / "loss_curve.png", fit.best_epoch).name}
+        if task == "regression":
+            figures["mae_curve"] = visualize.plot_curve(
+                {k: [v * float(fit.y_scaler.scale_[0]) for v in vals] for k, vals in fit.history.items()
+                 if "mae" in k}, "mae", "MAE (seconds)", "Task 7 DNN — lap time: MAE",
+                tdir / "mae_curve.png", fit.best_epoch).name
+            figures["prediction_vs_actual"] = visualize.plot_pred_vs_actual(
+                y_split["test"], pred["test"], "Task 7 DNN — test laps", tdir / "prediction_vs_actual.png").name
+        else:
+            figures["accuracy_curve"] = visualize.plot_curve(
+                fit.history, "accuracy", "accuracy (threshold 0.5)", "Task 7 DNN — pit decision: accuracy",
+                tdir / "accuracy_curve.png", fit.best_epoch).name
+            figures["confusion_matrix"] = visualize.plot_confusion(
+                dl_metrics["confusion_matrix"], thr, "Task 7 DNN — test laps", tdir / "confusion_matrix.png").name
+            roc = visualize.plot_roc(y_split["test"], pred["test"], "Task 7 DNN — ROC (test laps)",
+                                     tdir / "roc_curve.png")
+            figures["roc_curve"] = roc.name if roc else None
+            if roc is None and (tdir / "roc_curve.png").exists():
+                (tdir / "roc_curve.png").unlink()
 
-        # --- comparison against Task 6's own committed results ---------------
+        # ---- comparison against Task 6's own committed results ----------------
         classical = _task6_holdout_metrics(target)
         best_classical = _task6_best(target)
-        # PR-AUC for classification, matching Task 6's selection metric — a
-        # comparison decided on ROC-AUC would rank the models by a quantity
-        # neither pipeline now selects on.
         primary = "mae" if task == "regression" else "pr_auc"
-
         comparison = [{"model": "dnn_mlp", "family": "deep", "metrics": dl_metrics}]
-        for name, m in classical.items():
-            comparison.append({"model": name, "family": "classical", "metrics": m})
-
-        cmp_fig = None
+        comparison += [{"model": n, "family": "classical", "metrics": m} for n, m in classical.items()]
         rows = [{"model": r["model"], primary: r["metrics"][primary]}
                 for r in comparison if r["metrics"].get(primary) is not None]
-        if not rows and task == "classification":
-            primary = "f1"
-            rows = [{"model": r["model"], primary: r["metrics"].get(primary)}
-                    for r in comparison if r["metrics"].get(primary) is not None]
         if rows:
-            cmp_fig = visualize.plot_model_comparison(
-                rows, primary, f"Task 7 - {target}: deep network vs Task 6 classical models",
-                out.figures / f"dl_{target}_model_comparison.png",
-                lower_is_better=(task == "regression"),
-            )
-
+            figures["model_comparison"] = visualize.plot_model_comparison(
+                rows, primary, f"Task 7 — {label}: DNN vs Task 6 models (same test laps)",
+                tdir / "model_comparison.png", lower_is_better=(task == "regression")).name
         verdict = _verdict(task, primary, comparison, dl_metrics, best_classical,
-                           len(holdout.dev_index), holdout, y_test, classical)
+                           len(fin.train_index), holdout, y_split["test"], classical)
 
         arch = models_mod.architecture_summary(fit.model)
-        n_train = int(len(holdout.dev_index))
-        ratio = arch["total_parameters"] / max(n_train, 1)
-        capacity_note = (
-            f"With {arch['total_parameters']:,} parameters against {n_train} training rows "
-            f"(ratio {ratio:.2f}), this network has "
-            + ("more parameters than training examples. That is the expected regime for this "
-               "dataset and it is why dropout, L2 and early stopping are applied together; it "
-               "is also the honest reason to expect a tree ensemble to be competitive here."
-               if ratio > 1 else
-               "fewer parameters than training examples, which is the intended small-data design.")
-        )
-        overfit_note = (
-            f"Early stopping restored the weights from epoch {fit.best_epoch}. "
-            + (f"Training ran {fit.epochs_run} epochs, so {fit.epochs_run - fit.best_epoch} epochs "
-               f"of validation-loss deterioration were discarded - the countermeasures did real work."
-               if fit.epochs_run > fit.best_epoch else
-               "Validation loss was still improving when the epoch cap was reached, so the model "
-               "was capacity- or budget-limited rather than overfitting.")
-        )
-
         results[target] = {
             "task": task,
             "features": features,
             "n_features": len(features),
             "identity_features": [f for f in features if f.startswith(("driver_", "team_"))],
-            "n_train": int(len(holdout.dev_index)),
+            "n_train": int(len(fin.train_index)),
+            "n_validation": int(len(fin.val_index)),
             "n_test": int(len(holdout.test_index)),
+            "n_dev": int(len(holdout.dev_index)),
             "holdout": holdout.to_metadata(),
+            "final_fit_split": {"train_laps": fin.train_laps, "validation_laps": fin.val_laps,
+                                "test_laps": holdout.test_laps},
             "n_folds": len(folds),
-            "search_space": space.to_metadata(),
-            "trials": [t.to_metadata() for t in trials],
+            "search_method": "one-factor-at-a-time over expanding-window folds",
+            "stages": [[name, [list(v) if isinstance(v, tuple) else v for v in vals]]
+                       for name, vals in tuning.stages_for(task, quick)],
+            "trials": [tr.to_metadata() for tr in trials],
             "best_params": {**best_params, "hidden_units": list(best_params["hidden_units"])},
-            "selection_metric": "mae" if task == "regression" else "pr_auc",
-            "choice_note": (
-                "Ties are impossible here because the grid is fully enumerated and scored "
-                "deterministically under a fixed seed."
-            ),
+            "selection_metric": primary,
+            "class_weights_used": cw,
             "architecture": arch,
-            "capacity_note": capacity_note,
-            "overfit_note": overfit_note,
             "epochs_run": fit.epochs_run,
             "best_epoch": fit.best_epoch,
             "max_epochs": max_epochs,
             "patience": patience,
+            "train_metrics": split_metrics["train"],
+            "validation_metrics": split_metrics["validation"],
             "test_metrics": dl_metrics,
+            "overfitting": diag,
             "threshold": threshold_choice.to_metadata() if threshold_choice else None,
             "history": fit.history,
             "comparison": comparison,
             "task6_best_model": best_classical,
             "verdict": verdict,
             "dataset_source": source,
-            "figures": {
-                "training_history": fig.name,
-                "model_comparison": cmp_fig.name if cmp_fig else None,
-            },
+            "model_file": {"path": str(saved.model_path.relative_to(out.root.parent))
+                           if out.root.parent in saved.model_path.parents else str(saved.model_path),
+                           "bytes": saved.size_bytes, "reload_verified": saved.reload_verified},
+            "figures": figures,
         }
 
     _write_artifacts(results, source, out)
@@ -320,57 +352,154 @@ def _verdict(task, primary, comparison, dl_metrics, best_classical, n_train,
 
 
 def _write_artifacts(results: dict, source: dict, out: ArtifactPaths) -> None:
-    out.metrics.mkdir(parents=True, exist_ok=True)
+    now = datetime.now(timezone.utc).isoformat()
+    out.deep_learning.mkdir(parents=True, exist_ok=True)
 
+    # evaluation_report.json — read by GET /api/dl/metrics (shape unchanged)
     out.dl_metrics_json.write_text(json.dumps({
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": now,
         "task": "Task 7 - Deep Learning Model Development",
         "dataset_source": source,
+        "evaluation_split": ("chronological holdout: the last 20% of laps, never used for "
+                             "hyperparameter selection, threshold tuning or early stopping"),
         "models": {
             t: {
                 "task": r["task"],
+                "train_metrics": r["train_metrics"],
+                "validation_metrics": r["validation_metrics"],
                 "test_metrics": r["test_metrics"],
+                "overfitting": r["overfitting"],
                 "threshold": r.get("threshold"),
                 "architecture": r["architecture"],
                 "hyperparameters": r["best_params"],
-                "n_train": r["n_train"],
-                "n_test": r["n_test"],
+                "class_weights_used": r["class_weights_used"],
+                "n_train": r["n_train"], "n_validation": r["n_validation"], "n_test": r["n_test"],
+                "final_fit_split": r["final_fit_split"],
+                "epochs_run": r["epochs_run"], "best_epoch": r["best_epoch"],
+                "model_file": r["model_file"],
+                "figures": r["figures"],
             } for t, r in results.items()
         },
-    }, indent=2))
+    }, indent=2, default=_json_default))
 
+    # training_history.json — read by GET /api/dl/history (shape unchanged)
     out.dl_history_json.write_text(json.dumps({
-        t: {
-            "epochs_run": r["epochs_run"],
-            "best_epoch": r["best_epoch"],
-            "early_stopping_patience": r["patience"],
-            "max_epochs": r["max_epochs"],
-            "hyperparameters": r["best_params"],
-            "history": r["history"],
-        } for t, r in results.items()
-    }, indent=2))
+        t: {"epochs_run": r["epochs_run"], "best_epoch": r["best_epoch"],
+            "early_stopping_patience": r["patience"], "max_epochs": r["max_epochs"],
+            "hyperparameters": r["best_params"], "history": r["history"]}
+        for t, r in results.items()
+    }, indent=2, default=_json_default))
 
+    # model_comparison.json / .csv — DL vs Task 6 on the identical test laps
     out.dl_comparison_json.write_text(json.dumps({
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": now,
         "dataset_source": source,
-        "note": (
-            "The classical rows are Task 6's own committed holdout metrics, read from "
-            "artifacts/metrics/. Both families are evaluated on the identical "
-            "chronological holdout produced by app.intelligence.ml.splits."
-        ),
-        "targets": {
+        "note": ("The classical rows are Task 6's own committed holdout metrics, read from "
+                 "artifacts/metrics/. Both families are evaluated on the identical chronological "
+                 "holdout produced by app.intelligence.ml.splits."),
+        "targets": {t: {"task": r["task"], "selection_metric": r["selection_metric"],
+                        "task6_best_model": r["task6_best_model"], "comparison": r["comparison"],
+                        "verdict": r["verdict"]} for t, r in results.items()},
+    }, indent=2, default=_json_default))
+    cmp_rows = []
+    for t, r in results.items():
+        keys = (["mae", "rmse", "r2"] if r["task"] == "regression"
+                else ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc", "decision_threshold"])
+        for row in r["comparison"]:
+            cmp_rows.append({"target": t, "model": row["model"], "family": row["family"],
+                             "is_task6_selected": row["model"] == r["task6_best_model"],
+                             **{k: row["metrics"].get(k) for k in keys}})
+    pd.DataFrame(cmp_rows).to_csv(out.deep_learning / "model_comparison.csv", index=False)
+
+    # hyperparameter_report.csv — every experiment, both targets
+    hp_rows = []
+    for t, r in results.items():
+        metric = r["selection_metric"]
+        second = "rmse" if r["task"] == "regression" else "roc_auc"
+        for tr in r["trials"]:
+            p_ = tr["params"]
+            s = tr["cv_summary"]
+            hp_rows.append({
+                "Target": t,
+                "Experiment": tr["experiment"],
+                "Varied": tr["varied"],
+                "Architecture": "-".join(str(x) for x in (r["n_features"], *p_["hidden_units"], 1)),
+                "Hidden Layers": len(p_["hidden_units"]),
+                "Parameters": tr["parameters"],
+                "Learning Rate": p_["learning_rate"],
+                "Batch Size": p_["batch_size"],
+                "Dropout": p_["dropout"],
+                "Optimizer": "Adam" if p_["optimizer"] == "adam" else "RMSprop",
+                "L2": p_["l2"],
+                "Loss": p_.get("loss", "binary_crossentropy"),
+                "Class Weighting": ("balanced (inside the loss)" if p_.get("class_weighted")
+                                    else ("none" if r["task"] == "classification" else "n/a")),
+                "Mean Epochs Run": round(tr["mean_epochs_run"], 1),
+                "Mean Best Epoch": round(tr["mean_best_epoch"], 1),
+                "Validation Metric": f"CV {metric.upper()} (mean of {r['n_folds']} expanding-window folds)",
+                "Validation Metric Value": s.get(metric, {}).get("mean"),
+                "Validation Metric Std": s.get(metric, {}).get("std"),
+                f"CV {second.upper()}": s.get(second, {}).get("mean"),
+                "CV F1 @0.5" if r["task"] == "classification" else "CV R2":
+                    s.get("f1" if r["task"] == "classification" else "r2", {}).get("mean"),
+                "Selected": "YES" if {**p_, "hidden_units": tuple(p_["hidden_units"])} ==
+                                     {**r["best_params"], "hidden_units": tuple(r["best_params"]["hidden_units"])}
+                            else "",
+            })
+    pd.DataFrame(hp_rows).to_csv(out.deep_learning / "hyperparameter_report.csv", index=False)
+
+    # model_metadata.json — everything needed to reuse or audit a saved network
+    (out.deep_learning / "model_metadata.json").write_text(json.dumps({
+        "generated_at": now,
+        "task": "Task 7 - Deep Learning Model Development",
+        "framework": f"Keras {keras_version()} (backend: {keras_backend()})",
+        "dataset_source": source,
+        "models": {
             t: {
-                "task": r["task"],
-                "selection_metric": r["selection_metric"],
-                "task6_best_model": r["task6_best_model"],
-                "comparison": r["comparison"],
-                "verdict": r["verdict"],
+                "target": t, "task": r["task"], "model_file": r["model_file"],
+                "input_features": r["features"], "n_features": r["n_features"],
+                "architecture": r["architecture"], "hyperparameters": r["best_params"],
+                "class_weights_used": r["class_weights_used"],
+                "decision_threshold": (r["threshold"] or {}).get("threshold"),
+                "preprocessing": ("StandardScaler fitted on the training laps only; binary indicator "
+                                  "columns passed through unscaled"
+                                  + ("; lap-time target standardised on the training laps and "
+                                     "inverse-transformed before every metric" if r["task"] == "regression" else "")),
+                "split": {"test": "chronological holdout (last 20% of laps)",
+                          "tuning": f"{r['n_folds']} expanding-window lap-forward folds",
+                          "final_fit": r["final_fit_split"],
+                          "rows": {"train": r["n_train"], "validation": r["n_validation"], "test": r["n_test"]}},
+                "training": {"epochs_run": r["epochs_run"], "best_epoch": r["best_epoch"],
+                             "early_stopping": f"val_loss, patience {r['patience']}, restore_best_weights=True",
+                             "max_epochs": r["max_epochs"]},
             } for t, r in results.items()
         },
-    }, indent=2))
+    }, indent=2, default=_json_default))
 
     _extend_registry(results, out)
     _write_reports(results, out)
+
+
+def _json_default(o):
+    if isinstance(o, (np.integer,)):
+        return int(o)
+    if isinstance(o, (np.floating,)):
+        return float(o)
+    if isinstance(o, np.ndarray):
+        return o.tolist()
+    if isinstance(o, tuple):
+        return list(o)
+    return str(o)
+
+
+def keras_version() -> str:
+    import keras
+    return keras.__version__
+
+
+def keras_backend() -> str:
+    import keras
+    return keras.backend.backend()
 
 
 def _extend_registry(results: dict, out: ArtifactPaths | None = None) -> None:
@@ -384,15 +513,11 @@ def _extend_registry(results: dict, out: ArtifactPaths | None = None) -> None:
     else:
         registry = {"generated_at": datetime.now(timezone.utc).isoformat(), "models": []}
 
-    # Preserve the original trained_at for a target that is already registered.
-    # restore_registry_entries() runs on every build_all skip path, and stamping
-    # a fresh timestamp there would make a no-op rebuild dirty the tracked
-    # registry - the exact churn this phase is removing elsewhere.
-    previous_trained_at = {
-        m.get("target"): m.get("trained_at")
-        for m in registry.get("models", [])
-        if m.get("family") == "deep" and m.get("trained_at")
-    }
+    # Preserve the original trained_at for a target already registered, so a
+    # no-op rebuild (restore_registry_entries on the build_all skip path) does
+    # not dirty the tracked registry.
+    previous_trained_at = {m.get("target"): m.get("trained_at") for m in registry.get("models", [])
+                           if m.get("family") == "deep" and m.get("trained_at")}
     registry["models"] = [m for m in registry.get("models", []) if m.get("family") != "deep"]
 
     for target, r in results.items():
@@ -401,25 +526,16 @@ def _extend_registry(results: dict, out: ArtifactPaths | None = None) -> None:
             "family": "deep",
             "task_source": "Task 7 - Deep Learning",
             "target": target,
-            # Task 6's entries use "task" for the target name and always carry
-            # is_selected_best. Match that exactly: a registry with two field
-            # conventions is a KeyError waiting to happen in any consumer that
-            # iterates it (ModelCache._best_model_name does).
-            "task": target,
+            "task": target,               # Task 6 entries use "task" for the target name
             "task_type": r["task"],
             "is_selected_best": False,
             "features": r["features"],
             "architecture": r["architecture"],
             "hyperparameters": r["best_params"],
             "metrics": {"test": r["test_metrics"]},
-            "artifact": f"models/dl/{target}{persistence.MODEL_EXTENSION}",
+            "artifact": f"models/deep_learning/{TARGET_DIRNAME[target]}/{persistence.MODEL_FILENAME}",
             "framework": "keras",
             "model_format": persistence.MODEL_EXTENSION,
-            "format_note": (
-                f"Reference spec names {persistence.SPEC_EXTENSION_IN_REFERENCE}; Keras 3 "
-                f"cannot reload HDF5 models saved this way, so {persistence.MODEL_EXTENSION} "
-                f"is used."
-            ),
             "training_rows": r["n_train"],
             "test_rows": r["n_test"],
             "dataset": r["dataset_source"],
@@ -427,50 +543,34 @@ def _extend_registry(results: dict, out: ArtifactPaths | None = None) -> None:
         })
 
     registry_path.parent.mkdir(parents=True, exist_ok=True)
-    registry_path.write_text(json.dumps(registry, indent=2))
+    registry_path.write_text(json.dumps(registry, indent=2, default=_json_default))
 
 
 def _write_reports(results: dict, out: ArtifactPaths) -> None:
     from app.intelligence.dl import reports as reports_mod
-    reports_mod.evaluation_report(results, out.reports / "dl_evaluation_report.md")
-    reports_mod.hyperparameter_report(results, out.reports / "dl_hyperparameter_report.md")
+    reports_mod.evaluation_report(results, out.deep_learning / "evaluation_report.md")
+    reports_mod.hyperparameter_report(results, out.deep_learning / "hyperparameter_report.md")
 
 
 def restore_registry_entries(output_root: Path | None = None) -> int:
     """Rebuild Task 7's registry rows from the committed artifacts, without
-    retraining.
-
-    Task 7 extends the shared registry, and anything that rewrites that file
-    wholesale can drop those rows. ``write_registry`` now preserves them, but a
-    registry written before that fix — or edited by hand — can still be missing
-    them. Everything needed is already on disk (``dl_metrics.json`` plus each
-    model's ``*_spec.json``), so the rows are reconstructable exactly rather
-    than requiring a nine-minute retrain.
-
-    Returns the number of entries restored.
-    """
+    retraining. Returns the number of entries restored."""
     out = ArtifactPaths.default() if output_root is None else ArtifactPaths(root=Path(output_root))
     if not out.dl_metrics_json.exists():
         return 0
-
     metrics = json.loads(out.dl_metrics_json.read_text())
     results: dict = {}
     for target, m in metrics.get("models", {}).items():
-        spec_path = out.models_dl / f"{target}_spec.json"
+        spec_path = persistence.target_dir(out.models_dl, target) / "model_spec.json"
         if not spec_path.exists():
             continue
         spec = json.loads(spec_path.read_text())
         results[target] = {
-            "task": m["task"],
-            "features": spec["features"],
-            "architecture": m["architecture"],
-            "best_params": m["hyperparameters"],
-            "test_metrics": m["test_metrics"],
-            "n_train": m["n_train"],
-            "n_test": m["n_test"],
+            "task": m["task"], "features": spec["features"], "architecture": m["architecture"],
+            "best_params": m["hyperparameters"], "test_metrics": m["test_metrics"],
+            "n_train": m["n_train"], "n_test": m["n_test"],
             "dataset_source": metrics.get("dataset_source", {}),
         }
-
     if results:
         _extend_registry(results, out)
     return len(results)
@@ -479,4 +579,5 @@ def restore_registry_entries(output_root: Path | None = None) -> int:
 def artifacts_exist() -> bool:
     """True when Task 7 has already produced its outputs, so ``build_all.py``
     can skip the stage unless ``--force`` is passed."""
-    return DL_METRICS_JSON.exists() and any(DL_MODELS_DIR.glob(f"*{persistence.MODEL_EXTENSION}"))
+    return DL_METRICS_JSON.exists() and all(
+        (persistence.target_dir(DL_MODELS_DIR, t) / persistence.MODEL_FILENAME).exists() for t in TARGETS)
