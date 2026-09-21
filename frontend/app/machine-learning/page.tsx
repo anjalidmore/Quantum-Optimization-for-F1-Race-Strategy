@@ -21,14 +21,16 @@ export default async function MachineLearningPage() {
   let manifest = null;
   let registry = null;
   let importance = null;
+  let mlMetrics: Record<string, any> | null = null;
   let fetchError: string | null = null;
 
   try {
-    [comparison, manifest, registry, importance] = await Promise.all([
+    [comparison, manifest, registry, importance, mlMetrics] = await Promise.all([
       api.comparison(),
       api.artifacts(),
       api.models(),
       api.featureImportance(),
+      api.metrics().catch(() => null),
     ]);
   } catch (e) {
     fetchError = e instanceof ApiError ? e.message : "Could not reach the backend API.";
@@ -56,6 +58,12 @@ export default async function MachineLearningPage() {
   const clfFeatures = registry.models.find((m) => m.target === "target_pit_next_lap")?.features ?? [];
   const isReal = manifest.dataset_source.source === "real_fastf1";
   const anyUndefined = comparison.classification.some((r: ComparisonRow) => r.test_undefined_reason);
+  // Holdout / out-of-fold counts come from the committed metrics, never from constants in this file.
+  const clfBest = mlMetrics?.classification?.models?.[mlMetrics?.classification?.best_model];
+  const holdoutPos: number | undefined = clfBest?.test_metrics?.n_positive;
+  const holdoutN: number | undefined = clfBest?.test_metrics?.n;
+  const oofPos: number | undefined = clfBest?.threshold?.n_positive;
+  const oofN: number | undefined = clfBest?.threshold?.n_samples;
 
   return (
     <div className="space-y-10">
@@ -269,20 +277,24 @@ export default async function MachineLearningPage() {
           </table>
           <div className="text-xs text-white/40 mt-2 space-y-1">
             <p>
-              *Models are selected on <strong>CV PR-AUC</strong>, not ROC-AUC. Pit events are 4.8% of laps,
-              and at that prevalence ROC-AUC stays high for a model that never fires — it measures ranking,
-              not usefulness. PR-AUC asks how many of the flagged laps are real pit windows.
+              *Models are selected on <strong>CV PR-AUC</strong>, not ROC-AUC. Pit events are a small minority
+              of laps, and at that prevalence ROC-AUC stays high for a model that never fires — it measures
+              ranking, not usefulness. PR-AUC asks how many of the flagged laps are real pit windows.
             </p>
             <p>
               Decision thresholds are tuned on pooled out-of-fold CV predictions rather than left at
               sklearn&rsquo;s default 0.5, which is only optimal for balanced classes with equal error costs.
               Neither holds here.
             </p>
-            <p className="text-amber-400/70">
-              ⚠ The holdout contains <strong>1 pit event in 180 laps</strong>. Test precision/recall/F1 on a
-              single positive example carry almost no information — read the CV columns, which cover 36
-              positives across the folds. Broadening evaluation to multiple races is tracked in the backlog.
-            </p>
+            {holdoutPos !== undefined && holdoutN !== undefined && (
+              <p className="text-amber-400/70">
+                ⚠ The chronological holdout contains <strong>{holdoutPos} pit event(s) in {holdoutN} laps</strong>.
+                {holdoutPos < 5 &&
+                  " Test precision/recall/F1 on so few positives carry little information"}
+                {oofPos !== undefined && oofN !== undefined &&
+                  ` — the CV columns cover ${oofPos} pit laps across ${oofN} out-of-fold predictions.`}
+              </p>
+            )}
             <p>†undefined = the holdout contains only one class, so the metric cannot be computed there.</p>
           </div>
         </div>

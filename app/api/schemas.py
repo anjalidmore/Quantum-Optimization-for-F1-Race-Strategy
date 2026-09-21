@@ -97,8 +97,7 @@ class DeepPredictionResponse(BaseModel):
 
     ``prediction`` is lap time in seconds for the regression target and a pit
     probability in [0, 1] for the classification target; ``predicted_class`` is
-    populated only for the latter. ``model_format`` is surfaced because the
-    reference task spec names ``.h5`` while Keras 3 requires ``.keras``.
+    populated only for the latter, at Task 7's tuned decision threshold.
     """
 
     model: str

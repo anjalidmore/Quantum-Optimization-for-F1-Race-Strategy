@@ -220,12 +220,28 @@ export type DlArtifacts = {
   models: string[];
   reports: string[];
   model_format: string;
-  format_note: string;
+  models_served_over_http: boolean;
+};
+
+// --- Task 8: stratification and per-lap inspection ---------------------------
+export type XaiStratRow = Record<string, any> & { group_type: string; group: string; sample_note: string };
+export type XaiStratification = Record<string, { task: string; rows: XaiStratRow[]; figure?: string }>;
+export type XaiLapRow = Record<string, any> & {
+  row_index: number; driver?: string; team?: string; compound?: string; lap: number;
+  dnn_prediction: number; trust_score: number; trust_band: string;
+};
+export type XaiLaps = { target: string; task: string; laps: XaiLapRow[] };
+export type XaiLap = {
+  target: string; task: string; lap: XaiLapRow; race_state: Record<string, number>;
+  shap_base_value: number; shap_factors: { feature: string; value: number; shap_value: number }[];
+  counterfactual: Record<string, any>; decision_threshold: number | null;
 };
 
 // --- Task 8 (Explainable AI) ------------------------------------------------
 export type TrustBand = { label: string; meaning: string };
 export type XaiSummary = {
+  feature_importance_figure?: string;
+  trust_weights?: Record<string, number>;
   generated_at: string;
   dataset_source: DatasetSource;
   targets: Record<
@@ -258,8 +274,20 @@ export type XaiExplanation = {
       trust_score: number;
       trust_band: TrustBand;
       top_factors: ShapAttribution[];
+      trust_components?: Record<string, number>;
+      driver?: string;
+      team?: string;
+      compound?: string;
+      actual?: number;
+      race_state?: Record<string, number>;
+      shap_top3?: string[];
+      lime_top3?: string[];
+      lime?: { contributions?: { condition: string; weight: number }[]; local_r2?: number; local_prediction?: number };
+      counterfactual?: Record<string, any>;
+      figures?: Record<string, string>;
     }
   >;
+  model_explained?: Record<string, any>;
 };
 export type XaiFairness = Record<
   string,
@@ -288,6 +316,8 @@ export type XaiTrust = {
   formula: string;
   weights: Record<string, number>;
   bands: Record<string, string>;
+  note?: string;
+  all_test_laps?: { n: number; mean: number; bands: Record<string, number> };
   summary: { n: number; mean: number | null; bands: Record<string, number> };
   rows: Record<
     string,
@@ -307,6 +337,7 @@ export const api = {
   models: () => getJson<Registry>("/api/ml/models"),
   comparison: () => getJson<Comparison>("/api/ml/comparison"),
   artifacts: () => getJson<Manifest>("/api/ml/artifacts"),
+  metrics: () => getJson<Record<string, any>>("/api/ml/metrics"),
   featureImportance: () => getJson<Record<string, any>>("/api/ml/feature-importance"),
   dataOptions: () => getJson<DataOptions>("/api/data/options"),
   topFeatures: (target: string, n = 8) => getJson<TopFeaturesResponse>(`/api/ml/top-features?target=${target}&n=${n}`),
@@ -344,4 +375,8 @@ export const api = {
   xaiFeatureImportance: (target: string) =>
     getJson<Record<string, any>>(`/api/xai/feature-importance?target=${target}`),
   xaiCounterfactual: (target: string) => getJson<Record<string, any>>(`/api/xai/counterfactual?target=${target}`),
+  xaiStratification: () => getJson<XaiStratification>("/api/xai/stratification"),
+  xaiLaps: (target: string) => getJson<XaiLaps>(`/api/xai/laps?target=${target}`),
+  xaiLap: (target: string, rowIndex: number) =>
+    getJson<XaiLap>(`/api/xai/lap?target=${target}&row_index=${rowIndex}`),
 };

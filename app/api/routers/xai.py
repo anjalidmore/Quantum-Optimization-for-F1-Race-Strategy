@@ -5,7 +5,7 @@ app.api.routers.xai
 Task 8 — Explainable AI endpoints.
 
 Every response is read from the committed Task 8 artifact
-(``artifacts/metadata/xai_results.json``), which was produced by
+(``artifacts/xai/xai_metadata.json``), which was produced by
 ``app.intelligence.xai.pipeline`` — the same code path the build script uses.
 An explanation shown in the dashboard is therefore the same explanation the
 report contains, not a separately-computed lookalike.
@@ -60,16 +60,21 @@ def get_summary():
         "targets": {
             t: {
                 "task": r["task"],
+                "model_explained": r.get("model_explained"),
                 "classical_model_explained": r["classical_name"],
                 "n_features": len(r["features"]),
                 "n_identity_features": len(r["identity_features"]),
                 "identity_attribution_share": r["fairness"]["identity_attribution_share"],
                 "concentration_ratio": r["fairness"]["concentration_ratio"],
                 "trust": r["trust_summary"],
+                "trust_all_test_laps": r.get("trust_all_laps_summary"),
                 "explained_rows": list(r["examples"].keys()),
+                "figures": r.get("figures", {}),
             }
             for t, r in data.get("targets", {}).items()
         },
+        "feature_importance_figure": data.get("feature_importance_figure"),
+        "trust_weights": data.get("trust_weights"),
     }
 
 
@@ -195,15 +200,20 @@ def get_trust_score(target: str = Query(...), row: str | None = Query(None)):
     }
     payload = {
         "target": target,
-        "formula": "0.40*confidence + 0.30*model_agreement + 0.30*explanation_stability",
+        # Built from the weights actually used, so it cannot drift from the code.
+        "formula": " + ".join(f"{w:.2f}*{k}" for k, w in trust_mod.WEIGHTS.items()),
         "weights": dict(trust_mod.WEIGHTS),
+        "project_defined": True,
+        "note": ("A project-defined assessment, not a validated measure. Weights are a judgement; "
+                 "a component that cannot be computed is omitted and the rest renormalised."),
         "bands": {
-            "HIGH": ">= 0.75 - safe to act on",
+            "HIGH": ">= 0.75 - the strongest support this score can give; still not a guarantee",
             "MODERATE": "0.50-0.75 - one input among several; read the factors first",
             "LOW": "0.25-0.50 - a prompt to look at the evidence, not a recommendation",
-            "DO NOT ACT": "< 0.25 - no more information than a coin flip",
+            "DO NOT ACT": "< 0.25 - on the decision point and/or the model families contradict each other",
         },
         "summary": r["trust_summary"],
+        "all_test_laps": r.get("trust_all_laps_summary"),
     }
     if row is not None:
         if row not in rows:
@@ -247,7 +257,18 @@ def get_explanation(target: str = Query(...), row: str | None = Query(None)):
             "counterfactual_sentence": ex["counterfactual_sentence"],
             "trust_score": ex["trust"]["trust_score"],
             "trust_band": ex["trust"]["band"],
+            "trust_components": ex["trust"]["components"],
             "top_factors": ex["shap_dnn"][:3],
+            # full scenario view for the dashboard
+            "driver": ex.get("driver"), "team": ex.get("team"), "compound": ex.get("compound"),
+            "actual": ex.get("actual"),
+            "race_state": ex["feature_values"],
+            "shap_factors": ex["shap_dnn"],
+            "lime": {k: ex["lime"].get(k) for k in ("contributions", "local_r2", "local_prediction")},
+            "shap_top3": ex["shap_top3"], "lime_top3": ex["lime_top3"],
+            "counterfactual": {k: v for k, v in ex["counterfactual"].items() if k != "prediction_curve"},
+            "counterfactual_curve": ex["counterfactual"].get("prediction_curve"),
+            "figures": ex.get("figures", {}),
         }
         for label, ex in r["examples"].items()
     }
@@ -255,4 +276,69 @@ def get_explanation(target: str = Query(...), row: str | None = Query(None)):
         if row not in rows:
             raise HTTPException(status_code=404, detail=f"No explained row {row!r}. Available: {list(rows)}")
         return {"target": target, "row": {"label": row, **rows[row]}}
-    return {"target": target, "classical_model_explained": r["classical_name"], "rows": rows}
+    return {"target": target, "classical_model_explained": r["classical_name"],
+            "model_explained": r.get("model_explained"), "rows": rows}
+
+
+@router.get("/stratification")
+def get_stratification(target: str | None = Query(None)):
+    """F1-specific performance stratification: the Task 7 DNN's error by driver,
+    team and tyre compound on the test laps. Not a protected-attribute fairness
+    analysis — the data holds no demographic attributes."""
+    data = _results()
+    targets = data.get("targets", {})
+    pick = {target: _target(target)} if target else targets
+    return {t: {"task": r["task"], "rows": r.get("stratification", []),
+                "figure": r["figures"].get("stratification")} for t, r in pick.items()}
+
+
+@router.get("/laps")
+def list_laps(target: str = Query(...)):
+    """Every test lap Task 8 scored, with its prediction and trust band, so the
+    dashboard can offer any of them for inspection."""
+    r = _target(target)
+    return {"target": target, "task": r["task"], "laps": r.get("trust_all_laps", [])}
+
+
+@router.get("/lap")
+def inspect_lap(target: str = Query(...), row_index: int = Query(..., ge=0)):
+    """Inspect one test lap: race state, the DNN's prediction, its SHAP
+    attribution (from the committed run), LIME's top-3, the trust assessment,
+    and a tyre-age counterfactual computed live by the saved Task 7 network."""
+    import numpy as np
+    import pandas as pd
+
+    from app.core.paths import XAI_DIR
+    from app.intelligence.xai import counterfactual
+
+    r = _target(target)
+    laps = r.get("trust_all_laps", [])
+    if row_index >= len(laps):
+        raise HTTPException(status_code=404, detail=f"row_index must be < {len(laps)}")
+    csv = XAI_DIR / "shap" / f"{target}_shap_values.csv"
+    if not csv.exists():
+        raise HTTPException(status_code=404, detail=f"No SHAP table at {csv}. Run scripts/build_all.py.")
+    row = pd.read_csv(csv).iloc[row_index]
+    feats = r["features"]
+    shap_factors = sorted(({"feature": f, "value": float(row[f"value_{f}"]),
+                            "shap_value": float(row[f"shap_{f}"])} for f in feats),
+                          key=lambda d: -abs(d["shap_value"]))
+
+    scan = None
+    try:
+        from app.intelligence.xai import live
+        bundle = live._target_bundle(target)
+        x = np.array([float(row[f"value_{f}"]) for f in feats], dtype="float32")
+        lo, hi = (float(bundle.X_train[:, feats.index("tyre_life")].min()),
+                  float(bundle.X_train[:, feats.index("tyre_life")].max()))
+        thr = r["model_explained"]["decision_threshold"] if r["task"] == "classification" \
+            else float(np.median(bundle.y_train))
+        scan = counterfactual.tyre_age_scan(bundle.dnn_predict, x, feats, lo, hi, thr, r["task"])
+    except Exception as exc:  # the committed parts above stay available either way
+        scan = {"available": False, "reason": f"{type(exc).__name__}: {exc}"}
+
+    return {"target": target, "task": r["task"], "lap": laps[row_index],
+            "race_state": {f: float(row[f"value_{f}"]) for f in feats},
+            "shap_base_value": float(row["shap_base_value"]), "shap_factors": shap_factors,
+            "counterfactual": scan,
+            "decision_threshold": r["model_explained"]["decision_threshold"]}

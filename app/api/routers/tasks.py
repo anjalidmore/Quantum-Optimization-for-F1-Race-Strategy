@@ -144,17 +144,35 @@ def _task6() -> dict:
     }
 
 
+def _scan_tree(base: Path) -> dict:
+    """Every report / figure / data file under a Task 7 or Task 8 folder."""
+    files = sorted(p for p in base.rglob("*") if p.is_file()) if base.is_dir() else []
+    return {"reports": [_rel(p) for p in files if p.suffix == ".md"],
+            "figures": [_rel(p) for p in files if p.suffix == ".png"],
+            "other_artifacts": [_rel(p) for p in files if p.suffix in (".csv", ".json")]}
+
+
+def _task7() -> dict:
+    from app.core.paths import DEEP_LEARNING_DIR, DL_METRICS_JSON
+
+    return {"id": "task7", "number": 7, "label": "Deep Learning",
+            "purpose": "Keras DNNs for lap-time regression and pit-decision classification, tuned on "
+                       "time-aware folds and compared with Task 6 on the same chronological test laps.",
+            "status": "completed" if DL_METRICS_JSON.exists() else "upcoming",
+            **_scan_tree(DEEP_LEARNING_DIR)}
+
+
+def _task8() -> dict:
+    from app.core.paths import XAI_DIR, XAI_RESULTS_JSON
+
+    return {"id": "task8", "number": 8, "label": "Explainable AI",
+            "purpose": "Feature importance, SHAP, LIME, counterfactuals, a project-defined trust score and "
+                       "F1-specific performance stratification for the Task 7 DNN.",
+            "status": "completed" if XAI_RESULTS_JSON.exists() else "upcoming",
+            **_scan_tree(XAI_DIR)}
+
+
 _UPCOMING = [
-    {
-        "id": "task7", "number": 7, "label": "Deep Learning",
-        "purpose": "Neural models for race-performance prediction.",
-        "status": "upcoming", "reports": [], "figures": [], "other_artifacts": [],
-    },
-    {
-        "id": "task8", "number": 8, "label": "Explainable AI",
-        "purpose": "SHAP/LIME/counterfactual explanations and trust scores for the trained models.",
-        "status": "upcoming", "reports": [], "figures": [], "other_artifacts": [],
-    },
     {
         "id": "task9", "number": 9, "label": "System Integration & Deployment",
         "purpose": "A unified strategy engine combining every computational-intelligence capability.",
@@ -170,6 +188,6 @@ _UPCOMING = [
 
 @router.get("/evidence")
 def get_task_evidence():
-    tasks = [_task1(), _task2(), _task3(), _task4(), _task5(), _task6(), *_UPCOMING]
+    tasks = [_task1(), _task2(), _task3(), _task4(), _task5(), _task6(), _task7(), _task8(), *_UPCOMING]
     completed = sum(1 for t in tasks if t["status"] == "completed")
     return {"tasks": tasks, "completed_count": completed, "total_count": len(tasks)}

@@ -17,14 +17,16 @@ export default async function DeepLearningPage() {
   let comparison = null;
   let history = null;
   let artifacts = null;
+  let metrics: Record<string, any> | null = null;
   let error: string | null = null;
 
   try {
-    [models, comparison, history, artifacts] = await Promise.all([
+    [models, comparison, history, artifacts, metrics] = await Promise.all([
       api.dlModels(),
       api.dlComparison(),
       api.dlHistory(),
       api.dlArtifacts(),
+      api.dlMetrics(),
     ]);
   } catch (e) {
     error = e instanceof ApiError ? e.message : "Could not reach the backend API.";
@@ -44,7 +46,11 @@ export default async function DeepLearningPage() {
     );
   }
 
-  const figure = (name: string) => artifacts.figures.find((f) => f.endsWith(name));
+  const DIR: Record<string, string> = { target_laptime: "laptime", target_pit_next_lap: "pit_decision" };
+  // Figures live at deep_learning/<laptime|pit_decision>/<name>.png
+  const figure = (target: string, name: string) =>
+    artifacts.figures.find((f) => f.endsWith(`${DIR[target]}/${name}`));
+  const m = (target: string) => metrics?.models?.[target] ?? {};
 
   return (
     <div className="space-y-8">
@@ -147,29 +153,103 @@ export default async function DeepLearningPage() {
         </div>
       </section>
 
-      {/* --- training history --------------------------------------------- */}
+      {/* --- training curves --------------------------------------------- */}
       <section>
-        <h2 className="text-lg font-semibold text-white mb-1">Training history</h2>
+        <h2 className="text-lg font-semibold text-white mb-1">Training curves</h2>
         <p className="text-sm text-white/50 mb-3">
-          These curves are the diagnostic: they separate &ldquo;still learning&rdquo; from
-          &ldquo;plateaued&rdquo; from &ldquo;overfitting&rdquo;. The marked epoch is the one early
-          stopping restored.
+          The final network trains on earlier laps and early-stops on the block of laps just before the
+          test laps. The dashed line marks the epoch whose weights were restored and saved.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           {Object.entries(history).map(([target, h]) => {
-            const src = figure(`dl_${target}_training_history.png`);
-            const discarded = h.epochs_run - h.best_epoch;
+            const extra = target === "target_laptime" ? "mae_curve.png" : "accuracy_curve.png";
+            const o = m(target).overfitting ?? {};
             return (
-              <div key={target} className="card">
-                <h3 className="font-semibold text-white mb-2">{TARGET_LABEL[target] ?? target}</h3>
-                {src && <ArtifactImage src={artifactUrl(src)} alt={`${target} training history`} className="w-full rounded" />}
-                <p className="text-sm text-white/60 mt-3">
+              <div key={target} className="card space-y-3">
+                <h3 className="font-semibold text-white">{TARGET_LABEL[target] ?? target}</h3>
+                {figure(target, "loss_curve.png") && (
+                  <ArtifactImage src={artifactUrl(figure(target, "loss_curve.png")!)} alt={`${target} loss curve`} className="w-full rounded" />
+                )}
+                {figure(target, extra) && (
+                  <ArtifactImage src={artifactUrl(figure(target, extra)!)} alt={`${target} ${extra}`} className="w-full rounded" />
+                )}
+                <p className="text-sm text-white/60">
                   Ran {h.epochs_run} of a maximum {h.max_epochs} epochs; early stopping (patience{" "}
-                  {h.early_stopping_patience}) restored epoch {h.best_epoch}
-                  {discarded > 0
-                    ? `, discarding ${discarded} epochs of validation-loss deterioration.`
-                    : " — validation loss was still improving at the cap."}
+                  {h.early_stopping_patience}) restored epoch {h.best_epoch}.{" "}
+                  {o.verdict && (
+                    <>
+                      Diagnosis from the curves: <strong className="text-white">{o.verdict}</strong>
+                      {o.overfitting_emerged_after_best_epoch && " — overfitting emerged after the restored epoch and was cut off by early stopping"}
+                      .
+                    </>
+                  )}
                 </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* --- evaluation ---------------------------------------------------- */}
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-1">Evaluation — train / validation / test</h2>
+        <p className="text-sm text-white/50 mb-3">
+          Test = the chronological holdout (the last laps of the race), used once, after hyperparameters,
+          threshold and early-stopping epoch were fixed on earlier laps.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          {Object.keys(TARGET_LABEL).map((target) => {
+            const e = m(target);
+            if (!e.test_metrics) return null;
+            const reg = e.task === "regression";
+            const keys = reg ? ["mae", "rmse", "r2"] : ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"];
+            const splits: [string, Record<string, any>][] = [
+              ["Train", e.train_metrics], ["Validation", e.validation_metrics], ["Test", e.test_metrics],
+            ];
+            return (
+              <div key={target} className="card overflow-x-auto space-y-3">
+                <h3 className="font-semibold text-white">{TARGET_LABEL[target]}</h3>
+                <table className="w-full text-sm">
+                  <thead className="text-white/50">
+                    <tr>
+                      <th className="text-left font-normal py-1">Split</th>
+                      {!reg && <th className="text-right font-normal">pit laps</th>}
+                      {keys.map((k) => <th key={k} className="text-right font-normal">{k.toUpperCase()}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody className="text-white/80">
+                    {splits.map(([name, s]) => (
+                      <tr key={name} className={`border-t border-white/5 ${name === "Test" ? "bg-white/5" : ""}`}>
+                        <td className="py-1.5">{name}</td>
+                        {!reg && <td className="text-right tabular-nums">{s?.n_positive}/{s?.n}</td>}
+                        {keys.map((k) => (
+                          <td key={k} className="text-right tabular-nums">{fmt(s?.[k])}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {!reg && e.threshold && (
+                  <p className="text-xs text-white/50">
+                    Decision threshold <strong className="text-white/80">{fmt(e.threshold.threshold)}</strong>, tuned on{" "}
+                    {e.threshold.n_samples} out-of-fold predictions ({e.threshold.n_positive} pit laps): F1{" "}
+                    {fmt(e.threshold["at_default_0.5"]?.f1)} at 0.5 → {fmt(e.threshold.at_threshold?.f1)} at the tuned value.
+                  </p>
+                )}
+                {!reg && e.test_metrics.n_positive < 5 && (
+                  <p className="text-xs text-amber-400/70">
+                    ⚠ The test laps contain <strong>{e.test_metrics.n_positive} pit event(s) in {e.test_metrics.n} laps</strong>.
+                    Precision, recall, F1 and PR-AUC on so few positives are dominated by chance; the cross-validated
+                    figures rest on {e.threshold?.n_positive ?? "more"} pit laps and are the better guide.
+                  </p>
+                )}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(reg ? ["prediction_vs_actual.png"] : ["confusion_matrix.png", "roc_curve.png"]).map((n) =>
+                    figure(target, n) ? (
+                      <ArtifactImage key={n} src={artifactUrl(figure(target, n)!)} alt={`${target} ${n}`} className="w-full rounded" />
+                    ) : null,
+                  )}
+                </div>
               </div>
             );
           })}
@@ -228,19 +308,17 @@ export default async function DeepLearningPage() {
                     ))}
                   </tbody>
                 </table>
+                <p className="text-sm text-white/70 mt-3">{t.verdict.replace(/\*\*/g, "")}</p>
                 {t.task === "classification" && (
-                  <p className="text-xs text-amber-400/70 mt-3">
-                    ⚠ The holdout contains <strong>1 pit event in 180 laps</strong>. Precision, recall and
-                    F1 on a single positive carry almost no information; the decision threshold was tuned
-                    on 635 out-of-fold predictions containing 36 positives, where it moved F1 from 0.0000
-                    to 0.3143. Ranking is by <strong>PR-AUC</strong>, not ROC-AUC, which stays high at this
-                    prevalence for a model that never fires.
+                  <p className="text-xs text-white/50 mt-2">
+                    Ranked by <strong>PR-AUC</strong>, not ROC-AUC, which stays high at this prevalence for a
+                    model that never fires. Task 6&rsquo;s rows are its own committed results on the same test laps.
                   </p>
                 )}
-                {figure(`dl_${target}_model_comparison.png`) && (
+                {figure(target, "model_comparison.png") && (
                   <div className="mt-4">
                     <ArtifactImage
-                      src={artifactUrl(figure(`dl_${target}_model_comparison.png`)!)}
+                      src={artifactUrl(figure(target, "model_comparison.png")!)}
                       alt={`${target} model comparison`}
                       className="w-full rounded"
                     />
@@ -253,8 +331,21 @@ export default async function DeepLearningPage() {
       </section>
 
       <section className="card">
-        <h2 className="font-semibold text-white mb-2">Model format</h2>
-        <p className="text-sm text-white/60">{artifacts.format_note}</p>
+        <h2 className="font-semibold text-white mb-2">Saved models</h2>
+        <p className="text-sm text-white/60">
+          Saved as HDF5 (<code>{artifacts.model_format}</code>) with their fitted scalers. Each file is reloaded
+          after saving and must reproduce the trained network&rsquo;s predictions exactly. Weights are kept in the
+          private <code>models/</code> tree and are not served over HTTP. Full reports:{" "}
+          {artifacts.reports.filter((r) => r.endsWith(".md") || r.endsWith(".csv")).map((r, i) => (
+            <span key={r}>
+              {i > 0 && ", "}
+              <a className="text-sky-400 hover:underline" href={artifactUrl(r)} target="_blank" rel="noreferrer">
+                {r.split("/").pop()}
+              </a>
+            </span>
+          ))}
+          .
+        </p>
         <ul className="text-sm text-white/50 mt-2 space-y-1">
           {artifacts.models.map((m) => (
             <li key={m}>

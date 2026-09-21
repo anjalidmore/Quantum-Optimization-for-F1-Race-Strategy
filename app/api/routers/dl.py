@@ -98,23 +98,36 @@ def get_history():
 
 @router.get("/artifacts")
 def get_artifacts():
-    """Which Task 7 files exist on disk, so the frontend can link only to
-    figures that are really there."""
-    from app.core.paths import ML_FIGURES_DIR
+    """Which Task 7 deliverables exist on disk, as paths under the /artifacts
+    mount, so the frontend links only to files that are really there. Model
+    weights are listed by name for completeness but are deliberately not served
+    over HTTP (they live under the private models/ tree)."""
+    from app.core.paths import DEEP_LEARNING_DIR
 
-    figures = sorted(p.name for p in ML_FIGURES_DIR.glob("dl_*.png")) if ML_FIGURES_DIR.exists() else []
-    models = sorted(p.name for p in DL_MODELS_DIR.glob(f"*{dl_persistence.MODEL_EXTENSION}")) \
-        if DL_MODELS_DIR.exists() else []
+    def rel(p):
+        return str(p.relative_to(DEEP_LEARNING_DIR.parent))
+
+    files = sorted(DEEP_LEARNING_DIR.rglob("*")) if DEEP_LEARNING_DIR.exists() else []
     return {
-        "figures": [f"figures/{n}" for n in figures],
-        "models": [f"models/dl/{n}" for n in models],
-        "reports": ["reports/dl_evaluation_report.md", "reports/dl_hyperparameter_report.md"],
+        "figures": [rel(p) for p in files if p.suffix == ".png"],
+        "reports": [rel(p) for p in files if p.suffix in (".md", ".csv", ".json")],
+        "models": [f"models/deep_learning/{dl_persistence.TARGET_DIRNAME[t]}/{dl_persistence.MODEL_FILENAME}"
+                   for t in _TARGETS
+                   if (dl_persistence.target_dir(DL_MODELS_DIR, t) / dl_persistence.MODEL_FILENAME).exists()],
         "model_format": dl_persistence.MODEL_EXTENSION,
-        "format_note": (
-            f"The reference task spec names {dl_persistence.SPEC_EXTENSION_IN_REFERENCE}. "
-            f"Keras 3 saves HDF5 but cannot reload it, so {dl_persistence.MODEL_EXTENSION} is used."
-        ),
+        "models_served_over_http": False,
     }
+
+
+def _pit_threshold() -> float:
+    """Task 7's tuned decision threshold. predicted_class must use the cut-off
+    the model was evaluated at, not a default 0.5."""
+    if DL_METRICS_JSON.exists():
+        entry = json.loads(DL_METRICS_JSON.read_text()).get("models", {}).get("target_pit_next_lap", {})
+        thr = (entry.get("threshold") or {}).get("threshold")
+        if thr is not None:
+            return float(thr)
+    return 0.5
 
 
 def _predict(target: str, payload: dict) -> DeepPredictionResponse:
@@ -141,7 +154,7 @@ def _predict(target: str, payload: dict) -> DeepPredictionResponse:
         model="dnn_mlp",
         target=target,
         prediction=value,
-        predicted_class=(int(value >= 0.5) if target == "target_pit_next_lap" else None),
+        predicted_class=(int(value >= _pit_threshold()) if target == "target_pit_next_lap" else None),
         model_format=spec["format"],
         data_source=contract.dataset_source["source"],
     )

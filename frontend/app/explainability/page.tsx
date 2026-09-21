@@ -1,6 +1,7 @@
 import { api, ApiError, artifactUrl } from "@/lib/api";
 import { DatasetBadge } from "@/components/DatasetBadge";
 import { ArtifactImage } from "@/components/ArtifactImage";
+import LapInspector from "@/components/xai/LapInspector";
 
 function fmt(x: number | null | undefined, digits = 3): string {
   if (x === null || x === undefined || Number.isNaN(x)) return "—";
@@ -22,6 +23,13 @@ const BAND_CLASS: Record<string, string> = {
   MODERATE: "badge-warning",
   LOW: "badge-warning",
   "DO NOT ACT": "badge-danger",
+};
+
+const TRUST_TEXT: Record<string, string> = {
+  confidence: "Distance of the prediction from the model's tuned decision threshold. Not used for lap time, which has no decision point; the other weights are renormalised.",
+  model_agreement: "Do the Task 7 DNN and Task 6's selected model say the same thing?",
+  explanation_stability: "Do SHAP and LIME name the same top-3 drivers of this prediction?",
+  input_validity: "Share of inputs inside the training data's 1st–99th percentile — is the model extrapolating?",
 };
 
 function TrustPill({ score, band }: { score: number; band: string }) {
@@ -58,10 +66,11 @@ export default async function ExplainabilityPage() {
   }
 
   const targets = Object.keys(summary.targets);
-  const [explanations, shap, trust] = await Promise.all([
+  const [explanations, shap, trust, strat] = await Promise.all([
     Promise.all(targets.map((t) => api.xaiExplanation(t).catch(() => null))),
     Promise.all(targets.map((t) => api.xaiShap(t).catch(() => null))),
     Promise.all(targets.map((t) => api.xaiTrust(t).catch(() => null))),
+    api.xaiStratification().catch(() => null),
   ]);
 
   return (
@@ -73,11 +82,88 @@ export default async function ExplainabilityPage() {
           <span className="badge">Task 8</span>
         </div>
         <p className="text-white/60 mt-1 max-w-3xl">
-          Every prediction traced to named race-state factors, cross-checked between two
-          independent explanation methods, and scored for how much it should be trusted.
-          Nothing here is a black box.
+          Explains the trained <strong className="text-white/80">Task 7 DNN</strong> on the chronological test
+          laps: which race-state factors moved each prediction (SHAP, LIME), what change would flip it
+          (counterfactual), how far to trust it, and whether it performs evenly across drivers, teams and
+          compounds. These describe the model&rsquo;s behaviour — not causes, and not strategy instructions.
         </p>
       </section>
+
+      {/* --- inspect any lap ------------------------------------------------ */}
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-1">Inspect a race scenario</h2>
+        <p className="text-sm text-white/50 mb-3">
+          Pick any test lap. SHAP and trust come from the committed Task 8 run; the tyre-age counterfactual is
+          computed live by the saved network.
+        </p>
+        <LapInspector />
+      </section>
+
+      {/* --- global importance ---------------------------------------------- */}
+      {summary.feature_importance_figure && (
+        <section className="card">
+          <h2 className="font-semibold text-white mb-1">Global feature importance</h2>
+          <p className="text-sm text-white/50 mb-3">
+            Permutation importance of the Task 7 DNN on the test laps: how much performance is lost when one
+            feature is shuffled. This is a <em>global</em> summary; the cards below are <em>local</em> explanations
+            of single predictions.
+          </p>
+          <ArtifactImage src={artifactUrl(summary.feature_importance_figure)} alt="Global feature importance" className="w-full rounded" />
+        </section>
+      )}
+
+      {/* --- F1-specific performance stratification ------------------------- */}
+      {strat && (
+        <section>
+          <h2 className="text-lg font-semibold text-white mb-1">F1-specific performance stratification</h2>
+          <p className="text-sm text-white/50 mb-3 max-w-3xl">
+            Does the model perform systematically differently by driver, team or tyre compound? This is{" "}
+            <strong>not</strong> a protected-attribute fairness analysis — the data holds no demographic
+            attributes. All laps come from one race, so there is no circuit stratum. Rows marked small are
+            descriptive only.
+          </p>
+          <div className="grid gap-4">
+            {Object.entries(strat).map(([target, s]) => {
+              const reg = s.task === "regression";
+              const cols = reg ? ["mae", "rmse", "mean_error_bias"] : ["n_pit_laps", "precision", "recall", "f1", "false_positive_rate"];
+              const rows = s.rows.filter((r) => r.group_type !== "Driver");
+              return (
+                <div key={target} className="card overflow-x-auto">
+                  <h3 className="font-semibold text-white mb-2">{TARGET_LABEL[target] ?? target}</h3>
+                  <table className="w-full text-sm min-w-[40rem]">
+                    <thead className="text-white/50">
+                      <tr>
+                        <th className="text-left font-normal py-1">Group</th>
+                        <th className="text-right font-normal">laps</th>
+                        {cols.map((c) => <th key={c} className="text-right font-normal">{c.replace(/_/g, " ")}</th>)}
+                        <th className="text-left font-normal pl-3">note</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-white/80">
+                      {rows.map((r) => (
+                        <tr key={`${r.group_type}-${r.group}`} className="border-t border-white/5">
+                          <td className="py-1">{r.group_type === "overall" ? <strong>{r.group}</strong> : `${r.group_type}: ${r.group}`}</td>
+                          <td className="text-right tabular-nums">{r.n_laps}</td>
+                          {cols.map((c) => (
+                            <td key={c} className="text-right tabular-nums">
+                              {typeof r[c] === "number" ? (Number.isInteger(r[c]) ? r[c] : r[c].toFixed(3)) : "—"}
+                            </td>
+                          ))}
+                          <td className={`pl-3 text-xs ${r.sample_note === "OK" ? "text-white/40" : "text-amber-400/70"}`}>{r.sample_note}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className="text-xs text-white/40 mt-2">
+                    Per-driver rows (≈9 laps each) are in <code>artifacts/xai/fairness_assessment.csv</code> and the figure below.
+                  </p>
+                  {s.figure && <ArtifactImage src={artifactUrl(s.figure)} alt={`${target} stratification`} className="w-full rounded mt-3" />}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* --- fairness ------------------------------------------------------ */}
       <section>
@@ -133,7 +219,7 @@ export default async function ExplainabilityPage() {
                 {f.figure && (
                   <div className="mt-3">
                     <ArtifactImage
-                      src={artifactUrl(`figures/${f.figure}`)}
+                      src={artifactUrl(f.figure)}
                       alt={`${target} fairness`}
                       className="w-full rounded"
                     />
@@ -172,7 +258,7 @@ export default async function ExplainabilityPage() {
                       <div key={label} className="card">
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <span className="text-sm text-white/50">
-                            {label.replace(/_/g, " ")} · lap {row.lap}
+                            {label.replace(/_/g, " ")} · {row.driver} ({row.team}, {row.compound}) · lap {row.lap}
                           </span>
                           <TrustPill score={row.trust_score} band={row.trust_band.label} />
                         </div>
@@ -180,14 +266,12 @@ export default async function ExplainabilityPage() {
 
                         {comps && (
                           <dl className="grid grid-cols-2 gap-x-3 text-xs mt-3 text-white/50">
-                            <dt>confidence</dt>
-                            <dd className="text-right text-white/70">{fmt(comps.confidence)}</dd>
-                            <dt>model agreement</dt>
-                            <dd className="text-right text-white/70">{fmt(comps.model_agreement)}</dd>
-                            <dt>explanation stability</dt>
-                            <dd className="text-right text-white/70">
-                              {fmt(comps.explanation_stability)}
-                            </dd>
+                            {Object.entries(comps).map(([k, v]) => (
+                              <div key={k} className="contents">
+                                <dt>{k.replace(/_/g, " ")}</dt>
+                                <dd className="text-right text-white/70">{fmt(v as number)}</dd>
+                              </div>
+                            ))}
                           </dl>
                         )}
 
@@ -212,9 +296,28 @@ export default async function ExplainabilityPage() {
                           </ul>
                         </div>
 
+                        {row.lime_top3 && (
+                          <p className="text-xs text-white/50 mt-3">
+                            LIME top 3: <code className="text-white/70">{row.lime_top3.join(", ")}</code>
+                            {row.lime?.local_r2 !== undefined && ` (surrogate R² ${fmt(row.lime.local_r2)})`} · SHAP top 3:{" "}
+                            <code className="text-white/70">{(row.shap_top3 ?? []).join(", ")}</code>
+                          </p>
+                        )}
+
                         <p className="text-xs text-white/50 mt-3 border-t border-white/5 pt-2">
                           {row.counterfactual_sentence}
                         </p>
+
+                        {row.figures && (
+                          <details className="mt-2">
+                            <summary className="text-xs text-sky-400 cursor-pointer">SHAP · LIME · counterfactual plots</summary>
+                            <div className="space-y-2 mt-2">
+                              {Object.entries(row.figures).map(([k, src]) => (
+                                <ArtifactImage key={k} src={artifactUrl(src)} alt={`${label} ${k}`} className="w-full rounded" />
+                              ))}
+                            </div>
+                          </details>
+                        )}
                       </div>
                     );
                   })}
@@ -261,7 +364,7 @@ export default async function ExplainabilityPage() {
                 {s.figure && (
                   <div className="mt-4">
                     <ArtifactImage
-                      src={artifactUrl(`figures/${s.figure}`)}
+                      src={artifactUrl(s.figure)}
                       alt={`${target} SHAP summary`}
                       className="w-full rounded"
                     />
@@ -278,28 +381,14 @@ export default async function ExplainabilityPage() {
         <section className="card">
           <h2 className="font-semibold text-white mb-2">How the trust score works</h2>
           <code className="text-sm text-sky-300">{trust[0].formula}</code>
-          <dl className="grid md:grid-cols-3 gap-4 mt-4 text-sm">
-            <div>
-              <dt className="text-white/80">confidence (0.40)</dt>
-              <dd className="text-white/50 mt-1">
-                How far the prediction is from the decision boundary. A prediction sitting on the
-                boundary is unusable however well explained.
-              </dd>
-            </div>
-            <div>
-              <dt className="text-white/80">model agreement (0.30)</dt>
-              <dd className="text-white/50 mt-1">
-                Do the deep network and the classical model say the same thing? One disagreeing
-                means at least one is wrong and you cannot tell which.
-              </dd>
-            </div>
-            <div>
-              <dt className="text-white/80">explanation stability (0.30)</dt>
-              <dd className="text-white/50 mt-1">
-                Do SHAP and LIME name the same drivers? If two established methods disagree about
-                <em> why</em>, the explanation is not trustworthy even when the prediction is right.
-              </dd>
-            </div>
+          {trust[0].note && <p className="text-xs text-amber-400/70 mt-2">{trust[0].note}</p>}
+          <dl className="grid md:grid-cols-4 gap-4 mt-4 text-sm">
+            {Object.entries(trust[0].weights).map(([k, w]) => (
+              <div key={k}>
+                <dt className="text-white/80">{k.replace(/_/g, " ")} ({w.toFixed(2)})</dt>
+                <dd className="text-white/50 mt-1">{TRUST_TEXT[k] ?? ""}</dd>
+              </div>
+            ))}
           </dl>
           <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
             {Object.entries(trust[0].bands).map(([band, meaning]) => (

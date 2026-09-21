@@ -84,6 +84,8 @@ PUBLIC_ARTIFACT_DIRS = (
     "knowledge_representation",  # Task 1 diagrams, ontology, reports
     "expert_system",             # Task 2 reports + rule base
     "search",                    # Task 3 diagrams + reports
+    "deep_learning",             # Task 7 reports, CSVs, curves (weights are under models/, not here)
+    "xai",                       # Task 8 reports, CSVs, SHAP / LIME / counterfactual figures
 )
 
 PRIVATE_ARTIFACT_DIRS = ("models", "metadata")
