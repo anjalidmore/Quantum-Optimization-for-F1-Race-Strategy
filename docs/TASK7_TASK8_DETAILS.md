@@ -10,6 +10,20 @@ Part of **Quantum Optimization for Formula 1 Race Strategy**.
 Every claim below is traceable to a real file under `artifacts/`. Where a result is poor,
 it is written down as it came out.
 
+> **⚠ Superseded in part (2026-09-21).** Tasks 7 and 8 were re-implemented against the formal
+> specification. The **current** results, artifact layout and methods are in the README sections
+> [Task 7 — Deep Learning Model Development](../README.md#task-7--deep-learning-model-development) and
+> [Task 8 — Explainable Artificial Intelligence (XAI)](../README.md#task-8--explainable-artificial-intelligence-xai).
+> The numbers and file paths below come from the earlier run and no longer match `artifacts/`.
+> Specifically:
+> - models are now `artifacts/models/deep_learning/{laptime,pit_decision}/f1_dnn_model.h5` (reload-verified);
+> - reports live under `artifacts/deep_learning/` and `artifacts/xai/`;
+> - class weighting moved inside the loss (`fit(class_weight=)` was measured to have no effect);
+> - the final fit now validates on later, unseen laps;
+> - the trust score has four components (0.35/0.25/0.20/0.20);
+> - Task 8 explains the Task 7 DNN, with physically consistent tyre-age counterfactuals and driver/team/compound
+>   performance stratification.
+
 ---
 
 # Task 7 — Deep Learning Model Development

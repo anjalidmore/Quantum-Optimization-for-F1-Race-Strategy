@@ -211,12 +211,14 @@ and an R² of −5949 for exactly that reason. Standardising the target (fitted 
 rows only, inverted before any metric) fixes it. Binary indicators are left alone because
 standardising a 0/1 dummy destroys its interpretability without helping the optimiser.
 
-**Q: Your `.h5` deliverable is a `.keras` file. Why?**
-Under Keras 3 the HDF5 path is legacy: the model saves, but `load_model` fails with
-`Could not deserialize 'keras.metrics.mse'` — verified on this installation. A model that
-cannot be reloaded is not a deliverable. The native `.keras` archive round-trips
-correctly, so that is what ships, and the divergence is documented in the report, the
-registry entry and the API response rather than left for someone to discover.
+**Q: How do you know the saved `.h5` file is the model you trained?**
+Under Keras 3, HDF5 is a legacy format. An earlier version of this project could not reload its `.h5` file
+(`Could not deserialize 'keras.metrics.mse'`) and shipped `.keras` instead. The fix: recompile with a
+standard loss and metric just before saving. Recompiling does not change the weights, and a file that needs
+the project's custom class-weighted loss to deserialise is one nobody else can open. `persistence.save`
+then reloads the file with `compile=False` and **refuses to continue** unless the reloaded model reproduces
+the in-memory predictions (tolerance 1e-6). The result is recorded as `reload_verified` in the evaluation
+report.
 
 **Q: What would you change with more data?**
 In priority order. (1) **More sessions** — hold out whole *races*, not the tail of one
@@ -231,9 +233,11 @@ model generalises to new drivers; if it collapses, that is itself the finding.
 The three **components** are principled: distance from the decision boundary, agreement
 between two independently-trained model families, and agreement between two independent
 explanation methods. Each captures a distinct, real failure mode. The **weights**
-(0.40/0.30/0.30) are a documented judgement, not a derivation — confidence carries the
-largest share because a prediction on the boundary is unusable regardless of explanation
-quality. They are exposed as `app.intelligence.xai.trust.WEIGHTS` precisely so they can be
+(0.35/0.25/0.20/0.20, with input validity as a fourth component) are a documented judgement, not a
+derivation. Confidence carries the largest share because a prediction on the boundary is unusable
+regardless of explanation quality. For lap time there is no boundary, so confidence is left out and the
+rest renormalised. Checked against outcomes on the 180 test laps, the score did **not** track lap-time
+error (Spearman −0.09): a finding to state, not hide. They are exposed as `app.intelligence.xai.trust.WEIGHTS` precisely so they can be
 challenged. The honest framing: the score is a structured summary of three real signals,
 not a calibrated probability, and the bands are deliberately conservative.
 
@@ -269,25 +273,36 @@ positive — so the selection procedure is sound even where the holdout number i
 
 ```
 LAP-TIME REGRESSION                 PIT-DECISION CLASSIFICATION
-input (n features)                  input (n features)
-   ↓ Dense(64, relu) + L2              ↓ Dense(16, relu) + L2
-   ↓ Dropout(0.3)                      ↓ Dropout(0.4)
-   ↓ Dense(32, relu) + L2              ↓ Dense(8, relu) + L2
-   ↓ Dropout(0.3)                      ↓ Dropout(0.4)
-   ↓ Dense(1, LINEAR)                  ↓ Dense(1, SIGMOID)
-loss = MSE, Adam                    loss = binary cross-entropy, Adam
-target STANDARDISED (train only)    class_weight = balanced
+input (45 features)                 input (8 features)
+   ↓ Dense(128, relu) + L2 1e-3        ↓ Dense(16, relu) + L2 1e-4
+   ↓ Dropout(0.2)                      ↓ Dropout(0.3)
+   ↓ Dense(64, relu) + L2              ↓ Dense(8, relu) + L2
+   ↓ Dropout(0.2)                      ↓ Dropout(0.3)
+   ↓ Dense(32, relu) + L2              ↓ Dense(1, SIGMOID)
+   ↓ Dropout(0.2)
+   ↓ Dense(1, LINEAR)
+loss = MSE, RMSprop, batch 16       loss = binary cross-entropy, RMSprop, batch 32
+16,257 parameters                   289 parameters
+target STANDARDISED (train only)    class weighting: tried, inside the loss;
+                                    lost on CV PR-AUC, so not used
+                                    (fit(class_weight=) is ignored on this
+                                    Keras/torch install - measured)
+                                    decision threshold 0.1524 (tuned on OOF CV)
 ```
 
-Both: early stopping on `val_loss`, patience 20, `restore_best_weights=True`.
-Hyperparameters chosen by a **fully enumerated** grid over expanding-window folds.
+Both: early stopping on `val_loss`, patience 20, `restore_best_weights=True`, validating on laps 39–46
+(after the training laps 4–38, never inside them). Hyperparameters chosen by a one-factor-at-a-time
+search over the expanding-window folds; every value tried is in `artifacts/deep_learning/hyperparameter_report.csv`.
 
 ### The trust score
 
 ```
-trust = 0.40 · confidence            2·|p − 0.5|   (or 1 − gap/σ for regression)
-      + 0.30 · model_agreement       1 − |p_dnn − p_classical|
-      + 0.30 · explanation_stability Jaccard(SHAP top-3, LIME top-3)
+trust = Σ wₖ·componentₖ / Σ wₖ over the components that apply
+  0.35 · confidence            (p − t)/(1 − t) above the tuned threshold t, (t − p)/t below
+                               (not used for lap time: no decision point)
+  0.25 · model_agreement       1 − |p_dnn − p_classical|   (or 1 − gap/σ for regression)
+  0.20 · explanation_stability Jaccard(SHAP top-3, LIME top-3)
+  0.20 · input_validity        share of inputs inside the training 1st–99th percentile
 
 ≥0.75 HIGH  ·  0.50–0.75 MODERATE  ·  0.25–0.50 LOW  ·  <0.25 DO NOT ACT
 ```
@@ -316,7 +331,7 @@ concentration < 1  → race-state features dominate (the desired outcome)
 
 * **Why not K-fold?** Time-ordered panel; K-fold leaks the future.
 * **Why standardise the target?** σ = 0.56 s around a mean of 91 s; a linear head can't reach 91.
-* **Why `.keras` not `.h5`?** Keras 3 saves HDF5 but can't reload it.
+* **How is the `.h5` verified?** Recompiled with a standard loss before saving, then reloaded and required to reproduce the predictions exactly.
 * **Why permutation importance?** The only metric comparable across a forest and a network.
 * **Why `TreeExplainer` for one model and `KernelExplainer` for the other?** Exact when possible, model-agnostic when necessary.
 * **Why both SHAP and LIME?** Their disagreement is a signal, and the trust score uses it.

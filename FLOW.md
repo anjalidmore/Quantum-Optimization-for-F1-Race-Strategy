@@ -53,8 +53,8 @@ verified in this repository — not on what was planned.
  │   imports ml.splits + ml.evaluation directly, so DL and classical   │
  │   numbers are produced by the SAME code                             │
  │   Keras MLPs (torch backend): linear head / sigmoid head            │
- │   → artifacts/models/dl/*.keras                                     │
- │     artifacts/metrics/dl_{metrics,training_history,vs_classical}    │
+ │   → artifacts/models/deep_learning/*/f1_dnn_model.h5 (private)      │
+ │     artifacts/deep_learning/ (reports, curves, comparison)          │
  │     model_registry.json extended (not duplicated)                   │
  └────────────────────────────────┬────────────────────────────────────┘
                                   │
@@ -65,8 +65,8 @@ verified in this repository — not on what was planned.
  │   explains Task 6's PERSISTED pipelines + Task 7's saved networks    │
  │   permutation importance · SHAP (Tree exact / Kernel sampled) ·      │
  │   LIME · counterfactual scan + DiCE · trust score · fairness         │
- │   → artifacts/metadata/xai_results.json                             │
- │     artifacts/reports/xai_*.md, artifacts/figures/xai_*.png         │
+ │   → artifacts/xai/xai_metadata.json                                 │
+ │     artifacts/xai/{shap,lime,counterfactual,stratification}/, *.md  │
  └────────────────────────────────┬────────────────────────────────────┘
                                   │  app/services/model_cache.py (load once, cache)
                                   ▼
@@ -102,7 +102,7 @@ Machine Learning dashboard shows.
 
 **Task 8 depends on both and trains nothing.** It loads Task 6's persisted `.joblib`
 pipeline through `ModelCache` — the exact model the API serves — and Task 7's saved
-`.keras` network, then explains both. If either is missing it raises
+`f1_dnn_model.h5` network, then explains the network (Task 6's model is the second opinion). If either is missing it raises
 `ExplainerUnavailableError` rather than substituting a stand-in, so an explanation is
 always an explanation *of the deployed model*.
 
@@ -136,8 +136,8 @@ two triggered rule ids and a search cost.
 | Task 4 Cleaning & EDA | **Real** | full cleaning audit; cleaned CSVs regenerate byte-identically |
 | Task 5 Feature engineering | **Real, but a stub in `build_all.py`** | see below |
 | Task 6 Machine learning | **Real** | 10 models trained in 25 s; metrics reproduce to ~1e-14 |
-| Task 7 Deep learning | **Real** | 2 Keras MLPs, fully-enumerated grid over the same folds, saved as `.keras` |
-| Task 8 Explainable AI | **Real** | SHAP + LIME + counterfactuals + trust + fairness, all on the persisted models |
+| Task 7 Deep learning | **Real** | 2 Keras MLPs, one-factor-at-a-time search over the same folds, saved as reload-verified `.h5` |
+| Task 8 Explainable AI | **Real** | SHAP + LIME + consistent tyre-age counterfactuals + trust + driver/team/compound stratification, on the Task 7 DNN |
 | API | **Real** | all endpoints verified live; values traced to artifacts |
 | Frontend | **Partial** | 7 pages build and render; 3 symbolic-engine pages not built |
 | Tasks 9–10, Quantum | **Not started** | listed as planned in the README status table |
