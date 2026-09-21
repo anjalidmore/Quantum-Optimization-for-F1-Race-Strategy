@@ -1,0 +1,9 @@
+target,case,driver,lap,lime_prediction,model_prediction,lime_r2,lime_top3,shap_top3
+target_laptime,fastest_predicted_lap,GAS,47,97.03800688635603,96.06127166748047,0.30630966527310277,"track_status, field_median_lag1, form_vs_baseline","form_vs_baseline, field_median_lag1, stint_number"
+target_laptime,median_predicted_lap,ALB,53,97.85387827518454,97.61602783203125,0.2931847051599933,"track_status, field_median_lag1, stint_number","field_median_lag1, stint_number, tracktemp_dev_x_tyrelife"
+target_laptime,slowest_predicted_lap,ZHO,55,99.86884120149114,100.84445190429688,0.4442825247328399,"track_status, form_vs_baseline, field_median_lag1","form_vs_baseline, gap_roll3_mean, tyre_life"
+target_laptime,freshest_tyres,NOR,48,99.29378684189793,100.127197265625,0.4416205493754074,"track_status, form_vs_baseline, field_median_lag1","form_vs_baseline, wind_speed, field_median_lag1"
+target_laptime,oldest_tyres,DEV,56,100.06990287396455,98.902587890625,0.4181297075264764,"track_status, form_vs_baseline, field_median_lag1","tracktemp_dev_x_tyrelife, tyre_life, field_median_lag1"
+target_pit_next_lap,lowest_pit_probability,NOR,51,0.009766304455599437,0.0025092128198593855,0.18741777390647252,"form_vs_baseline, tyrelife_x_soft, tracktemp_dev_x_tyrelife","form_vs_baseline, tracktemp_dev_x_tyrelife, tyrelife_x_soft"
+target_pit_next_lap,closest_to_decision_boundary,ZHO,48,0.22325922815203902,0.12869270145893097,0.4417849419444402,"field_pace_trend, form_vs_baseline, tyre_life","tyre_life, tracktemp_dev_x_tyrelife, tyrelife_x_soft"
+target_pit_next_lap,actual_pit_lap,ZHO,54,0.03822824227131358,0.0630241334438324,0.31194893612309016,"field_pace_trend, tyre_life, tyrelife_x_soft","tracktemp_dev_x_tyrelife, tyre_life, tyrelife_x_soft"

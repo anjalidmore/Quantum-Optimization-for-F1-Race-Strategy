@@ -1733,24 +1733,35 @@
           {
             "name": "hidden_1",
             "type": "Dense",
-            "units": 32,
+            "units": 128,
             "activation": "relu"
           },
           {
             "name": "dropout_1",
             "type": "Dropout",
-            "rate": 0.1
+            "rate": 0.2
           },
           {
             "name": "hidden_2",
             "type": "Dense",
-            "units": 16,
+            "units": 64,
             "activation": "relu"
           },
           {
             "name": "dropout_2",
             "type": "Dropout",
-            "rate": 0.1
+            "rate": 0.2
+          },
+          {
+            "name": "hidden_3",
+            "type": "Dense",
+            "units": 32,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_3",
+            "type": "Dropout",
+            "rate": 0.2
           },
           {
             "name": "laptime_seconds",
@@ -1759,33 +1770,38 @@
             "activation": "linear"
           }
         ],
-        "total_parameters": 2017,
-        "optimizer": "Adam",
+        "total_parameters": 16257,
+        "trainable_parameters": 16257,
+        "non_trainable_parameters": 0,
+        "optimizer": "RMSprop",
         "loss": "mse"
       },
       "hyperparameters": {
         "hidden_units": [
-          32,
-          16
+          128,
+          64,
+          32
         ],
-        "dropout": 0.1,
+        "dropout": 0.2,
         "learning_rate": 0.001,
-        "batch_size": 32
+        "batch_size": 16,
+        "optimizer": "rmsprop",
+        "l2": 0.001,
+        "loss": "mse"
       },
       "metrics": {
         "test": {
-          "mae": 0.5153831058078342,
-          "rmse": 0.8895285211904014,
-          "r2": 0.47861973494433874,
-          "mape": 0.521825814638619,
+          "mae": 0.5651487986246745,
+          "rmse": 0.9083166156712367,
+          "r2": 0.4563625697811138,
+          "mape": 0.5729953048791535,
           "n": 180
         }
       },
-      "artifact": "models/dl/target_laptime.keras",
+      "artifact": "models/deep_learning/laptime/f1_dnn_model.h5",
       "framework": "keras",
-      "model_format": ".keras",
-      "format_note": "Reference spec names .h5; Keras 3 cannot reload HDF5 models saved this way, so .keras is used.",
-      "training_rows": 815,
+      "model_format": ".h5",
+      "training_rows": 675,
       "test_rows": 180,
       "dataset": {
         "source": "real_fastf1",
@@ -1822,24 +1838,24 @@
           {
             "name": "hidden_1",
             "type": "Dense",
-            "units": 32,
+            "units": 16,
             "activation": "relu"
           },
           {
             "name": "dropout_1",
             "type": "Dropout",
-            "rate": 0.4
+            "rate": 0.3
           },
           {
             "name": "hidden_2",
             "type": "Dense",
-            "units": 16,
+            "units": 8,
             "activation": "relu"
           },
           {
             "name": "dropout_2",
             "type": "Dropout",
-            "rate": 0.4
+            "rate": 0.3
           },
           {
             "name": "pit_probability",
@@ -1848,31 +1864,36 @@
             "activation": "sigmoid"
           }
         ],
-        "total_parameters": 833,
-        "optimizer": "Adam",
+        "total_parameters": 289,
+        "trainable_parameters": 289,
+        "non_trainable_parameters": 0,
+        "optimizer": "RMSprop",
         "loss": "binary_crossentropy"
       },
       "hyperparameters": {
         "hidden_units": [
-          32,
-          16
+          16,
+          8
         ],
-        "dropout": 0.4,
-        "learning_rate": 0.0003,
-        "batch_size": 32
+        "dropout": 0.3,
+        "learning_rate": 0.001,
+        "batch_size": 32,
+        "optimizer": "rmsprop",
+        "l2": 0.0001,
+        "class_weighted": false
       },
       "metrics": {
         "test": {
-          "accuracy": 0.8555555555555555,
+          "accuracy": 0.9944444444444445,
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "roc_auc": 0.5754189944134078,
-          "pr_auc": 0.012987012987012988,
+          "roc_auc": 0.776536312849162,
+          "pr_auc": 0.024390243902439025,
           "confusion_matrix": [
             [
-              154,
-              25
+              179,
+              0
             ],
             [
               1,
@@ -1886,7 +1907,7 @@
           "undefined_reason": null,
           "n": 180,
           "n_positive": 1,
-          "decision_threshold": 0.1189,
+          "decision_threshold": 0.1524,
           "at_default_threshold": {
             "accuracy": 0.9944444444444445,
             "precision": 0.0,
@@ -1895,11 +1916,10 @@
           }
         }
       },
-      "artifact": "models/dl/target_pit_next_lap.keras",
+      "artifact": "models/deep_learning/pit_decision/f1_dnn_model.h5",
       "framework": "keras",
-      "model_format": ".keras",
-      "format_note": "Reference spec names .h5; Keras 3 cannot reload HDF5 models saved this way, so .keras is used.",
-      "training_rows": 815,
+      "model_format": ".h5",
+      "training_rows": 675,
       "test_rows": 180,
       "dataset": {
         "source": "real_fastf1",
