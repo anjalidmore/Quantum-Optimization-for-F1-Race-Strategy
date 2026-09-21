@@ -92,6 +92,8 @@ def explain_row(
         ],
         "intercept": float(exp.intercept[label]),
         "local_r2": float(exp.score),
+        # The surrogate's own prediction for this row, to set beside the model's.
+        "local_prediction": float(np.asarray(exp.local_pred).ravel()[0]),
         "explanation": exp,
         "note": (
             "Weights are coefficients of a local linear surrogate fitted to "

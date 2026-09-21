@@ -17,6 +17,7 @@ callable so every explainer downstream is model-agnostic by construction.
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 
 from app.core.runtime import prepare_dl_runtime
@@ -26,7 +27,7 @@ prepare_dl_runtime()
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from app.core.paths import DL_MODELS_DIR  # noqa: E402
+from app.core.paths import DL_METRICS_JSON, DL_MODELS_DIR  # noqa: E402
 from app.intelligence.dl import persistence as dl_persistence  # noqa: E402
 from app.intelligence.dl import training as dl_training  # noqa: E402
 from app.intelligence.ml.data_contract import build_task_frame, load_and_validate  # noqa: E402
@@ -65,6 +66,12 @@ class ExplainableTarget:
     classical_X_test_transformed: np.ndarray
     transformed_feature_names: list[str]
     source_dataset: str
+    # Task 7's tuned decision threshold (classification), so explanations and
+    # the trust score measure confidence from where the model actually decides.
+    decision_threshold: float | None = None
+    # Driver / Team / Compound / LapNumber / Stint for each test row, for the
+    # F1-specific performance stratification.
+    test_ids: object = None
 
     @property
     def n_identity(self) -> int:
@@ -134,6 +141,15 @@ def load_target(target: str) -> ExplainableTarget:
     X_te_t = np.asarray(pre.transform(frame_features.iloc[holdout.test_index]), dtype=float)
     tnames = [n.split("__", 1)[-1] for n in pre.get_feature_names_out()]
 
+    # build_task_frame resets the index of dataset.frame, so positions align.
+    id_cols = [c for c in ("Driver", "Team", "Compound", "LapNumber", "Stint") if c in dataset.frame.columns]
+    test_ids = dataset.frame.iloc[holdout.test_index][id_cols].reset_index(drop=True)
+
+    threshold = None
+    if task == "classification" and DL_METRICS_JSON.exists():
+        entry = json.loads(DL_METRICS_JSON.read_text()).get("models", {}).get(target, {})
+        threshold = (entry.get("threshold") or {}).get("threshold")
+
     return ExplainableTarget(
         target=target, task=task, features=features,
         identity_features=[f for f in features if f.startswith(("driver_", "team_"))],
@@ -149,6 +165,8 @@ def load_target(target: str) -> ExplainableTarget:
         classical_X_test_transformed=X_te_t,
         transformed_feature_names=tnames,
         source_dataset=contract.source_dataset,
+        decision_threshold=threshold,
+        test_ids=test_ids,
     )
 
 
@@ -164,23 +182,40 @@ def pick_representative_rows(t: ExplainableTarget) -> dict[str, int]:
 
     if t.task == "classification":
         candidates = [
-            ("lowest_pit_probability", int(order[0])),
-            ("closest_to_decision_boundary", int(np.argmin(np.abs(pred - 0.5)))),
+            ("lowest_pit_probability", int(order[0])),            # a clear non-pit scenario
+            ("closest_to_decision_boundary",
+             int(np.argmin(np.abs(pred - (t.decision_threshold or 0.5))))),
             ("highest_pit_probability", int(order[-1])),
         ]
+        # The pit-window scenario, when the test laps contain one: a lap on which
+        # the driver actually pitted. Explaining it shows why the model caught or
+        # missed a real stop, which no model-chosen row can.
+        actual = np.where(np.asarray(t.y_test) == 1)[0]
+        if len(actual):
+            candidates.append(("actual_pit_lap", int(actual[np.argmax(pred[actual])])))
     else:
+        tyre = t.X_test[:, t.features.index("tyre_life")] if "tyre_life" in t.features else None
         candidates = [
             ("fastest_predicted_lap", int(order[0])),
             ("median_predicted_lap", int(order[len(order) // 2])),
             ("slowest_predicted_lap", int(order[-1])),
         ]
+        if tyre is not None:
+            # Fresh- vs old-tyre scenarios: the freshest / oldest tyres among the
+            # laps not already shown (the freshest test lap can also be the
+            # slowest-predicted one, as it is just after a stop).
+            by_age = np.argsort(tyre, kind="stable")
+            candidates += [("freshest_tyres", [int(i) for i in by_age]),
+                           ("oldest_tyres", [int(i) for i in by_age[::-1]])]
 
     out: dict[str, int] = {}
     seen: set[int] = set()
     for label, idx in candidates:
-        if idx not in seen:
-            out[label] = idx
-            seen.add(idx)
+        options = idx if isinstance(idx, list) else [idx]
+        pick = next((i for i in options if i not in seen), None)
+        if pick is not None and (isinstance(idx, list) or pick == idx):
+            out[label] = pick
+            seen.add(pick)
     return out
 
 
@@ -188,5 +223,6 @@ def boundary_row_index(t: ExplainableTarget) -> int:
     """The test row closest to the decision boundary - the best starting point
     for a counterfactual search, because a flip is most likely reachable there."""
     pred = np.asarray(t.dnn_predict(t.X_test)).ravel()
-    threshold = 0.5 if t.task == "classification" else float(np.median(t.y_train))
+    threshold = ((t.decision_threshold or 0.5) if t.task == "classification"
+                 else float(np.median(t.y_train)))
     return int(np.argmin(np.abs(pred - threshold)))

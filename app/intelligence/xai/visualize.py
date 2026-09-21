@@ -132,3 +132,58 @@ def fairness_plot(assessment: dict, title: str, out_path: Path) -> Path:
     ax.set_title(title, fontsize=11)
     ax.legend(fontsize=8, loc="lower right")
     return _save(fig, out_path)
+
+
+def shap_bar(ranking: list[dict], title: str, out_path: Path, top_n: int = 15) -> Path:
+    """Global SHAP feature importance: mean |SHAP value| per feature."""
+    rows = ranking[:top_n][::-1]
+    fig, ax = plt.subplots(figsize=(8, 0.34 * len(rows) + 1.6))
+    ax.barh([r["feature"] for r in rows], [r["mean_abs_shap"] for r in rows], color="#c0392b")
+    ax.set(xlabel="mean |SHAP value| (average impact on the model output)", title=title)
+    ax.grid(axis="x", alpha=0.3)
+    fig.tight_layout()
+    return _save(fig, out_path)
+
+
+def feature_importance_overview(per_target: dict, out_path: Path, top_n: int = 12) -> Path:
+    """One figure, one panel per target: permutation importance of the Task 7
+    DNN on the chronological test laps (the performance lost when a feature is
+    shuffled)."""
+    fig, axes = plt.subplots(1, len(per_target), figsize=(7 * len(per_target), 5.6))
+    axes = np.atleast_1d(axes)
+    for ax, (target, rows) in zip(axes, per_target.items()):
+        rows = [r for r in rows if r.get("importance") is not None][:top_n][::-1]
+        ax.barh([r["feature"] for r in rows], [r["importance"] for r in rows],
+                xerr=[r.get("std") or 0 for r in rows], color="#3b6ea5", capsize=2)
+        ax.axvline(0, color="grey", lw=0.8)
+        metric = "MAE increase (s)" if target == "target_laptime" else "ROC-AUC drop"
+        ax.set(title=f"{target} — Task 7 DNN", xlabel=f"permutation importance: {metric}")
+        ax.grid(axis="x", alpha=0.3)
+    fig.suptitle("Task 8 — global feature importance (test laps)")
+    fig.tight_layout()
+    return _save(fig, out_path)
+
+
+def stratification_plot(strata, task: str, title: str, out_path: Path) -> Path:
+    """Per-driver / team / compound error (regression) or recall (classification),
+    with small groups hatched so they are not read as findings."""
+    import pandas as pd
+
+    df = pd.DataFrame(strata)
+    df = df[df.group_type != "overall"]
+    metric = "mae" if task == "regression" else "recall"
+    types = [g for g in ("Team", "Compound", "Driver") if g in set(df.group_type)]
+    fig, axes = plt.subplots(1, len(types), figsize=(5.2 * len(types), 5.2), squeeze=False)
+    for ax, g in zip(axes[0], types):
+        sub = df[df.group_type == g].sort_values("group")
+        vals = sub[metric].astype(float).fillna(0).to_numpy()
+        small = sub.sample_note.str.startswith(("SMALL", "INSUFFICIENT")).to_numpy()
+        bars = ax.barh(sub.group.astype(str), vals, color=["#bbbbbb" if s else "#3b6ea5" for s in small])
+        for b, s in zip(bars, small):
+            if s:
+                b.set_hatch("//")
+        ax.set(title=g, xlabel=("MAE (s)" if metric == "mae" else "recall on pit laps"))
+        ax.grid(axis="x", alpha=0.3)
+    fig.suptitle(title + "\n(grey hatched = too few laps to compare)")
+    fig.tight_layout()
+    return _save(fig, out_path)

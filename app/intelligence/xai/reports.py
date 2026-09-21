@@ -26,8 +26,19 @@ def _write(out_path: Path, lines: list[str]) -> Path:
     return out_path
 
 
+def _img(path: str) -> str:
+    """Figure paths are stored relative to artifacts/; these reports live in
+    artifacts/xai/, so links are made relative to that folder."""
+    return path.split("xai/", 1)[1] if path and path.startswith("xai/") else path
+
+
 def _f(v, nd=4):
     return "_undefined_" if v is None else (f"{v:.{nd}f}" if isinstance(v, float) else str(v))
+
+
+def _c(v) -> str:
+    """A trust component; None means it does not apply (confidence for lap time)."""
+    return "n/a" if v is None else f"{v:.3f}"
 
 
 def shap_report(results: dict, out_path: Path) -> Path:
@@ -77,8 +88,8 @@ def shap_report(results: dict, out_path: Path) -> Path:
                     f"| `{c['feature']}` | {ex['feature_values'].get(c['feature'], float('nan')):.4g} | "
                     f"{c['shap_value']:+.6f} | {c['direction']} the prediction |"
                 )
-            lines += ["", f"![waterfall]({ex['figures']['shap_waterfall']})", ""]
-        lines += [f"![summary]({r['figures']['shap_summary_dnn']})", "", "---", ""]
+            lines += ["", f"![waterfall]({_img(ex['figures']['shap_waterfall'])})", ""]
+        lines += [f"![summary]({_img(r['figures']['shap_summary_dnn'])})", "", "---", ""]
     return _write(out_path, lines)
 
 
@@ -123,7 +134,7 @@ def lime_report(results: dict, out_path: Path) -> Path:
                 f"**LIME top-3:** {', '.join(f'`{f}`' for f in ex['lime_top3'])}",
                 f"**Agreement (Jaccard):** {ex['trust']['components']['explanation_stability']:.3f}",
                 "",
-                f"![lime]({ex['figures']['lime']})", "",
+                f"![lime]({_img(ex['figures']['lime'])})", "",
             ]
         lines += ["---", ""]
     return _write(out_path, lines)
@@ -173,7 +184,7 @@ def counterfactual_report(results: dict, out_path: Path) -> Path:
             else:
                 lines += [f"**Result: not reachable.** {cf['note']}", ""]
             lines += [f"> {ex['counterfactual_sentence']}", "",
-                      f"![cf]({ex['figures']['counterfactual']})", ""]
+                      f"![cf]({_img(ex['figures']['counterfactual'])})", ""]
 
         dice = r.get("dice")
         if dice:
@@ -233,8 +244,8 @@ def trust_report(results: dict, weights: dict, out_path: Path) -> Path:
             t = ex["trust"]
             c = t["components"]
             lines.append(
-                f"| {label.replace('_', ' ')} | {ex['row_index']} | {c['confidence']:.3f} | "
-                f"{c['model_agreement']:.3f} | {c['explanation_stability']:.3f} | "
+                f"| {label.replace('_', ' ')} | {ex['row_index']} | {_c(c.get('confidence'))} | "
+                f"{_c(c.get('model_agreement'))} | {_c(c.get('explanation_stability'))} | "
                 f"**{t['trust_score']:.3f}** | {t['band']['label']} |"
             )
         summary = r["trust_summary"]
@@ -274,7 +285,7 @@ def fairness_report(results: dict, out_path: Path) -> Path:
             f"| Highest-ranked identity feature | {a['highest_ranked_identity_feature'] or 'n/a'} |",
             f"| Top race-state features | {', '.join(f'`{f}`' for f in a['top_race_state_features'])} |",
             "", f"**Reading:** {a['reading']}", "",
-            f"![fairness]({r['figures']['fairness']})", "", "---", "",
+            f"![fairness]({_img(r['figures']['fairness'])})", "", "---", "",
         ]
     return _write(out_path, lines)
 
@@ -303,7 +314,7 @@ def dashboard(results: dict, out_path: Path) -> Path:
                 f"{_f(row['classical_importance'], 6)} | "
                 f"{row['rank_gap'] if row['rank_gap'] is not None else '-'} |"
             )
-        lines += ["", f"![importance]({r['figures']['importance']})", "",
+        lines += ["", f"![importance]({_img(r['figures']['importance'])})", "",
                   "### Per-prediction explanations", ""]
         for label, ex in r["examples"].items():
             t = ex["trust"]
@@ -312,9 +323,10 @@ def dashboard(results: dict, out_path: Path) -> Path:
                 f"> **{ex['narrative']}**", "",
                 f"| Trust | {t['trust_score']:.3f} ({t['band']['label']}) |",
                 "|---|---|",
-                f"| Confidence | {t['components']['confidence']:.3f} |",
-                f"| Model agreement | {t['components']['model_agreement']:.3f} |",
-                f"| Explanation stability | {t['components']['explanation_stability']:.3f} |",
+                f"| Confidence | {_c(t['components'].get('confidence'))} |",
+                f"| Model agreement | {_c(t['components'].get('model_agreement'))} |",
+                f"| Explanation stability | {_c(t['components'].get('explanation_stability'))} |",
+                f"| Input validity | {_c(t['components'].get('input_validity'))} |",
                 "", f"_{t['band']['meaning']}_", "",
                 "**Top factors (SHAP):** " + ", ".join(
                     f"`{c['feature']}` ({c['shap_value']:+.4f})" for c in ex["shap_dnn"][:3]

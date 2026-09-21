@@ -219,3 +219,99 @@ def dice_counterfactuals(
             "+1.0 means one standard deviation of that feature as observed in training."
         ),
     }
+
+
+# ---------------------------------------------------------------------------
+# Physically consistent tyre-age counterfactual
+# ---------------------------------------------------------------------------
+TYRE_AGE = "tyre_life"
+
+
+def consistent_tyre_age_rows(row: np.ndarray, features: list[str], ages: np.ndarray) -> tuple[np.ndarray, list, list]:
+    """Copies of ``row`` at each tyre age in ``ages``, with every feature that is
+    *derived from* tyre age recomputed so the input remains a possible lap.
+
+    Verified identities in the Task 5 matrix (all rows):
+        tyrelife_x_<c>           = tyre_life × compound_<c>        (c = soft, medium)
+        tracktemp_dev_x_tyrelife = track-temp deviation × tyre_life
+    Held fixed: the compound (it cannot change without a pit stop), whether the
+    set was new when fitted (``is_fresh_tyre`` is a property of the set, not of
+    its age), the track-temperature deviation, and every pace feature.
+
+    Moving ``tyre_life`` alone — what ``perturbation_scan`` does — would pair a
+    new tyre age with interaction terms computed from the old one: an input no
+    real lap can produce.
+    """
+    idx = {f: i for i, f in enumerate(features)}
+    base = np.asarray(row, dtype="float64").ravel()
+    life0 = base[idx[TYRE_AGE]]
+    rows = np.repeat(base[None, :], len(ages), axis=0)
+    rows[:, idx[TYRE_AGE]] = ages
+    recomputed = []
+    for f in features:
+        if f.startswith("tyrelife_x_"):
+            flag = base[idx[f]] / life0 if life0 else 0.0     # the compound indicator, recovered exactly
+            rows[:, idx[f]] = ages * flag
+            recomputed.append(f)
+        elif f == "tracktemp_dev_x_tyrelife":
+            dev = base[idx[f]] / life0 if life0 else 0.0
+            rows[:, idx[f]] = ages * dev
+            recomputed.append(f)
+    held = [f for f in features if f not in recomputed and f != TYRE_AGE]
+    return rows.astype("float32"), recomputed, held
+
+
+def tyre_age_scan(predict_fn, row: np.ndarray, features: list[str], search_lo: float, search_hi: float,
+                  threshold: float, task: str, step: float = 0.5) -> dict:
+    """Sweep tyre age across the range seen in training (0.5-lap steps), with
+    derived features recomputed, and report where the model's output crosses
+    ``threshold`` (classification) or how much the predicted lap time moves for
+    realistic changes (regression). Same result shape as ``perturbation_scan``."""
+    base = np.asarray(row, dtype="float64").ravel()
+    life0 = float(base[features.index(TYRE_AGE)])
+    grid = np.round(np.arange(search_lo, search_hi + 1e-9, step), 4)
+    rows, recomputed, held = consistent_tyre_age_rows(base, features, grid)
+    preds = np.asarray(predict_fn(rows)).ravel()
+    original = float(np.asarray(predict_fn(base[None, :].astype("float32"))).ravel()[0])
+
+    crossing = None
+    if task == "classification":
+        start_side = original >= threshold
+        # nearest tyre age (in either direction) at which the decision flips
+        flips = np.where((preds >= threshold) != start_side)[0]
+        if len(flips):
+            k = flips[np.argmin(np.abs(grid[flips] - life0))]
+            crossing = float(grid[k])
+
+    effects = []
+    if task == "regression":
+        for d in (-5, -2, 2, 5):
+            a = life0 + d
+            if search_lo <= a <= search_hi:
+                r1, _, _ = consistent_tyre_age_rows(base, features, np.array([a]))
+                p1 = float(np.asarray(predict_fn(r1)).ravel()[0])
+                effects.append({"tyre_age_change_laps": d, "tyre_age": a,
+                                "predicted": p1, "change_in_prediction": p1 - original})
+
+    return {
+        "method": "tyre-age scan (derived tyre features recomputed)",
+        "feature": TYRE_AGE,
+        "original_value": life0,
+        "original_prediction": original,
+        "threshold": float(threshold),
+        "searched_range": [float(search_lo), float(search_hi)],
+        "steps": int(len(grid)),
+        "crossing_value": crossing,
+        "reachable": crossing is not None if task == "classification" else None,
+        "direction": (None if crossing is None else ("increase" if crossing > life0 else "decrease")),
+        "delta_required": (None if crossing is None else float(crossing - life0)),
+        "prediction_at_crossing": (None if crossing is None
+                                   else float(preds[int(np.argmin(np.abs(grid - crossing)))])),
+        "derived_features_recomputed": recomputed,
+        "held_fixed": held,
+        "regression_effects": effects,
+        "prediction_curve": {"grid": [float(g) for g in grid], "prediction": [float(p) for p in preds]},
+        "note": (f"Tyre age swept over [{search_lo:g}, {search_hi:g}] laps (the training range) in {step:g}-lap "
+                 f"steps; {', '.join(recomputed) or 'no derived features'} recomputed from it; compound, set "
+                 f"freshness, track-temperature deviation and pace features held at this lap's values."),
+    }

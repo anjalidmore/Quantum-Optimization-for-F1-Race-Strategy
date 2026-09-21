@@ -123,12 +123,25 @@ def laptime_sentence(
 def counterfactual_sentence(cf: dict) -> str:
     """Plain-English rendering of a single-feature perturbation scan."""
     name = humanise(cf["feature"])
+    if cf.get("reachable") is None:
+        # Regression: there is no decision to flip - report the effect instead.
+        effects = cf.get("regression_effects") or []
+        lo, hi = cf["searched_range"]
+        if not effects:
+            return (f"This lap's {name} lies outside the {lo:.4g}-{hi:.4g} range seen in training, "
+                    f"so no in-range what-if is reported.")
+        parts = [f"{e['tyre_age_change_laps']:+d} laps -> {e['change_in_prediction']:+.3f}s" for e in effects]
+        return (f"Changing {name} with the rest of the race state unchanged moves the predicted "
+                f"lap time by: {'; '.join(parts)}.")
     if not cf["reachable"]:
         lo, hi = cf["searched_range"]
+        v = cf.get("original_value")
+        outside = (f" This lap's own {name} ({v:.4g}) is outside that training range, so the "
+                   f"model is extrapolating here." if v is not None and not lo <= v <= hi else "")
         return (
             f"No value of {name} between {lo:.4g} and {hi:.4g} flips this recommendation "
             f"with the rest of the race state unchanged - the call is not sensitive to "
-            f"{name} alone."
+            f"{name} alone.{outside}"
         )
     return (
         f"The recommendation flips when {name} reaches {cf['crossing_value']:.4g} "

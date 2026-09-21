@@ -20,7 +20,7 @@ Two deliberate differences from the batch path, both about latency:
 * LIME is not run. Its only role in the trust score is the
   ``explanation_stability`` term, and fitting a 2000-perturbation surrogate per
   request is not worth ~1s of pit-wall latency. The trust score is therefore
-  computed from its other two components, **renormalised**, and the response
+  computed from its other components, **renormalised**, and the response
   says so explicitly rather than silently reporting a differently-defined score
   under the same name.
 """
@@ -84,24 +84,19 @@ def explain_feature_row(target: str, row: dict[str, float]) -> dict:
         return {"available": False, "reason": f"{type(exc).__name__}: {exc}"}
 
     factors = shap_analysis.explain_row(shap_res, 0, top_n=min(6, len(t.features)))
-    shap_top3 = [f["feature"] for f in factors[:3]]
 
     # LIME is skipped here (see the module docstring), so explanation_stability
-    # has no input. Renormalise the remaining weights rather than scoring a
-    # missing component as zero, which would depress every live trust score by
-    # a constant 0.30 and make the bands mean something different.
+    # has no input; trust.compute leaves it out and renormalises the remaining
+    # weights rather than scoring a missing component as zero.
     target_std = float(np.std(t.y_train)) if t.task == "regression" else None
     full = trust.compute(
         task=t.task, dnn_prediction=p_dnn, classical_prediction=p_cls,
-        shap_top=shap_top3, lime_top=shap_top3, target_std=target_std,
+        shap_top=None, lime_top=None, target_std=target_std,
+        threshold=t.decision_threshold or 0.5,
+        input_validity_share=trust.input_validity(X[0], t.X_train),
     )
-    w = trust.WEIGHTS
-    denom = w["confidence"] + w["model_agreement"]
-    score = (
-        w["confidence"] * full["components"]["confidence"]
-        + w["model_agreement"] * full["components"]["model_agreement"]
-    ) / denom
-    band = trust.interpret(score)
+    score = full["trust_score"]
+    band = full["band"]
 
     values = {f: float(row[f]) for f in t.features}
     sentence = (
@@ -121,10 +116,7 @@ def explain_feature_row(target: str, row: dict[str, float]) -> dict:
         "narrative": sentence,
         "trust_score": round(float(score), 4),
         "trust_band": band,
-        "trust_components": {
-            "confidence": full["components"]["confidence"],
-            "model_agreement": full["components"]["model_agreement"],
-        },
+        "trust_components": full["components"],
         "method": {
             "explainer": shap_res["explainer"],
             "exact": shap_res["exact"],
@@ -133,9 +125,9 @@ def explain_feature_row(target: str, row: dict[str, float]) -> dict:
             "note": (
                 "Computed live at a reduced sampling budget so the request stays "
                 "interactive; the committed reports use a larger budget. LIME is not run "
-                "here, so the trust score uses confidence and model agreement only, "
-                "renormalised — it is not directly comparable to the three-component "
-                "score in the Task 8 reports."
+                "here, so the trust score uses confidence, model agreement and input "
+                "validity, renormalised — it omits the explanation-stability term the Task 8 "
+                "reports include."
             ),
         },
     }
