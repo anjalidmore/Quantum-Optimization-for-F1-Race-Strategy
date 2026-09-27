@@ -2,15 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { api, type XaiLap, type XaiLapRow } from "@/lib/api";
+import { fmt } from "@/lib/format";
 
 const TARGETS: Record<string, string> = {
   target_pit_next_lap: "Pit decision",
   target_laptime: "Lap time",
 };
-
-function fmt(x: number | null | undefined, d = 4) {
-  return x === null || x === undefined || Number.isNaN(x) ? "—" : x.toFixed(d);
-}
 
 /**
  * Inspect any Task 7 test lap: race state, the DNN's prediction, its SHAP
@@ -83,11 +80,11 @@ export default function LapInspector() {
           <div className="space-y-2">
             <h4 className="text-xs uppercase tracking-wide text-white/40">Prediction</h4>
             <p className="text-2xl font-bold text-white">
-              {isPit ? `P(pit) ${fmt(row.dnn_prediction)}` : `${fmt(row.dnn_prediction, 3)} s`}
+              {isPit ? `P(pit) ${fmt(row.dnn_prediction, 4)}` : `${fmt(row.dnn_prediction, 3)} s`}
             </p>
             <p className="text-sm text-white/60">
               {isPit
-                ? <>Decision at threshold {fmt(lap.decision_threshold)}: <strong className="text-white">{row.dnn_decision}</strong> · actually {row.actual === 1 ? "pitted" : "stayed out"}</>
+                ? <>Decision at threshold {fmt(lap.decision_threshold, 4)}: <strong className="text-white">{row.dnn_decision}</strong> · actually {row.actual === 1 ? "pitted" : "stayed out"}</>
                 : <>Actual {fmt(row.actual, 3)} s · error {fmt(row.dnn_abs_error_s, 3)} s</>}
             </p>
             <p className="text-sm text-white/60">
@@ -113,7 +110,7 @@ export default function LapInspector() {
                   <div className="flex justify-between gap-2">
                     <span><code className="text-white/70">{f.feature}</code> <span className="text-white/40">= {fmt(f.value, 3)}</span></span>
                     <span className={f.shap_value > 0 ? "text-red-400 tabular-nums" : "text-sky-400 tabular-nums"}>
-                      {f.shap_value > 0 ? "+" : ""}{fmt(f.shap_value)}
+                      {f.shap_value > 0 ? "+" : ""}{fmt(f.shap_value, 4)}
                     </span>
                   </div>
                   <div className="h-1 rounded-full bg-white/5 mt-0.5">
@@ -124,7 +121,7 @@ export default function LapInspector() {
               ))}
             </ul>
             <p className="text-xs text-white/40">
-              Base value {fmt(lap.shap_base_value)}. SHAP top 3: <code>{row.shap_top3}</code> · LIME top 3:{" "}
+              Base value {fmt(lap.shap_base_value, 4)}. SHAP top 3: <code>{row.shap_top3}</code> · LIME top 3:{" "}
               <code>{row.lime_top3}</code>
             </p>
           </div>
