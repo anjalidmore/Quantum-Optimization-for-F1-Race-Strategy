@@ -372,6 +372,39 @@ export type QmlSummary = {
   honesty_note: string;
 };
 
+
+// Tasks 1-3 — symbolic reasoning
+export type Unavailable = { available: false; reason: string };
+
+export type KnowledgeSummary = {
+  available: true;
+  n_entities: number;
+  n_relationships: number;
+  n_attributes: number;
+  entities_by_category: Record<string, number>;
+  categories: string[];
+  relationships: string[];
+  files: Record<string, boolean>;
+};
+
+export type ExpertSystemSummary = {
+  available: true;
+  n_rules: number;
+  rules_by_category: Record<string, number>;
+  salience_levels: number[];
+  rules: { rule_id: string; name: string; category: string; salience: number; description: string; n_conditions: number; actions: string[] }[];
+};
+
+export type SearchSummary = {
+  available: true;
+  problem: Record<string, any>;
+  algorithms: Record<string, any>[];
+  summary: Record<string, any>;
+  pit_stops: Record<string, any>[];
+  n_plan_steps: number;
+  final_cost_seconds: number | null;
+};
+
 export const api = {
   health: () => getJson<HealthResponse>("/api/health"),
   models: () => getJson<Registry>("/api/ml/models"),
@@ -422,4 +455,23 @@ export const api = {
 
   // Quantum ML
   qmlSummary: () => getJson<QmlSummary>("/api/qml/summary"),
+
+  // Tasks 1-3 — symbolic reasoning
+  knowledge: () => getJson<KnowledgeSummary | Unavailable>("/api/reasoning/knowledge"),
+  expertSystem: () => getJson<ExpertSystemSummary | Unavailable>("/api/reasoning/expert-system"),
+  searchComparison: () => getJson<SearchSummary | Unavailable>("/api/reasoning/search"),
+
+  // Task 9 — the race-strategy report generator. Returns markdown, not JSON.
+  strategyReport: async (raceState: RaceState): Promise<{ filename: string; markdown: string }> => {
+    const res = await fetch(`${API_BASE}/api/strategy/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(raceState),
+      cache: "no-store",
+    });
+    if (!res.ok) throw new ApiError(res.status, `Report generation failed (${res.status})`);
+    const disposition = res.headers.get("content-disposition") ?? "";
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    return { filename: match?.[1] ?? "strategy_report.md", markdown: await res.text() };
+  },
 };

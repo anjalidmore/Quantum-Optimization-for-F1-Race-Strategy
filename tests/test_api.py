@@ -316,3 +316,93 @@ def test_allowed_origins_are_configurable_by_environment():
         else:
             os.environ["F1_ALLOWED_ORIGINS"] = original
         importlib.reload(main_mod)
+
+
+# ---------------------------------------------------------------------------
+# Task 9 — the reasoning endpoints (Tasks 1-3) and the strategy report generator
+# ---------------------------------------------------------------------------
+REPORT_RACE_STATE = {
+    "driver": "ALO", "team": "ASTON MARTIN", "current_lap": 20, "total_laps": 55,
+    "tyre_compound": "MEDIUM", "tyre_age": 15, "track_temperature": 40.0,
+    "weather": "dry", "fuel_kg": 70, "track_status": "GREEN", "current_position": 6,
+}
+
+
+def test_knowledge_endpoint_counts_match_the_schema_it_was_built_from(client):
+    from app.intelligence.knowledge_representation import schema
+
+    body = client.get("/api/reasoning/knowledge").json()
+    assert body["available"] is True
+    assert body["n_entities"] == len(schema.entities_by_name())
+    assert body["n_relationships"] == len(schema.relationship_names())
+    # the per-category counts must add up to the total, not be a separate claim
+    assert sum(body["entities_by_category"].values()) == body["n_entities"]
+
+
+def test_expert_system_endpoint_matches_the_committed_rule_base(client):
+    import json
+
+    from app.api.routers.reasoning import RULE_BASE_JSON
+
+    body = client.get("/api/reasoning/expert-system").json()
+    if not RULE_BASE_JSON.exists():
+        assert body["available"] is False and "Run:" in body["reason"]
+        return
+    rules = json.loads(RULE_BASE_JSON.read_text())
+    rules = rules.get("rules", rules) if isinstance(rules, dict) else rules
+    assert body["n_rules"] == len(rules)
+    assert sum(body["rules_by_category"].values()) == body["n_rules"]
+    assert {r["rule_id"] for r in body["rules"]} == {r["rule_id"] for r in rules}
+
+
+def test_search_endpoint_reports_the_optimality_invariant(client):
+    body = client.get("/api/reasoning/search").json()
+    if not body.get("available"):
+        assert "Run:" in body["reason"]
+        return
+    costs = {a["algorithm"]: a["solution_cost"] for a in body["algorithms"] if a["found"]}
+    # A* with an admissible heuristic must match uniform-cost search exactly.
+    assert costs["A*"] == pytest.approx(costs["UCS"])
+    assert set(body["summary"]["optimal_algorithms"]) == {"UCS", "A*"}
+
+
+def test_missing_artifact_reports_not_generated_rather_than_a_number(client, tmp_path, monkeypatch):
+    """The dashboard must be able to print 'Not generated yet' instead of a zero."""
+    import app.api.routers.reasoning as mod
+
+    monkeypatch.setattr(mod, "SEARCH_JSON", tmp_path / "absent.json")
+    body = client.get("/api/reasoning/search").json()
+    assert body["available"] is False
+    assert "scripts/run_search.py" in body["reason"]
+
+
+def test_strategy_report_is_a_downloadable_markdown_briefing(client):
+    r = client.post("/api/strategy/report", json=REPORT_RACE_STATE)
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/markdown")
+    assert "attachment; filename=" in r.headers["content-disposition"]
+    assert ".md" in r.headers["content-disposition"]
+
+
+def test_strategy_report_contains_every_section_the_lab_requires(client):
+    body = client.post("/api/strategy/report", json=REPORT_RACE_STATE).text
+    for heading in ("# Race Strategy Report", "## 1. Race state", "## 2. Recommendation",
+                    "## 3. Expert-system rules that fired", "## 4. Search plan",
+                    "## 5. Why this prediction", "## 6. Provenance"):
+        assert heading in body, heading
+    # prediction, search plan, explanation and trust must all carry real values
+    assert "Predicted lap time" in body and "Expected cost, remaining stint" in body
+    assert "Trust score" in body
+    assert "SHAP" in body
+
+
+def test_strategy_report_never_shows_a_placeholder_number(client):
+    """A missing value must read as text, never as a stand-in figure like 0.000."""
+    body = client.post("/api/strategy/report", json=REPORT_RACE_STATE).text
+    for placeholder in ("TODO", "TBD", "lorem", "XXX", "placeholder", "clinical", "patient", "diagnosis"):
+        assert placeholder.lower() not in body.lower(), placeholder
+
+
+def test_strategy_report_validates_its_race_state(client):
+    bad = {**REPORT_RACE_STATE, "driver": "NOT_A_DRIVER"}
+    assert client.post("/api/strategy/report", json=bad).status_code == 422

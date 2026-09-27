@@ -40,6 +40,7 @@ export function FullScenarioTab({ options, registry }: { options: DataOptions; r
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showInputs, setShowInputs] = useState(false);
+  const [reporting, setReporting] = useState(false);
 
   function set<K extends keyof RaceState>(key: K, value: RaceState[K]) {
     setForm((f) => clampForm({ ...f, [key]: value }));
@@ -48,6 +49,30 @@ export function FullScenarioTab({ options, registry }: { options: DataOptions; r
   function applyScenario(scenario: Scenario) {
     setForm((f) => clampForm({ ...f, ...scenario.values }));
     setResult(null);
+  }
+
+  /** Task 9: ask the backend for a full Markdown briefing on this race state. */
+  async function downloadReport() {
+    setReporting(true);
+    setError(null);
+    try {
+      const payload: RaceState = {
+        ...form,
+        laptime_model: modelMode === "select" ? laptimeModel : null,
+        pit_model: modelMode === "select" ? pitModel : null,
+      };
+      const { filename, markdown } = await api.strategyReport(payload);
+      const url = URL.createObjectURL(new Blob([markdown], { type: "text/markdown" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Report generation failed.");
+    } finally {
+      setReporting(false);
+    }
   }
 
   async function submit() {
@@ -85,13 +110,23 @@ export function FullScenarioTab({ options, registry }: { options: DataOptions; r
         setPitModel={setPitModel}
       />
 
-      <button
-        onClick={submit}
-        disabled={loading}
-        className="bg-f1red hover:bg-f1red/80 text-white font-semibold px-6 py-3 rounded disabled:opacity-50"
-      >
-        {loading ? "Running model…" : "Predict"}
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={submit}
+          disabled={loading}
+          className="bg-f1red hover:bg-f1red/80 text-white font-semibold px-6 py-3 rounded disabled:opacity-50"
+        >
+          {loading ? "Running model…" : "Predict"}
+        </button>
+        <button
+          onClick={downloadReport}
+          disabled={reporting}
+          className="border border-white/20 hover:border-white/40 text-white/80 hover:text-white font-medium px-5 py-3 rounded disabled:opacity-50"
+          title="Prediction, triggered rules, search plan, SHAP explanation and trust score as one Markdown file"
+        >
+          {reporting ? "Generating report…" : "Download strategy report"}
+        </button>
+      </div>
 
       {error && <div className="card border-red-500/30 bg-red-500/5 text-red-400 text-sm">{error}</div>}
 
