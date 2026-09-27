@@ -53,15 +53,16 @@ f1-quantum-strategy/
 │                                       # selection, persistence, registry, visualize,
 │                                       # reports, pipeline (orchestrator)
 │
-├── frontend/                        # Next.js 14 + TypeScript + Tailwind
+├── frontend/                        # Next.js 15 + TypeScript + Tailwind
 │   ├── app/
 │   │   ├── page.tsx                 # Dashboard
 │   │   ├── strategy/page.tsx        # Race Strategy Simulator
-│   │   ├── machine-learning/page.tsx
-│   │   ├── data-analysis/page.tsx
-│   │   └── evidence/page.tsx        # Project Evidence
-│   ├── components/
-│   └── lib/api.ts                   # typed fetch client (no hard-coded data)
+│   │   ├── models/page.tsx          # Tasks 6 + 7 side by side
+│   │   ├── explainability/page.tsx  # Task 8
+│   │   └── data/page.tsx            # Task 4 figures + the task evidence index
+│   ├── components/                  # one folder per page's sections
+│   ├── lib/api.ts                   # typed fetch client (no hard-coded data)
+│   └── lib/format.ts                # shared number/path formatting
 │
 ├── data/
 │   ├── raw/                         # Kaggle/Ergast-style + FastF1-like CSVs
@@ -149,13 +150,13 @@ Enforced principles:
 
 ## Frontend
 
-Built with Next.js 14 (App Router) + TypeScript + Tailwind. Every page renders real artifacts and calls the real backend — nothing is mocked.
+Built with Next.js 15 (App Router) + React 19 + TypeScript + Tailwind. Five pages, each rendering real artifacts from the real backend — nothing is mocked. No component is longer than 250 lines, so each one can be read in a sitting.
 
 - **Dashboard** — workflow diagram, honest Task 1–10 progress, clickable task cards showing each task's real generated reports/figures (or "Artifact not generated yet," never a placeholder)
 - **Race Strategy Simulator** — driver/team/compound as real dropdowns sourced from the dataset (`GET /api/data/options`), server + client validation, a model selector (best-performing or manual), quick scenario presets built from the data's real ranges, and a "Top Features" tab for a simplified feature-level demo
-- **Machine Learning** — model comparison tables, ROC/PR curves, confusion matrix, feature importance, and a live prediction form, all reading `GET /api/ml/{comparison,artifacts,models,feature-importance}`
-- **Data & Analysis** — Task 4's real EDA figures and reports
-- **Project Evidence** — every task's artifacts in one place, scanned live from `artifacts/`
+- **Models** — Tasks 6 and 7 together: comparison tables, ROC/PR curves, confusion matrices, feature importance and live prediction forms for the classical models, then the networks' architectures, training curves, train/validation/test tables and the deep-vs-classical verdict
+- **Explainability** — Task 8: global importance, per-group performance, fairness, one card per explained lap, and a lap inspector whose counterfactual is computed live by the saved network
+- **Data & Evidence** — Task 4's EDA figures and reports, followed by every task's artifacts, scanned live from `artifacts/`
 
 **Honesty note on the simulator:** Task 6's models need Task 5's engineered features (rolling gap, field-median lag, form-vs-baseline, ...), which require multi-lap race history a single form snapshot can't supply. Driver/team/compound/tyre-age features are computed *exactly* from the form input; history-dependent features fall back to the training data's median. The API response's `approximated_features` field names exactly which ones every time, and an `out_of_range` field flags any feature value that falls outside what the model was actually trained on — a stated engineering approximation, never a silent fabrication.
 
@@ -321,13 +322,12 @@ What happens from raw CSV to a number on the dashboard. Each stage is marked **r
                                   │  frontend/lib/api.ts (typed fetch, no local data)
                                   ▼
  ┌─────────────────────────────────────────────────────────────────────┐
- │ FRONTEND · Next.js 14                                    [PARTIAL]  │
+ │ FRONTEND · Next.js 15                                       [REAL]  │
  │   /                 Dashboard              [real]                   │
  │   /strategy         Race Strategy Simulator[real]                   │
- │   /machine-learning Metrics + live predict [real]                   │
- │   /data-analysis    Task 4 figures/reports [real]                   │
- │   /evidence         Task 1-9 artifact index[real]                   │
- │   dedicated KR / Expert System / Search pages  [NOT BUILT]          │
+ │   /models           Tasks 6 + 7 compared   [real]                   │
+ │   /explainability   Task 8                 [real]                   │
+ │   /data             Task 4 + evidence index[real]                   │
  └─────────────────────────────────────────────────────────────────────┘
 ```
 
