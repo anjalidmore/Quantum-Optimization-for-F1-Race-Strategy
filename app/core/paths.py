@@ -48,37 +48,8 @@ EXPERT_SYSTEM_ARTIFACTS_DIR = ARTIFACTS_DIR / "expert_system"
 SEARCH_ARTIFACTS_DIR = ARTIFACTS_DIR / "search"
 DATA_ENGINEERING_ARTIFACTS_DIR = ARTIFACTS_DIR / "data_engineering"
 
-# Task 6 — Machine Learning.
-ML_ARTIFACTS_DIR = ARTIFACTS_DIR / "models"
-ML_MODELS_LAPTIME_DIR = ML_ARTIFACTS_DIR / "laptime"
-ML_MODELS_PIT_DIR = ML_ARTIFACTS_DIR / "pit_decision"
-ML_METRICS_DIR = ARTIFACTS_DIR / "metrics"
-ML_FIGURES_DIR = ARTIFACTS_DIR / "figures"
-ML_REPORTS_DIR = ARTIFACTS_DIR / "reports"
-ML_METADATA_DIR = ARTIFACTS_DIR / "metadata"
-ML_MODEL_REGISTRY_JSON = ML_METADATA_DIR / "model_registry.json"
-ARTIFACT_MANIFEST_JSON = ARTIFACTS_DIR / "manifest.json"
-
-# Task 7 — Deep Learning.
-#   artifacts/models/deep_learning/<laptime|pit_decision>/f1_dnn_model.h5
-#       weights + fitted scalers. Kept inside the private models/ tree beside
-#       Task 6's pipelines, so trained weights are never served over HTTP.
-#   artifacts/deep_learning/
-#       every public Task 7 deliverable: training history, hyperparameter and
-#       evaluation reports, model comparison, metadata and plots.
-DL_MODELS_DIR = ML_ARTIFACTS_DIR / "deep_learning"
-DEEP_LEARNING_DIR = ARTIFACTS_DIR / "deep_learning"
-DL_METRICS_JSON = DEEP_LEARNING_DIR / "evaluation_report.json"
-DL_HISTORY_JSON = DEEP_LEARNING_DIR / "training_history.json"
-DL_COMPARISON_JSON = DEEP_LEARNING_DIR / "model_comparison.json"
-
 # Short folder name per target, shared by Task 6's models/ layout.
 TARGET_DIRNAME = {"target_laptime": "laptime", "target_pit_next_lap": "pit_decision"}
-
-# Task 8 — Explainable AI. Every Task 8 deliverable lives here; nothing in it
-# is a model weight, so the whole directory is safe to serve.
-XAI_DIR = ARTIFACTS_DIR / "xai"
-XAI_RESULTS_JSON = XAI_DIR / "xai_metadata.json"
 
 
 @dataclass(frozen=True)
@@ -86,9 +57,9 @@ class ArtifactPaths:
     """Every output location the ML/DL/XAI pipelines write to, resolved from a
     single root.
 
-    The module-level constants above remain the default and are what production
-    code uses. This object exists so a caller can redirect *all* output
-    somewhere else in one argument - which is how the test suite stays
+    The module-level constants below are this object's default paths, and are
+    what production code imports. The object exists so a caller can redirect
+    *all* output somewhere else in one argument - which is how the test suite stays
     hermetic: before this, running ``pytest`` retrained Task 6 and overwrote ten
     tracked files under ``artifacts/``, so a clean clone went dirty just from
     running the documented test command.
@@ -187,9 +158,40 @@ class ArtifactPaths:
             path.mkdir(parents=True, exist_ok=True)
         return self
 
+# ---------------------------------------------------------------------------
+# The committed artifact layout (Tasks 6-8), named once each.
+#
+# ``ArtifactPaths`` above is the definition; these constants are the default
+# instance's paths, so production code can import a plain constant and the
+# pipelines can still redirect every write through one object. Task 7 keeps
+# weights under ``models/`` — a tree the API does not serve — while every public
+# Task 7/8 deliverable lives in ``deep_learning/`` and ``xai/``.
+# ---------------------------------------------------------------------------
+_DEFAULT = ArtifactPaths.default()
+
+ML_ARTIFACTS_DIR = _DEFAULT.models
+ML_MODELS_LAPTIME_DIR = _DEFAULT.models_laptime
+ML_MODELS_PIT_DIR = _DEFAULT.models_pit
+ML_METRICS_DIR = _DEFAULT.metrics
+ML_FIGURES_DIR = _DEFAULT.figures
+ML_REPORTS_DIR = _DEFAULT.reports
+ML_METADATA_DIR = _DEFAULT.metadata
+ML_MODEL_REGISTRY_JSON = _DEFAULT.model_registry_json
+ARTIFACT_MANIFEST_JSON = _DEFAULT.manifest_json
+
+DL_MODELS_DIR = _DEFAULT.models_dl
+DEEP_LEARNING_DIR = _DEFAULT.deep_learning
+DL_METRICS_JSON = _DEFAULT.dl_metrics_json
+DL_HISTORY_JSON = _DEFAULT.dl_history_json
+DL_COMPARISON_JSON = _DEFAULT.dl_comparison_json
+
+XAI_DIR = _DEFAULT.xai
+XAI_RESULTS_JSON = _DEFAULT.xai_results_json
+
 
 def ensure_dirs() -> None:
     """Create every artifact/data directory this project writes to."""
+    ArtifactPaths.default().ensure()
     for path in (
         DATA_RAW_DIR,
         DATA_PROCESSED_DIR,
@@ -197,14 +199,5 @@ def ensure_dirs() -> None:
         EXPERT_SYSTEM_ARTIFACTS_DIR,
         SEARCH_ARTIFACTS_DIR,
         DATA_ENGINEERING_ARTIFACTS_DIR,
-        ML_MODELS_LAPTIME_DIR,
-        ML_MODELS_PIT_DIR,
-        ML_METRICS_DIR,
-        ML_FIGURES_DIR,
-        ML_REPORTS_DIR,
-        ML_METADATA_DIR,
-        DL_MODELS_DIR,
-        DEEP_LEARNING_DIR,
-        XAI_DIR,
     ):
         path.mkdir(parents=True, exist_ok=True)

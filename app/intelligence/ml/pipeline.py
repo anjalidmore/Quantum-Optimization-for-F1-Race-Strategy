@@ -277,23 +277,19 @@ def _run_classification(dataset, out: ArtifactPaths) -> dict:
 
 
 def _rel(path, root: Path | None = None) -> str:
-    """Manifest paths, relative to the repository root.
+    """Manifest paths, relative and never absolute — the frontend joins them
+    onto the API's ``/artifacts`` mount.
 
-    The frontend joins these onto the API's ``/artifacts`` mount, so they must
-    never be absolute. When output is redirected outside the repo (the test
-    suite's ``tmp_path``), repo-relative is undefined — fall back to a path
-    relative to the artifact root, which keeps the value relative and keeps the
-    "no absolute paths in the manifest" invariant true in both cases.
+    Repo-relative covers the committed layout (including the one ``data/`` entry).
+    When output is redirected outside the repo, as the test suite does with
+    ``tmp_path``, only the artifact root is a meaningful base.
     """
     resolved = Path(path).resolve()
     try:
         return str(resolved.relative_to(REPO_ROOT))
     except ValueError:
         base = (root or ArtifactPaths.default().root).resolve()
-        try:
-            return str(Path("artifacts") / resolved.relative_to(base))
-        except ValueError:
-            return resolved.name
+        return str(Path("artifacts") / resolved.relative_to(base))
 
 
 def _rel_out(out: ArtifactPaths, path) -> str:
@@ -367,7 +363,8 @@ def _generate_classification_figures(clf: dict, out: ArtifactPaths) -> list[str]
     if best_name:
         best = clf["artifacts"][best_name]
         written.append(
-            _rel(
+            _rel_out(
+                out,
                 viz.confusion_matrix_plot(
                     best["test_metrics"]["confusion_matrix"], best_name, out.figures / "confusion_matrix.png"
                 )
@@ -375,7 +372,8 @@ def _generate_classification_figures(clf: dict, out: ArtifactPaths) -> list[str]
         )
         if best["importance"]:
             written.append(
-                _rel(
+                _rel_out(
+                    out,
                     viz.feature_importance_chart(
                         best["importance"], best_name, out.figures / "classification_feature_importance.png"
                     )
@@ -383,7 +381,8 @@ def _generate_classification_figures(clf: dict, out: ArtifactPaths) -> list[str]
             )
         if best.get("y_proba_test") is not None:
             written.append(
-                _rel(
+                _rel_out(
+                    out,
                     viz.probability_distribution(
                         y_test, best["y_proba_test"], best_name, out.figures / "probability_distribution.png"
                     )
@@ -418,7 +417,7 @@ def _registry_entries(reg: dict, clf: dict, dataset, out: ArtifactPaths) -> list
                         "holdout": task_result["holdout"],
                     },
                     metrics={"cv": result.cv_summary, "test": result.test_metrics},
-                    artifact=_rel(models_dir / f"{result.model_name}.joblib") if result.status == "trained" else "",
+                    artifact=_rel_out(out, models_dir / f"{result.model_name}.joblib") if result.status == "trained" else "",
                     hyperparameters=result.best_params,
                     random_state=42,
                     dataset=_rel(TASK5_FEATURES_CSV),
