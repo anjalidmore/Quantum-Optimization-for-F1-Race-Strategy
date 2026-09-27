@@ -80,7 +80,7 @@ export function ClassicalRegression({
                 <td>{fmt(r.cv_r2)}</td>
                 <td>{fmt(r.test_mae)}</td>
                 <td>{fmt(r.test_r2)}</td>
-                <td>{r.selected ? "✅" : ""}</td>
+                <td>{r.selected ? <span className="marker">selected</span> : null}</td>
               </tr>
             ))}
           </tbody>

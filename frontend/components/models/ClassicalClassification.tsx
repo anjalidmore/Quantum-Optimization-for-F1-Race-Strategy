@@ -91,7 +91,7 @@ export function ClassicalClassification({
                 <td>{fmt(r.test_recall)}</td>
                 <td>{fmt(r.test_f1)}</td>
                 <td>{r.test_roc_auc === null ? "undefined†" : fmt(r.test_roc_auc)}</td>
-                <td>{r.selected ? "✅" : ""}</td>
+                <td>{r.selected ? <span className="marker">selected</span> : null}</td>
               </tr>
             ))}
           </tbody>
@@ -108,7 +108,7 @@ export function ClassicalClassification({
           </p>
           {holdout.positives !== undefined && holdout.laps !== undefined && (
             <p className="text-amber-400/70">
-              ⚠ The chronological holdout contains{" "}
+              The chronological holdout contains{" "}
               <strong>
                 {holdout.positives} pit event(s) in {holdout.laps} laps
               </strong>

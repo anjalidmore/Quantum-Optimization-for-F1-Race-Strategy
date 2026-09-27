@@ -11,9 +11,9 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_CLASS: Record<string, string> = {
-  completed: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  in_progress: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  upcoming: "bg-white/10 text-white/50 border-white/20",
+  completed: "badge-success",
+  in_progress: "badge-warning",
+  upcoming: "badge-info",
 };
 
 /**
@@ -87,7 +87,7 @@ export default async function DataPage() {
                     rel="noreferrer"
                     className="text-sky-400 hover:underline text-sm"
                   >
-                    {prettify(basename(r))} ↗
+                    {prettify(basename(r))}
                   </a>
                 </li>
               ))}
@@ -113,7 +113,7 @@ export default async function DataPage() {
                   </span>
                   <span className="font-semibold text-white">{task.label}</span>
                 </div>
-                <span className={`badge border ${STATUS_CLASS[task.status]}`}>{STATUS_LABEL[task.status]}</span>
+                <span className={`badge ${STATUS_CLASS[task.status]}`}>{STATUS_LABEL[task.status]}</span>
               </summary>
               <p className="text-sm text-white/60 mt-3 mb-4">{task.purpose}</p>
               <TaskArtifactList task={task} />

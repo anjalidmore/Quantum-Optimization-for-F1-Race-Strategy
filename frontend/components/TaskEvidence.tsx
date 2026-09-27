@@ -7,13 +7,26 @@ import { Modal } from "@/components/Modal";
 import { ArtifactImage } from "@/components/ArtifactImage";
 
 function StatusBadge({ status }: { status: TaskEvidence["status"] }) {
-  const map: Record<TaskEvidence["status"], { label: string; cls: string }> = {
-    completed: { label: "Completed", cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" },
-    in_progress: { label: "In Progress", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
-    upcoming: { label: "Upcoming", cls: "bg-white/10 text-white/50 border-white/20" },
+  const map: Record<TaskEvidence["status"], { label: string; cls: string; mark: string }> = {
+    // Status reads from the marker shape and the word, not from a hue: the
+    // detector flags emerald as the reflex accent, and it carried no meaning
+    // a filled square does not.
+    completed: { label: "Built", cls: "badge-success", mark: "full" },
+    in_progress: { label: "In progress", cls: "badge-warning", mark: "half" },
+    upcoming: { label: "Not built", cls: "badge-info", mark: "empty" },
   };
-  const { label, cls } = map[status];
-  return <span className={`badge border ${cls}`}>{label}</span>;
+  const { label, cls, mark } = map[status];
+  return (
+    <span className={`badge ${cls}`}>
+      <span
+        aria-hidden
+        className={`block h-[7px] w-[7px] ${
+          mark === "full" ? "bg-paper-900" : mark === "half" ? "bg-accent" : "border border-edge"
+        }`}
+      />
+      {label}
+    </span>
+  );
 }
 
 export function TaskCard({ task }: { task: TaskEvidence }) {
@@ -24,20 +37,20 @@ export function TaskCard({ task }: { task: TaskEvidence }) {
     <>
       <button
         onClick={() => hasArtifacts && setOpen(true)}
-        className={`card text-left w-full transition ${hasArtifacts ? "hover:border-white/25 cursor-pointer" : "cursor-default opacity-70"}`}
+        className={`card w-full text-left transition-colors duration-[120ms] ${hasArtifacts ? "cursor-pointer hover:border-edge" : "cursor-default opacity-70"}`}
       >
         <div className="flex items-start justify-between">
-          <div className="text-[10px] text-white/40 uppercase tracking-wider">Task {task.number}</div>
+          <div className="font-display text-[13px] font-semibold text-paper-400">Task {task.number}</div>
           <StatusBadge status={task.status} />
         </div>
-        <div className="font-semibold text-white text-sm mt-1">{task.label}</div>
-        <div className="text-xs text-white/50 mt-1.5 line-clamp-3">{task.purpose}</div>
-        {hasArtifacts && <div className="text-xs text-sky-400 mt-2">View evidence →</div>}
+        <div className="mt-1 text-sm font-semibold text-paper-900">{task.label}</div>
+        <div className="mt-1.5 line-clamp-3 text-xs text-paper-500">{task.purpose}</div>
+        {hasArtifacts && <div className="mt-2 text-[11px] text-paper-500 underline decoration-track-300">View evidence</div>}
       </button>
 
       {open && (
         <Modal title={`Task ${task.number} — ${task.label}`} onClose={() => setOpen(false)}>
-          <p className="text-sm text-white/70 mb-4">{task.purpose}</p>
+          <p className="mb-4 text-sm text-paper-700">{task.purpose}</p>
           <TaskArtifactList task={task} />
         </Modal>
       )}
@@ -76,7 +89,7 @@ export function TaskArtifactList({ task }: { task: TaskEvidence }) {
                   rel="noreferrer"
                   className="text-sm text-sky-400 hover:underline"
                 >
-                  {prettify(basename(r))} ↗
+                  {prettify(basename(r))}
                 </a>
               </li>
             ))}

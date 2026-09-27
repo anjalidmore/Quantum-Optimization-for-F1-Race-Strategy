@@ -58,7 +58,7 @@ export function QuantumSection({ summary }: { summary: QmlSummary }) {
             target="_blank"
             rel="noreferrer"
           >
-            classical_vs_quantum_report.md ↗
+            classical_vs_quantum_report.md
           </a>
         </p>
       </section>
@@ -141,7 +141,7 @@ function QuantumTargetTable({ target, t }: { target: string; t: QmlTarget }) {
         </table>
         {isClf && (
           <p className="text-xs text-amber-400/70 mt-2">
-            ⚠ The test laps hold {t.n_test_positive} pit event, so every test column here is decided by one lap
+            The test laps hold {t.n_test_positive} pit event, so every test column here is decided by one lap
             — a test PR-AUC of 1.0 only means that lap got the top score. The CV column is the one to read.
           </p>
         )}

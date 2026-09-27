@@ -62,7 +62,7 @@ export function ExpertSystemCard({ data }: { data: ExpertSystemSummary | Unavail
             target="_blank"
             rel="noreferrer"
           >
-            rule_catalogue.md ↗
+            rule_catalogue.md
           </a>
         </p>
       </div>

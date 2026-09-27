@@ -23,7 +23,7 @@ export function FairnessCards({ fairness }: { fairness: XaiFairness }) {
             <div key={target} className="card">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h3 className="font-semibold text-white">{TARGET_LABEL[target] ?? target}</h3>
-                <span className={`badge ${healthy ? "badge-success" : "badge-warning"}`}>
+                <span className={`badge ${healthy ? "badge-info" : "badge-warning"}`}>
                   {f.concentration_ratio === null
                     ? "no identity features"
                     : `${f.concentration_ratio}× concentration`}
@@ -31,12 +31,12 @@ export function FairnessCards({ fairness }: { fairness: XaiFairness }) {
               </div>
               <div className="mt-3 h-3 w-full rounded-full overflow-hidden bg-white/5 flex">
                 <div
-                  className="bg-red-500/70"
+                  className="bg-accent"
                   style={{ width: `${f.identity_attribution_share * 100}%` }}
                   title={`identity: ${pct(f.identity_attribution_share)}`}
                 />
                 <div
-                  className="bg-emerald-500/70"
+                  className="bg-paper-400"
                   style={{ width: `${f.race_state_attribution_share * 100}%` }}
                   title={`race state: ${pct(f.race_state_attribution_share)}`}
                 />

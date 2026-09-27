@@ -42,3 +42,6 @@ practicals/
 
 # TypeScript incremental build cache
 frontend/*.tsbuildinfo
+
+# Design-work screenshots (Playwright, dev only)
+design-screenshots/

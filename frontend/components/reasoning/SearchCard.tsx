@@ -46,14 +46,14 @@ export function SearchCard({ data }: { data: SearchSummary | Unavailable }) {
           </thead>
           <tbody className="text-white/80">
             {data.algorithms.map((a) => (
-              <tr key={a.algorithm} className={`border-t border-white/5 ${a.is_optimal ? "bg-emerald-500/10" : ""}`}>
+              <tr key={a.algorithm} className={`border-t border-track-300 ${a.is_optimal ? "is-marked" : ""}`}>
                 <td className="py-1.5">{a.algorithm}</td>
                 {COLUMNS.map(([key]) => (
                   <td key={key} className="text-right tabular-nums">
                     {typeof a[key] === "number" ? fmt(a[key], key === "solution_cost" ? 2 : 1) : "—"}
                   </td>
                 ))}
-                <td className="text-center">{a.is_optimal ? "✅" : ""}</td>
+                <td className="text-center">{a.is_optimal ? <span className="marker">optimal</span> : null}</td>
               </tr>
             ))}
           </tbody>

@@ -75,13 +75,13 @@ export function DeepEvaluation({
                   <p className="text-xs text-white/50">
                     Decision threshold <strong className="text-white/80">{fmt(e.threshold.threshold, 4)}</strong>,
                     tuned on {e.threshold.n_samples} out-of-fold predictions ({e.threshold.n_positive} pit laps):
-                    F1 {fmt(e.threshold["at_default_0.5"]?.f1, 4)} at 0.5 → {fmt(e.threshold.at_threshold?.f1, 4)}{" "}
+                    F1 {fmt(e.threshold["at_default_0.5"]?.f1, 4)} at 0.5, {fmt(e.threshold.at_threshold?.f1, 4)}{" "}
                     at the tuned value.
                   </p>
                 )}
                 {!reg && e.test_metrics.n_positive < 5 && (
                   <p className="text-xs text-amber-400/70">
-                    ⚠ The test laps contain{" "}
+                    The test laps contain{" "}
                     <strong>
                       {e.test_metrics.n_positive} pit event(s) in {e.test_metrics.n} laps
                     </strong>

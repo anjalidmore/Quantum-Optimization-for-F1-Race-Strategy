@@ -1,0 +1,10 @@
+# Development-only dependencies. NOT needed to run the platform.
+#
+# Kept separate from requirements.txt on purpose: nothing here is imported by
+# app/ or by any build script, so a deployment never installs it. Playwright is
+# used only to screenshot the dashboard during design work, via the
+# webapp-testing skill, and its output goes to design-screenshots/ (gitignored).
+#
+#   pip install -r requirements-dev.txt
+#   playwright install chromium
+playwright==1.58.0

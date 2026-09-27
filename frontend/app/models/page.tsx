@@ -79,7 +79,7 @@ export default async function ModelsPage() {
             </>
           ) : (
             <>
-              ⚠ The synthetic pit schedule is close to deterministic, so classification metrics are inflated
+              The synthetic pit schedule is close to deterministic, so classification metrics are inflated
               relative to real telemetry. These are not real-world F1 performance figures.
             </>
           )}

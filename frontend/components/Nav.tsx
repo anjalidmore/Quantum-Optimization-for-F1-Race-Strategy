@@ -1,48 +1,92 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LINKS: { href: string; label: string }[] = [
-  { href: "/", label: "Dashboard" },
-  { href: "/strategy", label: "Race Strategy" },
+  { href: "/", label: "Overview" },
+  { href: "/strategy", label: "Strategy" },
   { href: "/reasoning", label: "Reasoning" },
   { href: "/models", label: "Models" },
   { href: "/explainability", label: "Explainability" },
-  { href: "/data", label: "Data & Evidence" },
+  { href: "/data", label: "Data" },
 ];
 
 export default function Nav() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  const linkClass = (href: string) =>
+    `rounded-sm px-3 py-2 transition-colors duration-[120ms] ${
+      pathname === href ? "bg-track-200 text-paper-900" : "text-paper-500 hover:text-paper-900"
+    }`;
 
   return (
-    <nav className="border-b border-white/10 bg-carbon/95 sticky top-0 z-20 backdrop-blur">
-      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-2.5 h-8 bg-f1red rounded-sm" />
-          <div>
-            <div className="font-bold text-white leading-tight">F1 Race Strategy Intelligence</div>
-            <div className="text-[10px] text-white/40 tracking-wider">
-              Computational Intelligence for race prediction & strategy
-            </div>
-          </div>
-        </div>
-        <div className="hidden lg:flex items-center gap-1 text-sm">
+    /* No backdrop-blur: the audit found it was the app's only glass surface and
+       it was doing nothing. The nav is opaque. */
+    <header className="sticky top-0 z-20 border-b border-track-300 bg-track-000">
+      <div className="mx-auto flex h-[52px] max-w-[1320px] items-center gap-7 px-5 sm:px-8">
+        <Link href="/" className="flex items-center gap-2.5 whitespace-nowrap">
+          <span aria-hidden className="block h-[17px] w-[3px] bg-accent" />
+          <span className="font-display text-[17px] font-bold leading-none tracking-[0.01em] text-paper-900">
+            PIT WALL
+          </span>
+        </Link>
+
+        <nav aria-label="Main" className="ml-auto hidden items-center gap-0.5 text-[13px] font-medium lg:flex">
           {LINKS.map((link) => (
             <Link
-              key={link.label}
+              key={link.href}
               href={link.href}
-              className={`px-3 py-1.5 rounded-md transition ${
-                pathname === link.href
-                  ? "bg-white/10 text-white"
-                  : "text-white/60 hover:text-white hover:bg-white/5"
+              aria-current={pathname === link.href ? "page" : undefined}
+              className={linkClass(link.href)}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Below lg the site had no navigation at all. */}
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-controls="mobile-nav"
+          className="btn-secondary ml-auto flex items-center gap-2 px-3 py-1.5 text-[13px] lg:hidden"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden focusable="false">
+            {open ? (
+              <path d="M2 2 L12 12 M12 2 L2 12" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            ) : (
+              <path d="M1 3h12M1 7h12M1 11h12" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            )}
+          </svg>
+          {open ? "Close" : "Menu"}
+        </button>
+      </div>
+
+      {open && (
+        <nav
+          id="mobile-nav"
+          aria-label="Main"
+          className="border-t border-track-300 bg-track-000 px-5 pb-3 lg:hidden"
+        >
+          {LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              aria-current={pathname === link.href ? "page" : undefined}
+              className={`block border-b border-track-300 py-3 text-[15px] ${
+                pathname === link.href ? "text-paper-900" : "text-paper-500"
               }`}
             >
               {link.label}
             </Link>
           ))}
-        </div>
-      </div>
-    </nav>
+        </nav>
+      )}
+    </header>
   );
 }

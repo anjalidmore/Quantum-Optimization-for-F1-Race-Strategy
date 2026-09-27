@@ -2,47 +2,370 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   Design tokens — the normative layer. See /DESIGN.md.
+   Every value here was contrast-measured against the surface it is used on.
+   ========================================================================== */
+:root {
+  /* Base: the track surface, four steps of near-black. */
+  --track-000: #08090b;
+  --track-050: #0e1013;
+  --track-100: #15181c;
+  --track-200: #1d2126;
+  --track-300: #2a2f36;
+
+  /* Text: warm off-white, so the dark never reads blue-grey. */
+  --paper-900: #f4f1ea; /* 15.8:1 on track-100 */
+  --paper-700: #d8d4ca; /* 12.0:1 */
+  --paper-500: #a9a59b; /*  7.2:1 */
+  --paper-400: #8b8780; /*  5.0:1 */
+
+  /* One accent. Bright enough to pass AA as text, not only as a fill.
+     avoid-ai-design-ignore: SD2 — red on near-black is Formula One's own
+     livery language here, not a decorative escape from purple. See DESIGN.md
+     § Constraints. */
+  --accent: #ff2d16; /* 5.1:1 on track-050 */
+  --accent-ink: #0a0b0d; /* 5.3:1 on accent */
+
+  /* Non-text UI: control boundaries and focus need >= 3.0. */
+  --edge: #5e6773; /* 3.3:1 on track-050 */
+  --focus: #f4f1ea; /* 16.9:1 */
+
+  /* Tyre compounds. DATA MEANING ONLY — never chrome, never decoration,
+     and never the sole carrier of meaning (the chip also shows its letter). */
+  --compound-soft: #e8382b;
+  --compound-medium: #f2d13c;
+  --compound-hard: #edeae3;
+  --compound-inter: #3fb950;
+  --compound-wet: #3b8eea;
+
+  --r-sm: 2px;
+  --r-md: 4px;
+  --r-lg: 6px;
+
+  --t-fast: 120ms;
+  --t-base: 180ms;
+  --ease: cubic-bezier(0.2, 0, 0.3, 1);
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
 body {
-  background-color: #0d0f12;
-  color: #e6e8eb;
+  background-color: var(--track-050);
+  color: var(--paper-700);
+  font-family: var(--font-text);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Browser surfaces we did not draw still carry the design. */
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+* {
+  caret-color: var(--accent);
+  /* Fixes the browser-default magenta radios and checkboxes. */
+  accent-color: var(--accent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--track-300) var(--track-050);
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--track-050);
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--track-300);
+  border-radius: 0;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--edge);
+}
+
+/* Visible focus on everything interactive. There were none before. */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Type roles
+   ========================================================================== */
+.t-display-hero {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(48px, 6vw, 76px);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  color: var(--paper-900);
+  font-variant-numeric: tabular-nums;
+}
+.t-display-lg {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(32px, 4vw, 44px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--paper-900);
+  font-variant-numeric: tabular-nums;
+}
+.t-display-md {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.1;
+  color: var(--paper-900);
+  font-variant-numeric: tabular-nums;
+}
+/* Page titles borrow the display face at masthead scale. */
+.t-page-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(34px, 4.4vw, 52px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--paper-900);
+}
+.t-title {
+  font-family: var(--font-text);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.3;
+  color: var(--paper-900);
+}
+.t-body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--paper-700);
+}
+.t-data {
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.t-micro {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--paper-400);
+}
+.t-code {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--paper-900);
+}
+.unit {
+  color: var(--paper-400);
+  font-size: 11px;
+  font-weight: 400;
+  font-family: var(--font-text);
+}
+
+/* ==========================================================================
+   Components
+   ========================================================================== */
+
+/* A panel. Elevation is a surface step plus a hairline, never a shadow. */
 .card {
-  @apply bg-panel border border-white/10 rounded-xl p-5;
+  background-color: var(--track-100);
+  border: 1px solid var(--track-300);
+  border-radius: var(--r-md);
+  padding: 16px;
+}
+/* The one focal panel per page. */
+.card-focal {
+  border-color: var(--edge);
+  border-radius: var(--r-lg);
 }
 
-.stat-value {
-  @apply text-3xl font-bold tracking-tight text-white;
-}
-
+/* A stat tile: no border, no box. Space and one hairline separate them. */
 .stat-label {
-  @apply text-xs uppercase tracking-wider text-white/50;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--paper-500);
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.1;
+  color: var(--paper-900);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
 }
 
+/* A pill states real status only. */
 .badge {
-  @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--track-300);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--paper-500);
+  white-space: nowrap;
 }
-
-.badge-warning {
-  @apply bg-amber-500/15 text-amber-300 border border-amber-500/30;
-}
-
 .badge-info {
-  @apply bg-sky-500/15 text-sky-300 border border-sky-500/30;
+  border-color: var(--edge);
+  color: var(--paper-500);
+}
+.badge-success {
+  border-color: var(--edge);
+  color: var(--paper-900);
+}
+.badge-warning {
+  border-color: var(--accent);
+  color: var(--paper-900);
+}
+.badge-danger {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .input {
-  @apply w-full bg-panel2 border border-white/10 rounded px-2 py-1.5 text-white text-sm;
+  width: 100%;
+  background-color: var(--track-200);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-sm);
+  padding: 6px 8px;
+  color: var(--paper-900);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--t-fast) var(--ease);
+}
+.input:hover {
+  border-color: var(--paper-400);
 }
 
-table.data-table {
-  @apply w-full text-sm border-collapse;
+/* Buttons */
+.btn-primary {
+  background-color: var(--accent);
+  color: var(--accent-ink);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-sm);
+  padding: 9px 18px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: opacity var(--t-fast) var(--ease);
+}
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.86;
+}
+.btn-primary:disabled {
+  opacity: 0.45;
+}
+.btn-secondary {
+  background-color: transparent;
+  color: var(--paper-700);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-sm);
+  padding: 9px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--paper-400);
+  color: var(--paper-900);
+}
+.btn-secondary:disabled {
+  opacity: 0.45;
 }
 
-table.data-table th {
-  @apply text-left text-white/50 font-medium uppercase text-xs tracking-wider py-2 border-b border-white/10;
+/* ==========================================================================
+   Tables: figures right, text left, no zebra striping.
+   ========================================================================== */
+table.data-table,
+table.t-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.data-table th,
+table.t-table th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  color: var(--paper-500);
+  padding: 0 10px 7px 0;
+  border-bottom: 1px solid var(--edge);
+  white-space: nowrap;
+}
+table.data-table td,
+table.t-table td {
+  padding: 7px 10px 7px 0;
+  border-bottom: 1px solid var(--track-300);
+  font-variant-numeric: tabular-nums;
+}
+table.data-table tbody tr:hover,
+table.t-table tbody tr:hover {
+  background-color: var(--track-200);
+}
+/* Figures align right; add .num to the cell. */
+table th.num,
+table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+table td.num {
+  color: var(--paper-900);
+  font-weight: 500;
+}
+/* A marked row carries an inset edge AND a text marker — never colour alone. */
+table tbody tr.is-marked td {
+  background-color: var(--track-100);
+}
+table tbody tr.is-marked td:first-child {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.marker {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
 }
 
-table.data-table td {
-  @apply py-2 border-b border-white/5;
+/* A hairline rule between sections; more space above a heading than below. */
+.rule {
+  border-top: 1px solid var(--track-300);
+}
+
+/* Loading skeleton: a block at the final height, no shimmer. */
+.skeleton {
+  background-color: var(--track-100);
+  border: 1px solid var(--track-300);
+  border-radius: var(--r-md);
 }
