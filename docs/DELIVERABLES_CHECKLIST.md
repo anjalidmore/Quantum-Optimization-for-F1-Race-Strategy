@@ -140,7 +140,7 @@ compound), race-strategy explanation (plain-English narratives) — `app/intelli
 |---|---|---|---|
 | Streamlit Application *(agreed equivalent)* | `frontend/` (Next.js 15 + FastAPI) | ✅ | Next.js was chosen over Streamlit so the models sit behind a real HTTP API that the tests and `scripts/demo_predict.py` also call; the choice and its reason are stated in `README.md` |
 | Integrated Source Code | `app/` (89 modules) | ✅ | one package per task under `app/intelligence/`, wired together by `app/services/strategy_service.py` |
-| Dashboard | `frontend/app/page.tsx` + `app/{strategy,reasoning,models,explainability,data}/page.tsx` | ✅ | six pages covering every task: Data & EDA, Knowledge, Expert System, Search (Reasoning page), ML, DL, QML (Models page), XAI, Strategy. Missing artifacts render "Not generated yet" with the command to run |
+| Dashboard | `frontend/app/page.tsx`, `frontend/app/strategy/page.tsx`, `frontend/app/reasoning/page.tsx`, `frontend/app/models/page.tsx`, `frontend/app/explainability/page.tsx`, `frontend/app/data/page.tsx` | ✅ | six pages covering every task: Data & EDA, Knowledge, Expert System, Search (Reasoning page), ML, DL, QML (Models page), XAI, Strategy. Missing artifacts render "Not generated yet" with the command to run |
 | Race-Strategy Report Generator | `app/services/strategy_report.py`, `POST /api/strategy/report` | ✅ | one race state in, a downloadable Markdown briefing out: prediction, extrapolation warnings, rules fired, search plan, SHAP factors, trust components, provenance. Button on the Race Strategy page |
 | Deployment Documentation | `docs/DEPLOYMENT.md` | ✅ | install, build, run, serve behind a proxy, retrain on another race, health checks, troubleshooting, backups |
 
