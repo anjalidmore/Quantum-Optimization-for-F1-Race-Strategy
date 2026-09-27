@@ -1,6 +1,6 @@
 # State-Space Formulation
 
-_Generated 2026-09-27 16:56 UTC._
+_Generated 2026-09-27 17:42 UTC._
 
 ## Problem as search
 

@@ -38,6 +38,7 @@ from sklearn.preprocessing import StandardScaler
 from app.core.paths import (
     DATA_PROCESSED_DIR,
     FASTF1_LAPS_CLEAN_CSV,
+    FEATURE_ENGINEERING_ARTIFACTS_DIR,
     REPO_ROOT,
     TASK5_FEATURE_METADATA_JSON,
     TASK5_FEATURES_CSV,
@@ -604,3 +605,176 @@ def build(clean_csv: Path = FASTF1_LAPS_CLEAN_CSV, out_dir: Path = DATA_PROCESSE
         "cv_selected": (mae_sel, r2_sel),
         "cv_all_features": (mae_all, r2_all),
     }
+
+# ---------------------------------------------------------------------------
+# 8. Task 5's written deliverables
+# ---------------------------------------------------------------------------
+def write_reports(result: dict, out_dir: Path = FEATURE_ENGINEERING_ARTIFACTS_DIR) -> dict:
+    """Persist the correlation matrix, the importance ranking and a written report.
+
+    ``build`` already computes all three on its way to choosing features; before
+    this they existed only inside the notebook's output cells, so the Task 5
+    deliverables could not be inspected without re-running it.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written: dict[str, Path] = {}
+
+    meta = result["metadata"]
+    F_sel = result["features_post_funnel"]
+    ranking = result["ranking"]
+
+    # --- correlation matrix, as data and as a figure ----------------------
+    corr = F_sel.corr()
+    corr_csv = out_dir / "correlation_matrix.csv"
+    corr.round(6).to_csv(corr_csv)
+    written["correlation_matrix_csv"] = corr_csv
+
+    fig, ax = plt.subplots(figsize=(max(6, 0.4 * len(corr)), max(5, 0.35 * len(corr))))
+    im = ax.imshow(corr.to_numpy(), cmap="coolwarm", vmin=-1, vmax=1)
+    ax.set_xticks(range(len(corr)))
+    ax.set_xticklabels(corr.columns, rotation=90, fontsize=6)
+    ax.set_yticks(range(len(corr)))
+    ax.set_yticklabels(corr.index, fontsize=6)
+    ax.set_title(f"Task 5 — correlation of the {len(corr)} features surviving the funnel", fontsize=9)
+    fig.colorbar(im, ax=ax, shrink=0.7, label="Pearson r")
+    fig.tight_layout()
+    corr_png = out_dir / "correlation_matrix.png"
+    fig.savefig(corr_png, dpi=140, bbox_inches="tight")
+    plt.close(fig)
+    written["correlation_matrix_png"] = corr_png
+
+    # --- importance ranking ------------------------------------------------
+    rank_csv = out_dir / "feature_importance.csv"
+    ranking.round(6).to_csv(rank_csv, index_label="feature")
+    written["feature_importance_csv"] = rank_csv
+
+    selected_reg = meta["selected_features"]["target_laptime"]
+    lines = [
+        "# Task 5 — Feature Importance Report", "",
+        f"_Generated {_stamp()}._", "",
+        "Three criteria are averaged by rank, so a feature only finishes high when more than one "
+        "agrees: mutual information, random-forest importance, and the absolute value of an L1 "
+        "(Lasso/logistic) coefficient. `stability` is the share of cross-validation folds in whose "
+        f"top {TOP_K_STABILITY} the feature appeared — a feature strong on the full data but unstable "
+        "across folds is fitting one stretch of the race.", "",
+        "## Ranking for `target_laptime` (the selection target)", "",
+        "| Rank | Feature | Mutual info | Tree importance | L1 coef | Avg rank | Stability | Selected |",
+        "|---:|---|---:|---:|---:|---:|---:|:---:|",
+    ]
+    for i, (feature, row) in enumerate(ranking.iterrows(), 1):
+        lines.append(
+            f"| {i} | `{feature}` | {row['mutual_info']:.4f} | {row['tree_importance']:.4f} | "
+            f"{row['l1_coef']:.4f} | {row['avg_rank']:.2f} | {row.get('stability', float('nan')):.2f} | "
+            f"{'yes' if feature in selected_reg else ''} |"
+        )
+    sweep = result["regression_sweep"]
+    mae_sel, r2_sel = result["cv_selected"]
+    mae_all, r2_all = result["cv_all_features"]
+    lines += ["", "## How many features to keep", "",
+              "Cross-validated error for the top-K features, K chosen as the smallest set within 2% of "
+              "the best MAE — the simplest model the data cannot distinguish from the best one.", "",
+              "| K | CV MAE (s) | CV R² |", "|---:|---:|---:|"]
+    for k, row in sweep.iterrows():
+        lines.append(f"| {k} | {row['cv_MAE_s']:.4f} | {row['cv_R2']:.4f} |")
+    lines += ["", f"**Selected K* = {len(selected_reg)}.** Selected set: CV MAE {mae_sel:.4f} s "
+                  f"(R² {r2_sel:.4f}); all {F_sel.shape[1]} post-funnel features: {mae_all:.4f} s "
+                  f"(R² {r2_all:.4f}).", "",
+              "## Pit-decision target", "",
+              "Ranked the same way against `target_pit_next_lap`, with K fixed at "
+              f"{K_CLASSIFICATION}: at roughly 5% positives a sweep would be choosing between numbers "
+              "that are mostly noise. CV ROC-AUC by K: "
+              + ", ".join(f"K={k}: {v:.3f}" for k, v in result["classification_sweep"].items()) + ".", "",
+              f"Selected ({len(meta['selected_features']['target_pit_next_lap'])}): "
+              + ", ".join(f"`{f}`" for f in meta["selected_features"]["target_pit_next_lap"]) + ".", ""]
+    rank_md = out_dir / "feature_importance_report.md"
+    rank_md.write_text("\n".join(lines) + "\n")
+    written["feature_importance_report"] = rank_md
+
+    # --- the feature-engineering report ------------------------------------
+    funnel = meta["selection_funnel"]
+    pairs = result["correlation_pairs"]
+    vif = result["vif_removed"]
+    fe = [
+        "# Task 5 — Feature Engineering Report", "",
+        f"_Generated {_stamp()}._", "",
+        f"**Input:** `{meta['source_dataset']}` (Task 4's cleaned laps).  ",
+        f"**Output:** `data/processed/f1_features_selected.csv` "
+        f"({meta['rows']} rows) and `data/processed/feature_metadata.json`.  ",
+        f"**Data source:** {meta['dataset_source'].get('source')}"
+        + (f" — {meta['dataset_source'].get('event')} {meta['dataset_source'].get('year')} "
+           f"({meta['dataset_source'].get('session')})" if meta["dataset_source"].get("event") else "")
+        + ".", "",
+        "## 1. Engineered features", "",
+        f"{result['features_all'].shape[1]} candidate features were built in six blocks: tyre and stint "
+        "dynamics, fuel and race progress, the driver's own recent pace in gap-space, field-level pace, "
+        "environment, and reference-encoded categoricals. Two rules govern all of them: anything derived "
+        "from history uses `shift(1)` so no feature can see the lap it predicts, and no feature is an exact "
+        "linear combination of others.", "",
+        f"The fuel-burn coefficient was estimated from the data at {result['fuel_coef']:+.4f} s per lap "
+        "(negative means the car speeds up as fuel burns off), and used to build the fuel-corrected target.", "",
+        "## 2. Leakage exclusions", "",
+        f"Excluded before any feature was built: {', '.join('`' + c + '`' for c in meta['excluded_as_leakage']['columns'])}.", "",
+        f"Reason: {meta['excluded_as_leakage']['reason']}", "",
+        "## 3. The selection funnel", "",
+        "| Stage | Removes | Dropped here |", "|---|---|---|",
+        f"| 1. Near-zero variance | constant or near-constant columns | "
+        f"{len(funnel['1_near_zero_variance_dropped'])}: {', '.join('`' + c + '`' for c in funnel['1_near_zero_variance_dropped']) or 'none'} |",
+        f"| 2. Correlation pruning (\\|r\\| > {CORRELATION_CUT}) | one of each redundant pair | "
+        f"{len(funnel['2_correlation_dropped'])}: {', '.join('`' + c + '`' for c in funnel['2_correlation_dropped']) or 'none'} |",
+        f"| 3. Variance inflation (VIF > {VIF_THRESHOLD:g}) | multi-way collinearity | "
+        f"{len(funnel['3_vif_dropped'])}: {', '.join('`' + c + '`' for c in funnel['3_vif_dropped']) or 'none'} |",
+        "| 4. Importance and stability | weak or unstable predictors | see the importance report |",
+        "",
+    ]
+    if pairs:
+        fe += ["Correlated pairs, and which of the two survived (mutual information decided):", "",
+               "| Kept | Dropped | \\|r\\| |", "|---|---|---:|"]
+        for pair in pairs:
+            fe.append(f"| `{pair['kept']}` | `{pair['dropped']}` | {pair['|r|']} |")
+        fe.append("")
+    if vif:
+        fe += ["Removed for multicollinearity, worst first:", "",
+               "| Feature | VIF at removal |", "|---|---:|"]
+        for item in vif:
+            fe.append(f"| `{item['dropped']}` | {item['VIF']} |")
+        fe.append("")
+    fe += ["## 4. What was exported", "",
+           f"- {len(selected_reg)} features for `target_laptime`",
+           f"- {len(meta['selected_features']['target_pit_next_lap'])} features for `target_pit_next_lap`",
+           f"- {len(meta['selected_features']['union_exported'])} columns exported (the union), plus "
+           f"{len(meta['identifier_columns'])} identifier columns and {len(meta['targets'])} targets",
+           f"- {meta['preprocessing_contract']['warmup_rows_dropped']} warm-up rows dropped; first usable "
+           f"lap is {meta['preprocessing_contract']['first_usable_lap']}",
+           "",
+           "## 5. The contract for later tasks", "",
+           f"- **Scaling:** {meta['preprocessing_contract']['scaling']}",
+           f"- **Validation:** {meta['preprocessing_contract']['validation']}",
+           f"- **Needs scaling:** {len(meta['numeric_features_requiring_scaling'])} numeric features; "
+           f"{len(meta['binary_features_no_scaling_needed'])} binary indicators do not.",
+           "",
+           "## 6. Validation scores at selection time", "",
+           f"- Regression CV MAE {meta['validation_scores']['regression_cv_MAE_s']} s, "
+           f"R² {meta['validation_scores']['regression_cv_R2']}",
+           f"- Classification CV ROC-AUC {meta['validation_scores']['classification_cv_AUC']}",
+           "",
+           f"> {meta['validation_scores']['caveat']}",
+           "",
+           "Full step-by-step walkthrough with intermediate tables: "
+           "[`docs/notebooks/task5_feature_engineering.ipynb`](../../docs/notebooks/task5_feature_engineering.ipynb).",
+           ""]
+    fe_md = out_dir / "feature_engineering_report.md"
+    fe_md.write_text("\n".join(fe) + "\n")
+    written["feature_engineering_report"] = fe_md
+    return written
+
+
+def _stamp() -> str:
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")

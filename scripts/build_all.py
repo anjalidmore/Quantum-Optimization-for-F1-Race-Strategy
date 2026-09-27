@@ -152,6 +152,7 @@ def build_features(force: bool) -> None:
     from app.intelligence.features import build as feature_build
 
     result = feature_build.build()
+    feature_build.write_reports(result)
     selected = result["metadata"]["selected_features"]
     log.info("Task 5 rebuilt: %d rows x %d columns (%d regression / %d classification features)",
              *result["export"].shape, len(selected["target_laptime"]),

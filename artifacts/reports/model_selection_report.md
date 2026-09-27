@@ -1,6 +1,13 @@
 # Task 6 — Model Selection Report
 
-Generated: 2026-09-05T06:38:02.674312+00:00
+Generated: 2026-09-27T17:43:32.997837+00:00
+
+## Saved model format
+
+Every trained pipeline is saved with `joblib.dump` as `artifacts/models/{laptime,pit_decision}/<model>.joblib`.
+**`.joblib` is the pickle format scikit-learn recommends for estimators** — the same pickle protocol
+with more efficient handling of large NumPy arrays — so no separate `.pkl` copy is exported.
+Load one with `joblib.load(path)`, or through `app/services/model_cache.py` as the API does.
 
 ## Selection criteria
 

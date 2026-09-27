@@ -1,6 +1,6 @@
 # Inference Report — Fuel-critical defensive stint
 
-_Generated 2026-09-05 06:37 UTC._
+_Generated 2026-09-27 17:42 UTC._
 
 ## Inputs (GIVEN facts)
 

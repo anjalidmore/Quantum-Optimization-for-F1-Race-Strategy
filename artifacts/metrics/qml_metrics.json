@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-27T16:50:39.788923+00:00",
+  "generated_at": "2026-09-27T17:57:47.584284+00:00",
   "task": "Quantum machine learning (PennyLane)",
   "simulator": "default.qubit (noiseless state-vector simulation; no quantum hardware)",
   "framework": {
@@ -27,7 +27,7 @@
     "n_laps": 1055,
     "n_drivers": 20
   },
-  "wall_seconds": 27.542292874997656,
+  "wall_seconds": 27.310875124996528,
   "targets": {
     "target_pit_next_lap": {
       "target": "target_pit_next_lap",
@@ -124,7 +124,7 @@
             "n_qubits": 4
           },
           "n_parameters": 14,
-          "train_seconds": 0.4420662920019822,
+          "train_seconds": 0.45958962500299094,
           "cv_summary": {
             "pr_auc": {
               "mean": 0.30367953194691055,
@@ -301,7 +301,7 @@
             "n_qubits": 4
           },
           "n_parameters": 413,
-          "train_seconds": 3.8953097080011503,
+          "train_seconds": 3.7764098750049016,
           "cv_summary": {
             "pr_auc": {
               "mean": 0.21272704323665115,
@@ -399,7 +399,7 @@
           "description": "smallest sensible classical model on the same reduced inputs; trained on the same 4 PCA components the circuits see",
           "hyperparameters": {},
           "n_parameters": 5,
-          "train_seconds": 0.0028446249998523854,
+          "train_seconds": 0.0014390829965122975,
           "cv_summary": {
             "pr_auc": {
               "mean": 0.20465530994360712,
@@ -488,7 +488,7 @@
             "hidden_units": 2
           },
           "n_parameters": 13,
-          "train_seconds": 0.025647041002230253,
+          "train_seconds": 0.02348570899630431,
           "cv_summary": {
             "pr_auc": {
               "mean": 0.15287246394883297,
@@ -1880,7 +1880,7 @@
             "n_qubits": 4
           },
           "n_parameters": 14,
-          "train_seconds": 0.4493994579970604,
+          "train_seconds": 0.45297199999913573,
           "cv_summary": {
             "mae": {
               "mean": 1.7458938019769565,
@@ -1997,7 +1997,7 @@
           "description": "smallest sensible classical model on the same reduced inputs; trained on the same 4 PCA components the circuits see",
           "hyperparameters": {},
           "n_parameters": 5,
-          "train_seconds": 0.00029766599618596956,
+          "train_seconds": 0.00031316700187744573,
           "cv_summary": {
             "mae": {
               "mean": 1.6242745539291337,
@@ -2032,7 +2032,7 @@
             "hidden_units": 2
           },
           "n_parameters": 13,
-          "train_seconds": 0.0045878750024712645,
+          "train_seconds": 0.004724667000118643,
           "cv_summary": {
             "mae": {
               "mean": 1.7696955084261976,

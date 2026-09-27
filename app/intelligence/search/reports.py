@@ -175,6 +175,111 @@ cost. Admissibility guarantees A\\* returns a cost-optimal solution.
 """
 
 
+def heuristic_table_md(problem: RaceProblem, results: Dict[str, SearchResult]) -> str:
+    """The heuristic, its components, and an admissibility check with real numbers.
+
+    Admissibility is the property A* depends on, so it is demonstrated rather
+    than asserted: for every state along the optimal path, h(n) is compared with
+    the true remaining cost taken from that same optimal solution. If any row
+    showed h > actual, A* would not be guaranteed optimal and the table would
+    say so.
+    """
+    fastest = problem.fastest_possible_lap()
+    astar = results.get("A*")
+
+    parts = [
+        "# Heuristic Table",
+        "",
+        f"_Generated {_ts()}._",
+        "",
+        "## Definition",
+        "",
+        "```",
+        "h(state) = (total_laps - state.lap) x fastest_possible_lap",
+        "```",
+        "",
+        "| Component | Value | Where it comes from |",
+        "|---|---:|---|",
+        f"| `total_laps` | {problem.total_laps} | the problem instance |",
+        f"| `fastest_possible_lap` | {fastest:.4f} s | `RaceProblem.fastest_possible_lap()`: "
+        "fresh-tyre pace at zero fuel, the fastest lap physically available |",
+        f"| `pit_loss` (ignored by h) | {problem.pit_loss:.1f} s | ignoring a non-negative cost keeps h a lower bound |",
+        f"| `h(initial state)` | {problem.heuristic(problem.initial_state()):.2f} s | "
+        f"{problem.total_laps} laps x {fastest:.2f} s |",
+        "",
+        "## Why it is admissible",
+        "",
+        "Two costs are deliberately left out, and both are non-negative:",
+        "",
+        "1. **Tyre degradation.** `fastest_possible_lap` is fresh-tyre pace; a real lap on worn tyres is slower.",
+        "2. **Fuel weight and pit loss.** Carrying fuel costs time, and a dry race may still require a stop.",
+        "",
+        "Leaving out non-negative costs can only make h too small, never too large, so "
+        "`h(n) <= true remaining cost` everywhere. That is exactly the condition A* needs to return "
+        "a cost-optimal solution, and it is why A* and uniform-cost search agree below.",
+        "",
+    ]
+
+    if astar and astar.found:
+        path = astar.solution
+        total = astar.solution_cost
+        parts += [
+            "## Admissibility checked on the optimal path",
+            "",
+            "`g` is the cost paid to reach the state, `h` the estimate of what remains, and "
+            "`actual remaining` the true figure taken from the optimal solution itself. "
+            "Admissibility requires `h <= actual remaining` on every row.",
+            "",
+            "| Lap | Compound | Tyre age | g (s) | h (s) | f = g + h | Actual remaining (s) | h <= actual |",
+            "|---:|---|---:|---:|---:|---:|---:|:---:|",
+        ]
+        violations = 0
+        # Every 4th state keeps the table readable; the check below covers all of them.
+        for node in path[:: max(1, len(path) // 8)]:
+            g = float(node.path_cost)
+            h = float(problem.heuristic(node.state))
+            actual = total - g
+            ok = h <= actual + 1e-9
+            violations += 0 if ok else 1
+            parts.append(
+                f"| {node.state.lap} | {node.state.compound.value} | {node.state.tyre_age} | "
+                f"{g:.2f} | {h:.2f} | {g + h:.2f} | {actual:.2f} | {'yes' if ok else '**NO**'} |"
+            )
+        all_violations = sum(
+            1 for node in path
+            if float(problem.heuristic(node.state)) > (total - float(node.path_cost)) + 1e-9
+        )
+        parts += [
+            "",
+            f"Checked on all {len(path)} states of the optimal path: "
+            f"**{all_violations} violations**."
+            + (" Admissibility holds, so A*'s solution is cost-optimal."
+               if all_violations == 0 else
+               " At least one state overestimates, so A* is **not** guaranteed optimal here."),
+            "",
+            f"Optimal cost: **{total:.4f} s**. "
+            f"A* expanded {astar.nodes_expanded} nodes to find it.",
+            "",
+        ]
+        if "UCS" in results and results["UCS"].found:
+            ucs = results["UCS"]
+            same = abs(ucs.solution_cost - total) < 1e-6
+            parts += [
+                f"Uniform-cost search, which uses no heuristic, reached "
+                f"{ucs.solution_cost:.4f} s while expanding {ucs.nodes_expanded} nodes. "
+                + ("The two costs agree, which is the empirical check that the heuristic did not "
+                   "cost optimality — it only saved "
+                   f"{ucs.nodes_expanded - astar.nodes_expanded} node expansions."
+                   if same else
+                   "**The two costs differ, which would indicate an inadmissible heuristic.**"),
+                "",
+            ]
+    else:
+        parts += ["## Admissibility check", "",
+                  "A* found no solution on this instance, so there is no optimal path to check against.", ""]
+    return "\n".join(parts) + "\n"
+
+
 def generate_all(output_dir: Path, problem: RaceProblem,
                  rows: List[ComparisonRow],
                  results: Dict[str, SearchResult]) -> Dict[str, Path]:
@@ -184,4 +289,6 @@ def generate_all(output_dir: Path, problem: RaceProblem,
                                     comparison_report_md(problem, rows, results)),
         "formulation": _write(output_dir / "state_space_formulation.md",
                               formulation_doc_md()),
+        "heuristic_table": _write(output_dir / "heuristic_table.md",
+                                  heuristic_table_md(problem, results)),
     }

@@ -67,6 +67,9 @@ def main() -> int:
     else:
         for path in (result["csv_path"], result["json_path"]):
             log.info("wrote %s", Path(path).resolve().relative_to(REPO_ROOT))
+        # The Task 5 written deliverables: FE report, correlation matrix, importance report.
+        for name, path in feature_build.write_reports(result).items():
+            log.info("wrote %s -> %s", name, Path(path).resolve().relative_to(REPO_ROOT))
     return 0
 
 

@@ -1,6 +1,6 @@
 # Task 7 — Hyperparameter Report
 
-_Generated 2026-09-21 04:57 UTC._
+_Generated 2026-09-27 17:55 UTC._
 
 Selection used **only** the expanding-window lap-forward folds over the development laps. The chronological test laps were not touched until the final evaluation.
 

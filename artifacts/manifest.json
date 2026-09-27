@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T06:38:02.674524+00:00",
+  "generated_at": "2026-09-27T17:43:32.998140+00:00",
   "dataset": "data/processed/f1_features_selected.csv",
   "dataset_source": {
     "source": "real_fastf1",
@@ -28,10 +28,8 @@
   "metrics": [
     "artifacts/metrics/classification_metrics.json",
     "artifacts/metrics/cv_fold_metrics.json",
-    "artifacts/metrics/dl_metrics.json",
-    "artifacts/metrics/dl_training_history.json",
-    "artifacts/metrics/dl_vs_classical.json",
     "artifacts/metrics/model_comparison.json",
+    "artifacts/metrics/qml_metrics.json",
     "artifacts/metrics/regression_metrics.json"
   ],
   "figures": [

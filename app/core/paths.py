@@ -47,6 +47,7 @@ KNOWLEDGE_REPRESENTATION_ARTIFACTS_DIR = ARTIFACTS_DIR / "knowledge_representati
 EXPERT_SYSTEM_ARTIFACTS_DIR = ARTIFACTS_DIR / "expert_system"
 SEARCH_ARTIFACTS_DIR = ARTIFACTS_DIR / "search"
 DATA_ENGINEERING_ARTIFACTS_DIR = ARTIFACTS_DIR / "data_engineering"
+FEATURE_ENGINEERING_ARTIFACTS_DIR = ARTIFACTS_DIR / "feature_engineering"
 
 # Short folder name per target, shared by Task 6's models/ layout.
 TARGET_DIRNAME = {"target_laptime": "laptime", "target_pit_next_lap": "pit_decision"}
@@ -207,5 +208,6 @@ def ensure_dirs() -> None:
         EXPERT_SYSTEM_ARTIFACTS_DIR,
         SEARCH_ARTIFACTS_DIR,
         DATA_ENGINEERING_ARTIFACTS_DIR,
+        FEATURE_ENGINEERING_ARTIFACTS_DIR,
     ):
         path.mkdir(parents=True, exist_ok=True)

@@ -65,6 +65,108 @@ def rule_catalogue_md(rules: Sequence[Rule]) -> str:
     return "\n".join(parts) + "\n"
 
 
+def rule_tree_md(rules: Sequence[Rule]) -> str:
+    """The rule base as a tree: category -> rule -> conditions and conclusions.
+
+    The catalogue lists rules in prose; this shows the same rules as the
+    structure the inference engine walks, which is what makes it possible to see
+    at a glance which inputs can reach which conclusion.
+    """
+    by_cat: Dict[str, List[Rule]] = {}
+    for r in rules:
+        by_cat.setdefault(r.category, []).append(r)
+
+    parts = [
+        "# Rule Tree",
+        "",
+        f"_Generated {_ts()} — {len(rules)} rules across {len(by_cat)} categories._",
+        "",
+        "Read it as: **category → rule (salience) → conditions that must hold → what it asserts**.",
+        "Higher salience fires first when several rules match.",
+        "",
+        "```text",
+        "RULE BASE",
+    ]
+    cats = sorted(by_cat)
+    for ci, cat in enumerate(cats):
+        last_cat = ci == len(cats) - 1
+        cbranch = "└──" if last_cat else "├──"
+        cpad = "    " if last_cat else "│   "
+        group = sorted(by_cat[cat], key=lambda r: (-r.salience, r.rule_id))
+        parts.append(f"{cbranch} {cat}  ({len(group)} rules)")
+        for ri, r in enumerate(group):
+            last_rule = ri == len(group) - 1
+            rbranch = "└──" if last_rule else "├──"
+            rpad = "    " if last_rule else "│   "
+            parts.append(f"{cpad}{rbranch} {r.rule_id}  salience {r.salience}  [{r.connective.value.upper()}]")
+            for cond in r.conditions:
+                value = "" if cond.value is None else f" {cond.value!r}"
+                parts.append(f"{cpad}{rpad}│   IF   {cond.key} {cond.operator.value}{value}")
+            for j, act in enumerate(r.actions):
+                tip = "└──" if j == len(r.actions) - 1 else "├──"
+                conf = "" if act.confidence >= 1.0 else f"  (confidence {act.confidence:.2f})"
+                parts.append(f"{cpad}{rpad}{tip} THEN {act.key} = {act.value!r}{conf}")
+    parts += ["```", ""]
+    return "\n".join(parts) + "\n"
+
+
+def decision_table_md(rules: Sequence[Rule]) -> str:
+    """Condition/action matrix: every rule as a row, every input it reads as a column.
+
+    A decision table makes two things checkable that prose cannot: which inputs
+    the rule base actually consumes, and which conclusions more than one rule can
+    assert (where salience decides the winner).
+    """
+    condition_keys = sorted({c.key for r in rules for c in r.conditions})
+    action_keys = sorted({a.key for r in rules for a in r.actions})
+
+    parts = [
+        "# Decision Table",
+        "",
+        f"_Generated {_ts()} — {len(rules)} rules, {len(condition_keys)} input keys, "
+        f"{len(action_keys)} output keys._",
+        "",
+        "Each row is one rule. A condition cell shows the test that input must pass; "
+        "an action cell shows what the rule asserts. Empty means the rule ignores that key.",
+        "",
+        "## Conditions (inputs)",
+        "",
+        "| Rule | Salience | " + " | ".join(f"`{k}`" for k in condition_keys) + " |",
+        "|---|---:|" + "---|" * len(condition_keys),
+    ]
+    for r in sorted(rules, key=lambda r: (-r.salience, r.rule_id)):
+        tests = {c.key: f"{c.operator.value} {'' if c.value is None else c.value}".strip()
+                 for c in r.conditions}
+        row = " | ".join(tests.get(k, "") for k in condition_keys)
+        parts.append(f"| `{r.rule_id}` | {r.salience} | {row} |")
+
+    parts += ["", "## Actions (conclusions)", "",
+              "| Rule | " + " | ".join(f"`{k}`" for k in action_keys) + " |",
+              "|---|" + "---|" * len(action_keys)]
+    for r in sorted(rules, key=lambda r: (-r.salience, r.rule_id)):
+        asserts = {a.key: str(a.value) for a in r.actions}
+        row = " | ".join(asserts.get(k, "") for k in action_keys)
+        parts.append(f"| `{r.rule_id}` | {row} |")
+
+    # Which conclusions are contested, and therefore decided by salience.
+    writers: Dict[str, List[str]] = {}
+    for r in rules:
+        for a in r.actions:
+            writers.setdefault(a.key, []).append(r.rule_id)
+    contested = {k: v for k, v in writers.items() if len(v) > 1}
+    parts += ["", "## Conclusions more than one rule can assert", ""]
+    if not contested:
+        parts.append("None: every conclusion has a single source rule.")
+    else:
+        parts += ["Conflict resolution is by salience, then specificity, then rule id "
+                  "(see `app/intelligence/expert_system/inference.py`).", "",
+                  "| Conclusion | Rules that can assert it |", "|---|---|"]
+        for key in sorted(contested):
+            parts.append(f"| `{key}` | {', '.join('`' + rid + '`' for rid in sorted(contested[key]))} |")
+    parts.append("")
+    return "\n".join(parts) + "\n"
+
+
 def validation_report_md(results: Sequence[RuleCheckResult]) -> str:
     passed = sum(1 for r in results if r.passed)
     total = len(results)
@@ -153,6 +255,8 @@ def generate_all(
                                  rule_catalogue_md(rules)),
         "validation_report": _write(output_dir / "rule_validation_report.md",
                                     validation_report_md(validation_results)),
+        "rule_tree": _write(output_dir / "rule_tree.md", rule_tree_md(rules)),
+        "decision_table": _write(output_dir / "decision_table.md", decision_table_md(rules)),
     }
     for i, (title, inputs, result) in enumerate(scenarios, 1):
         slug = title.lower().replace(" ", "_").replace("/", "_")

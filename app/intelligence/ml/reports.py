@@ -242,6 +242,13 @@ def write_model_selection_report(reg: dict, clf: dict, path: Path) -> Path:
 
 Generated: {datetime.now(timezone.utc).isoformat()}
 
+## Saved model format
+
+Every trained pipeline is saved with `joblib.dump` as `artifacts/models/{{laptime,pit_decision}}/<model>.joblib`.
+**`.joblib` is the pickle format scikit-learn recommends for estimators** — the same pickle protocol
+with more efficient handling of large NumPy arrays — so no separate `.pkl` copy is exported.
+Load one with `joblib.load(path)`, or through `app/services/model_cache.py` as the API does.
+
 ## Selection criteria
 
 | Task | Primary | Secondary |

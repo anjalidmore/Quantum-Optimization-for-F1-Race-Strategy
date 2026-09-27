@@ -145,7 +145,8 @@ def main(data_dir: Path, output_dir: Path, regenerate: bool) -> int:
     log.info("Generating reports ...")
     written = rep.generate_all(
         reports_dir, cleaning=cleaning_reports, quality=quality_reports,
-        correlation=correlation, summaries=summaries, analyses=analyses)
+        correlation=correlation, summaries=summaries, analyses=analyses,
+        figures={**figs, "dashboard": figures_dir / "dashboard.png"})
     for name, path in written.items():
         log.info("  wrote %s -> %s", name, path.relative_to(output_dir))
 

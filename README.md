@@ -106,7 +106,7 @@ Both model families are scored on the **same 180 held-out laps** (laps 47–57),
 
 | | Task 6 best classical | Task 7 neural network |
 |---|---|---|
-| Lap time | `svr` — MAE **0.782 s**, R² 0.302 | **MAE 0.565 s, R² 0.456** (16,257 parameters) |
+| Lap time | `svr` — MAE **0.781 s**, R² 0.302 | **MAE 0.565 s, R² 0.456** (16,257 parameters) |
 | Pit decision | `random_forest` — PR-AUC 0.25, caught the one real stop | CV PR-AUC 0.482, but missed that stop (289 parameters) |
 
 ### Quantum models (simulated)
@@ -334,6 +334,9 @@ The suite writes to a temporary directory, so running it never modifies the comm
 | [`docs/architecture.md`](docs/architecture.md) | Module layout, the feature contract, leakage prevention, end-to-end flow |
 | [`docs/task7_task8.md`](docs/task7_task8.md) | Tasks 7–8: what we built, and the concepts behind deep learning and XAI |
 | [`docs/QML_README.md`](docs/QML_README.md) | Quantum ML from zero: qubits, our circuit, how it trains, our results, viva prep |
+| [`docs/DELIVERABLES_CHECKLIST.md`](docs/DELIVERABLES_CHECKLIST.md) | Every lab deliverable, its file path, and whether it is complete |
+| [`docs/TESTING_REPORT.md`](docs/TESTING_REPORT.md) | The last clean build and test run, with the actual output |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Install, build, run, serve, retrain, troubleshoot |
 | [`docs/task1_knowledge_representation.md`](docs/task1_knowledge_representation.md) … [`task4_data_engineering.md`](docs/task4_data_engineering.md) | One note per early task |
 | [`docs/notebooks/task5_feature_engineering.ipynb`](docs/notebooks/task5_feature_engineering.ipynb) | Task 5 walkthrough over the functions in `app/intelligence/features/build.py` |
 | `artifacts/**/*.md` | The generated reports — every table in them was computed, not written |

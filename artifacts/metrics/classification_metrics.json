@@ -557,7 +557,7 @@
       "decision_threshold": 0.4803,
       "threshold_objective": "f1",
       "test_undefined_reason": null,
-      "fit_seconds": 0.17160070803947747,
+      "fit_seconds": 0.16373012500116602,
       "selected": true
     },
     {
@@ -576,7 +576,7 @@
       "decision_threshold": 0.1008,
       "threshold_objective": "f1",
       "test_undefined_reason": null,
-      "fit_seconds": 0.017877542006317526,
+      "fit_seconds": 0.015697917006036732,
       "selected": false
     },
     {
@@ -595,7 +595,7 @@
       "decision_threshold": 0.1527,
       "threshold_objective": "f1",
       "test_undefined_reason": null,
-      "fit_seconds": 0.11475866701221094,
+      "fit_seconds": 0.13274783299857518,
       "selected": false
     },
     {
@@ -614,7 +614,7 @@
       "decision_threshold": 0.5756,
       "threshold_objective": "f1",
       "test_undefined_reason": null,
-      "fit_seconds": 0.0038134169881232083,
+      "fit_seconds": 0.0032021250008256175,
       "selected": false
     },
     {
@@ -633,7 +633,7 @@
       "decision_threshold": 0.7608,
       "threshold_objective": "f1",
       "test_undefined_reason": null,
-      "fit_seconds": 0.0030520830187015235,
+      "fit_seconds": 0.0028324160011834465,
       "selected": false
     }
   ],

@@ -1,6 +1,6 @@
 # Task 7 — Deep Learning Evaluation Report
 
-_Generated 2026-09-21 04:57 UTC._
+_Generated 2026-09-27 17:55 UTC._
 
 Every network below was evaluated **once** on the chronological holdout — the last 20% of laps — after its hyperparameters, decision threshold and early-stopping epoch had been fixed on earlier laps.
 

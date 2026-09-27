@@ -21,8 +21,8 @@
       "nodes_expanded": 1455,
       "nodes_generated": 1590,
       "max_frontier_size": 135,
-      "elapsed_ms": 13.78883400320774,
-      "peak_memory_kb": 933.96875,
+      "elapsed_ms": 14.355541999975685,
+      "peak_memory_kb": 927.3828125,
       "solution_depth": 24,
       "n_pit_stops": 1
     },
@@ -35,7 +35,7 @@
       "nodes_expanded": 24,
       "nodes_generated": 29,
       "max_frontier_size": 5,
-      "elapsed_ms": 0.13575000048149377,
+      "elapsed_ms": 0.13566699635703117,
       "peak_memory_kb": 12.4453125,
       "solution_depth": 24,
       "n_pit_stops": 2
@@ -49,8 +49,8 @@
       "nodes_expanded": 1589,
       "nodes_generated": 1723,
       "max_frontier_size": 135,
-      "elapsed_ms": 19.153499997628387,
-      "peak_memory_kb": 786.703125,
+      "elapsed_ms": 19.180458002665546,
+      "peak_memory_kb": 785.453125,
       "solution_depth": 24,
       "n_pit_stops": 1
     },
@@ -63,7 +63,7 @@
       "nodes_expanded": 26,
       "nodes_generated": 72,
       "max_frontier_size": 47,
-      "elapsed_ms": 0.5074580039945431,
+      "elapsed_ms": 0.5204999979468994,
       "peak_memory_kb": 39.78125,
       "solution_depth": 24,
       "n_pit_stops": 1
@@ -77,7 +77,7 @@
       "nodes_expanded": 1005,
       "nodes_generated": 1139,
       "max_frontier_size": 134,
-      "elapsed_ms": 13.286917004734278,
+      "elapsed_ms": 13.661958997545298,
       "peak_memory_kb": 504.453125,
       "solution_depth": 24,
       "n_pit_stops": 1
