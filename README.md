@@ -31,7 +31,8 @@ The lab specification is ten tasks. Eight are implemented, and they are one appl
 | 6 · Machine learning | 10 classical models, time-aware validation, tuned decision thresholds | `app/intelligence/ml/` |
 | 7 · Deep learning | Two Keras networks on the same folds and the same holdout | `app/intelligence/dl/` |
 | 8 · Explainable AI | SHAP, LIME, counterfactuals, a trust score, per-group performance | `app/intelligence/xai/` |
-| 9–10 | Integration polish and a formal evaluation — not started | — |
+| 9 · Quantum ML | Three PennyLane models simulated on the same split, with fair classical baselines | `app/intelligence/qml/` |
+| 10 | Formal responsible-AI evaluation — not started | — |
 
 Two predictions run through everything: **lap time** (regression) and **does this driver pit at the end of this lap?** (classification).
 
@@ -56,7 +57,7 @@ Or by hand:
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt && pip install -e .
 
-python scripts/build_all.py          # builds Tasks 1-8 (skips stages that already have artifacts)
+python scripts/build_all.py          # builds Tasks 1-9 (skips stages that already have artifacts)
 python scripts/build_all.py --force  # rebuilds everything from the raw data (~15 min; Task 7 is most of it)
 
 uvicorn app.api.main:app --reload    # backend on :8000
@@ -69,6 +70,7 @@ Single stages, when you only want one:
 python scripts/build_features.py     # Task 5 only
 python -c "from app.intelligence.dl import pipeline; pipeline.train_all()"      # Task 7
 python -c "from app.intelligence.xai import pipeline; pipeline.run_all()"       # Task 8
+python scripts/run_qml.py            # quantum models (~30 s; skip in build_all with --skip-qml)
 ```
 
 To train on a different race:
@@ -106,6 +108,24 @@ Both model families are scored on the **same 180 held-out laps** (laps 47–57),
 |---|---|---|
 | Lap time | `svr` — MAE **0.782 s**, R² 0.302 | **MAE 0.565 s, R² 0.456** (16,257 parameters) |
 | Pit decision | `random_forest` — PR-AUC 0.25, caught the one real stop | CV PR-AUC 0.482, but missed that stop (289 parameters) |
+
+### Quantum models (simulated)
+
+Three PennyLane models run on the noiseless `default.qubit` simulator — a variational classifier, a variational
+regressor and a fidelity-kernel SVM — on the same laps, the same folds and the same metric code. Fitting 45
+features into 4 qubits means PCA-reducing the inputs (on training rows only), so the fair comparison is against
+classical models with a similar parameter count on those same reduced inputs.
+
+| Cross-validated | Quantum | Parameter-matched classical | Task 6 (all features) |
+|---|---|---|---|
+| Pit decision, PR-AUC | **0.304 ± 0.191** (VQC, 14 params) | 0.205 (logistic regression, 5 params) | 0.386 (random forest) |
+| Lap time, MAE (s) | 1.746 (VQR, 14 params) | 1.624 (linear regression, 5 params) | **1.381** (SVR) |
+
+The VQC edges out both parameter-matched classical models on the pit decision; the VQR does not beat a linear
+model on lap time; neither comes near Task 6 with all features. **This is a noiseless simulation of tiny
+circuits on one race and demonstrates nothing about quantum advantage** — and the fold spreads overlap, so it
+does not cleanly separate these models either. Full discussion:
+[`artifacts/reports/classical_vs_quantum_report.md`](artifacts/reports/classical_vs_quantum_report.md).
 
 The lap-time network is the best model in the project. The pit-decision result is genuinely inconclusive, and the reason matters more than the number: **the test laps contain exactly one labelled pit stop.** Precision, recall and F1 on one event are noise, so we lean on the cross-validated figures and say so everywhere the number appears.
 
