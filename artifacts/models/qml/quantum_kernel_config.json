@@ -1,0 +1,20 @@
+{
+  "n_qubits": 4,
+  "reps": 2,
+  "C": 1.0,
+  "seed": 42,
+  "svc_file": "quantum_kernel_svc.joblib",
+  "train_inputs_file": "quantum_kernel_train_inputs.npy",
+  "threshold": 0.8201805925158568,
+  "encoding": {
+    "method": "PCA to 4 components",
+    "n_qubits": 4,
+    "angle_range": [
+      0.0,
+      3.141592653589793
+    ],
+    "explained_variance_ratio": 0.8183507504784054,
+    "values_clipped_to_range": 24,
+    "fitted_on": "training rows only"
+  }
+}

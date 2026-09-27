@@ -26,7 +26,7 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
 
-from app.core.paths import (  # noqa: E402
+from app.core.paths import (
     ARTIFACTS_DIR,
     DATA_ENGINEERING_ARTIFACTS_DIR,
     DATA_RAW_DIR,
@@ -35,6 +35,7 @@ from app.core.paths import (  # noqa: E402
     FASTF1_LAPS_CLEAN_CSV,
     KNOWLEDGE_REPRESENTATION_ARTIFACTS_DIR,
     ML_MODEL_REGISTRY_JSON,
+    QML_METRICS_JSON,
     SEARCH_ARTIFACTS_DIR,
     TASK5_FEATURE_METADATA_JSON,
     TASK5_FEATURES_CSV,
@@ -193,6 +194,22 @@ def build_xai(force: bool) -> dict | None:
     return xai_pipeline.run_all()
 
 
+@_stage("Quantum machine learning (PennyLane)")
+def build_qml(force: bool) -> dict | None:
+    """Simulated quantum models on the same data, split and metrics as Task 6.
+
+    Last stage because it reads Task 6's committed metrics for its classical
+    reference. Skipped with --skip-qml, which is also what a machine without
+    pennylane installed should use.
+    """
+    from app.intelligence.qml import pipeline as qml_pipeline
+
+    if not force and qml_pipeline.artifacts_exist():
+        log.info("Already built (%s exists). Use --force to regenerate.", QML_METRICS_JSON.name)
+        return None
+    return qml_pipeline.run_all()
+
+
 @_stage("Artifact consistency validation")
 def validate_artifacts() -> None:
     from app.intelligence.ml.registry import load_registry
@@ -255,6 +272,8 @@ def main() -> int:
     parser.add_argument("--skip-ml", action="store_true", help="Skip Task 6 model training (the slowest stage).")
     parser.add_argument("--skip-dl", action="store_true",
                         help="Skip Task 7 (deep learning) and Task 8 (explainable AI).")
+    parser.add_argument("--skip-qml", action="store_true",
+                        help="Skip the quantum machine-learning stage (needs pennylane).")
     parser.add_argument(
         "--regenerate-synthetic",
         action="store_true",
@@ -292,6 +311,9 @@ def main() -> int:
     else:
         dl_summary = build_dl(args.force)
         build_xai(args.force)
+
+    if not args.skip_qml:
+        build_qml(args.force)
 
     if not args.skip_ml:
         validate_artifacts()

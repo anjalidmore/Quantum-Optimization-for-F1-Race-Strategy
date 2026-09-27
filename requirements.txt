@@ -39,6 +39,13 @@ shap>=0.44          # Shapley attributions (TreeExplainer exact, KernelExplainer
 lime>=0.2           # local linear surrogates, for comparison against SHAP
 dice-ml>=0.11       # diverse counterfactuals (time-bounded; see xai/counterfactual.py)
 
+# --- Quantum machine learning (Task 9 / QML) ---
+# Simulated only: every circuit runs on PennyLane's noiseless `default.qubit`
+# state-vector simulator. No quantum hardware, no cloud quantum backend, and no
+# other quantum SDK - see app/intelligence/qml/ and the classical-vs-quantum
+# report for what this can and cannot show.
+pennylane==0.45.1
+
 # --- Backend API ---
 fastapi>=0.110
 uvicorn[standard]>=0.29

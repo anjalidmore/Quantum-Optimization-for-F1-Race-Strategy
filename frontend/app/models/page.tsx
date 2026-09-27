@@ -4,6 +4,7 @@ import { ClassicalRegression } from "@/components/models/ClassicalRegression";
 import { ClassicalClassification } from "@/components/models/ClassicalClassification";
 import { DeepNetworks } from "@/components/models/DeepNetworks";
 import { DeepEvaluation } from "@/components/models/DeepEvaluation";
+import { QuantumSection } from "@/components/models/QuantumSection";
 
 /**
  * Task 6 and Task 7 on one page: the same two prediction problems, solved by
@@ -40,13 +41,14 @@ export default async function ModelsPage() {
     );
   }
 
-  // Task 7 is optional: the page still works if the deep-learning stage has not run.
-  const [dlModels, dlComparison, dlHistory, dlArtifacts, dlMetrics] = await Promise.all([
+  // Tasks 7 and the quantum stage are optional: the page still works without them.
+  const [dlModels, dlComparison, dlHistory, dlArtifacts, dlMetrics, qml] = await Promise.all([
     api.dlModels().catch(() => null),
     api.dlComparison().catch(() => null),
     api.dlHistory().catch(() => null),
     api.dlArtifacts().catch(() => null),
     api.dlMetrics().catch(() => null),
+    api.qmlSummary().catch(() => null),
   ]);
 
   const isReal = manifest.dataset_source.source === "real_fastf1";
@@ -149,6 +151,15 @@ export default async function ModelsPage() {
         <div className="card text-sm text-white/50">
           No deep model available yet. Run <code className="text-white/80">python scripts/build_all.py</code>.
         </div>
+      )}
+
+      {qml && (
+        <>
+          <h2 className="text-sm uppercase tracking-wider text-white/40 border-b border-white/10 pb-2">
+            Quantum — simulated circuits on the same split
+          </h2>
+          <QuantumSection summary={qml} />
+        </>
       )}
     </div>
   );

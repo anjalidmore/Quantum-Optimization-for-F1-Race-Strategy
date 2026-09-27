@@ -332,6 +332,46 @@ export type XaiTrust = {
   >;
 };
 
+
+// Quantum ML (PennyLane, simulated)
+export type QmlModelRow = {
+  model: string;
+  family: string;
+  description: string;
+  n_parameters: number;
+  train_seconds: number | null;
+  cv_mean: number | null;
+  cv_std: number | null;
+  test_metrics: Record<string, any>;
+};
+
+export type QmlTarget = {
+  task: string;
+  selection_metric: string;
+  encoding: { method: string; n_qubits: number; explained_variance_ratio: number | null; values_clipped_to_range: number; fitted_on: string };
+  n_dev: number;
+  n_test: number;
+  n_test_positive?: number | null;
+  n_folds: number;
+  notes: string[];
+  models: QmlModelRow[];
+  task6_reference: { model: string; test_metrics: Record<string, any>; cv_summary: Record<string, any> } | null;
+};
+
+export type QmlSummary = {
+  generated_at: string;
+  simulator: string;
+  framework: { pennylane: string };
+  seed: number;
+  search_space: { n_layers: number[]; learning_rate: number[]; selected_on: string };
+  dataset_source: DatasetSource;
+  wall_seconds: number;
+  figures: Record<string, string>;
+  report: string;
+  targets: Record<string, QmlTarget>;
+  honesty_note: string;
+};
+
 export const api = {
   health: () => getJson<HealthResponse>("/api/health"),
   models: () => getJson<Registry>("/api/ml/models"),
@@ -379,4 +419,7 @@ export const api = {
   xaiLaps: (target: string) => getJson<XaiLaps>(`/api/xai/laps?target=${target}`),
   xaiLap: (target: string, rowIndex: number) =>
     getJson<XaiLap>(`/api/xai/lap?target=${target}&row_index=${rowIndex}`),
+
+  // Quantum ML
+  qmlSummary: () => getJson<QmlSummary>("/api/qml/summary"),
 };

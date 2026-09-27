@@ -103,6 +103,11 @@ class ArtifactPaths:
         return self.models_dl / TARGET_DIRNAME[target]
 
     @property
+    def models_qml(self) -> Path:
+        """Trained quantum weights: .npy plus a config JSON, beside the other models."""
+        return self.models / "qml"
+
+    @property
     def xai(self) -> Path:
         return self.root / "xai"
 
@@ -151,7 +156,7 @@ class ArtifactPaths:
         for path in (
             self.models_laptime, self.models_pit, self.models_dl,
             self.metrics, self.figures, self.reports, self.metadata,
-            self.deep_learning, self.xai,
+            self.deep_learning, self.xai, self.models_qml,
             *(self.dl_target(t) for t in TARGET_DIRNAME),
             *(self.dl_model_dir(t) for t in TARGET_DIRNAME),
         ):
@@ -187,6 +192,9 @@ DL_COMPARISON_JSON = _DEFAULT.dl_comparison_json
 
 XAI_DIR = _DEFAULT.xai
 XAI_RESULTS_JSON = _DEFAULT.xai_results_json
+
+QML_MODELS_DIR = _DEFAULT.models_qml
+QML_METRICS_JSON = _DEFAULT.metrics / "qml_metrics.json"
 
 
 def ensure_dirs() -> None:
