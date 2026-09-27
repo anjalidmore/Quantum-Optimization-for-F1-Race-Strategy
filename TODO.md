@@ -72,7 +72,7 @@ held-out data as the platform's lap-time predictor is not.
 
 ### 🟡 [Priority: Medium] Evaluation rests on a single race and a ~180-row holdout — PARTIALLY CLOSED (Phase 2)
 
-**🟡 PARTIALLY CLOSED (Phase 2).** `race_level_holdout()` now exists in `app/intelligence/ml/splits.py`, but the committed dataset is a single session so it has **not been exercised on multiple races** — it raises rather than degrading silently. The multi-session fetch remains open. See [`todo-complete.md`](todo-complete.md).
+**🔴 OPEN.** A `race_level_holdout()` helper existed briefly in Phase 2 but was removed in the 2026-09-27 simplification: a single committed session gave it nothing to split, so it could only raise. Re-add it together with the multi-session fetch, which is the actual blocker.
 
 
 **Why:** All Task 6 conclusions come from one session (2023 Bahrain GP, 995 usable rows after warm-up).
@@ -472,7 +472,7 @@ reason other than that they have not been connected.
 
 ### 🟡 [Priority: Medium] Deep learning is only ever compared on one race — PARTIALLY CLOSED (Phase 2)
 
-**🟡 PARTIALLY CLOSED (Phase 2).** `race_level_holdout()` now exists in `app/intelligence/ml/splits.py`, but the committed dataset is a single session so it has **not been exercised on multiple races** — it raises rather than degrading silently. The multi-session fetch remains open. See [`todo-complete.md`](todo-complete.md).
+**🔴 OPEN.** A `race_level_holdout()` helper existed briefly in Phase 2 but was removed in the 2026-09-27 simplification: a single committed session gave it nothing to split, so it could only raise. Re-add it together with the multi-session fetch, which is the actual blocker.
 
 
 **Why:** Task 7's headline result — the network beating every classical model on lap time (MAE 0.5154 vs

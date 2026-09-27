@@ -753,11 +753,12 @@ This one distinction explains three separate symptoms we spent the phase chasing
 
 They are not three bugs. They are one evaluation design, seen from three angles.
 
-We added `race_level_holdout()` for the correct split and deliberately **did not** claim
-the entry as closed: the dataset is a single session, so the function raises rather than
-degrading silently, and the multi-session fetch is still open. Building infrastructure and
-being honest that it is unexercised is a better outcome than a split that technically runs
-and answers nothing.
+We wrote a race-level holdout during that phase and later removed it again: with a
+single committed session there is nothing to hold out at race level, so the function could
+only raise, and unused code that nobody can demonstrate is a liability in a small project.
+The distinction above is the part worth keeping. Re-add the split at the point the dataset
+actually has several races — it is a dozen lines, and `chronological_holdout` shows the
+shape.
 
 > **Likely question: "what would you do first with more time?"** Fetch five to ten more
 > 2023 sessions and re-run with the race-level holdout. It addresses the negative R², the
