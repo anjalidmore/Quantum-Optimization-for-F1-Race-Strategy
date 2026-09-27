@@ -23,50 +23,57 @@ export default function StrategyPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Race Strategy Simulator</h1>
-        <p className="text-white/60 mt-1 max-w-2xl">
-          Enter a race situation and use the trained Task 6 models to predict race behaviour, combined with
-          the Task 2 expert system and Task 3 search for a strategy recommendation.
+    <div>
+      <div className="pt-14">
+        <h1 className="t-page-title">Race strategy</h1>
+        <p className="t-body mt-4 max-w-measure">
+          Describe a race situation. The trained Task 6 models predict lap time and pit probability, the Task 2
+          rules fire over the same state, and the Task 3 search plans the rest of the race.
         </p>
       </div>
 
-      {loading && <div className="card text-white/50 text-sm">Loading real driver/team/model data…</div>}
+      {loading && (
+        <div className="mt-10" aria-busy="true" aria-live="polite">
+          <span className="sr-only">Loading drivers, teams and models</span>
+          <div className="skeleton h-[52px] w-full" />
+          <div className="mt-6 skeleton h-[260px] w-full" />
+        </div>
+      )}
 
       {error && (
-        <div className="card border-red-500/30 bg-red-500/5">
-          <div className="badge badge-warning">Backend unreachable</div>
-          <p className="text-sm text-white/70 mt-2">{error}</p>
-          <p className="text-sm text-white/50 mt-1">
-            Start it with <code className="text-white/80">./run.sh</code> or{" "}
-            <code className="text-white/80">uvicorn app.api.main:app --reload</code>.
+        <div className="card mt-10 border-accent">
+          <span className="badge badge-danger">Backend unreachable</span>
+          <p className="t-body mt-3">{error}</p>
+          <p className="t-micro mt-1">
+            Start it with <code className="text-paper-500">./run.sh</code> or{" "}
+            <code className="text-paper-500">uvicorn app.api.main:app --reload</code>
           </p>
         </div>
       )}
 
       {options && registry && (
         <>
-          <div className="flex gap-1 border-b border-white/10">
-            <button
-              onClick={() => setTab("full")}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
-                tab === "full" ? "border-f1red text-white" : "border-transparent text-white/50 hover:text-white"
-              }`}
-            >
-              Full Race Scenario
-            </button>
-            <button
-              onClick={() => setTab("top")}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
-                tab === "top" ? "border-f1red text-white" : "border-transparent text-white/50 hover:text-white"
-              }`}
-            >
-              Top Features
-            </button>
+          <div role="tablist" aria-label="Simulator mode" className="mt-10 flex gap-1 border-b border-track-300">
+            {([["full", "Full race scenario"], ["top", "Top features"]] as const).map(([id, label]) => (
+              <button
+                key={id}
+                role="tab"
+                id={`tab-${id}`}
+                aria-selected={tab === id}
+                aria-controls={`panel-${id}`}
+                onClick={() => setTab(id)}
+                className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors duration-[120ms] ${
+                  tab === id ? "border-accent text-paper-900" : "border-transparent text-paper-500 hover:text-paper-900"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
-          {tab === "full" ? <FullScenarioTab options={options} registry={registry} /> : <TopFeaturesTab registry={registry} />}
+          <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="mt-8">
+            {tab === "full" ? <FullScenarioTab options={options} registry={registry} /> : <TopFeaturesTab registry={registry} />}
+          </div>
         </>
       )}
     </div>
