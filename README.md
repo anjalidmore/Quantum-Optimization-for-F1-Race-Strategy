@@ -335,7 +335,7 @@ On the **same four cross-validation folds** — a comparison resting on 36 pit l
   overlap. On the test laps, the one real pit stop was caught by Task 6's random forest and missed by the DNN.
   One event cannot decide between the models; more races can.
 - Three defects in the earlier Task 7 code were found and fixed during this work, and each is covered by a
-  regression test in `tests/test_task7_task8_fixes.py`:
+  regression test (see the merged-regression sections of `tests/test_dl_training.py`, `tests/test_xai.py` and `tests/test_dl_xai_api.py`):
   1. `model.fit(class_weight=...)` did not weight the loss on this Keras/PyTorch installation (measured: a
      class-weighted fit left predictions essentially unchanged). Class weighting now happens inside the loss.
   2. The final network early-stopped on rows that were also in its training set. It now trains on laps 4–38

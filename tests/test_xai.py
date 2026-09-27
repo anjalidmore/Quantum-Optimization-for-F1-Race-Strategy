@@ -15,11 +15,19 @@ from app.core.runtime import prepare_dl_runtime
 prepare_dl_runtime()
 warnings.filterwarnings("ignore")
 
+import json
+
 import numpy as np
+import pandas as pd
 import pytest
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
-from app.core.paths import XAI_DIR, XAI_RESULTS_JSON
+from app.core.paths import (
+    TASK5_FEATURE_METADATA_JSON,
+    TASK5_FEATURES_CSV,
+    XAI_DIR,
+    XAI_RESULTS_JSON,
+)
 from app.intelligence.xai import (
     counterfactual,
     fairness,
@@ -27,6 +35,7 @@ from app.intelligence.xai import (
     lime_analysis,
     narrative,
     shap_analysis,
+    stratification,
     trust,
 )
 from app.intelligence.xai import pipeline as xai_pipeline
@@ -306,3 +315,92 @@ def test_reports_exist_and_are_non_trivial():
 def test_dataset_source_is_reported_in_task8_too():
     data = xai_pipeline.load_results()
     assert data["dataset_source"].get("source") in {"real_fastf1", "synthetic", "unknown"}
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for the defects found while implementing the 2026-09-21
+# Task 7 / Task 8 specification. Each pins one of them so it cannot return
+# silently. (They lived in test_task7_task8_fixes.py until the files were
+# merged by subject.)
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# 3. Counterfactuals must stay physically possible
+# ---------------------------------------------------------------------------
+def _real_laps(target: str):
+    meta = json.loads(TASK5_FEATURE_METADATA_JSON.read_text())
+    feats = meta["selected_features"][target]
+    return feats, pd.read_csv(TASK5_FEATURES_CSV)[feats].to_numpy(float)
+
+
+@pytest.mark.parametrize("target", ["target_laptime", "target_pit_next_lap"])
+def test_consistent_tyre_rows_reproduce_every_real_lap_at_its_own_tyre_age(target):
+    feats, X = _real_laps(target)
+    i_life = feats.index("tyre_life")
+    for row in X:
+        rebuilt, _, _ = counterfactual.consistent_tyre_age_rows(row, feats, np.array([row[i_life]]))
+        assert np.allclose(rebuilt[0], row, atol=1e-4)
+
+
+def test_changing_tyre_age_recomputes_the_interaction_terms():
+    feats, X = _real_laps("target_laptime")
+    row = X[0]
+    rows, recomputed, held = counterfactual.consistent_tyre_age_rows(row, feats, np.array([20.0]))
+    r = rows[0]
+    i = {f: k for k, f in enumerate(feats)}
+    assert r[i["tyre_life"]] == 20.0
+    assert np.isclose(r[i["tyrelife_x_soft"]], 20.0 * row[i["compound_soft"]])
+    assert np.isclose(r[i["tyrelife_x_medium"]], 20.0 * row[i["compound_medium"]])
+    assert "is_fresh_tyre" in held and "compound_soft" in held
+
+
+# ---------------------------------------------------------------------------
+# 4. Trust score
+# ---------------------------------------------------------------------------
+def test_confidence_is_measured_from_the_tuned_threshold():
+    # At the model's own threshold, confidence must be zero - not 2*|0.1-0.5| = 0.8.
+    assert trust.confidence_from_threshold(0.1, 0.1) == 0.0
+    assert trust.confidence_from_threshold(1.0, 0.1) == pytest.approx(1.0)
+    assert trust.confidence_from_threshold(0.0, 0.1) == pytest.approx(1.0)
+
+
+def test_missing_components_are_renormalised_not_scored_as_zero():
+    partial = trust.compute(task="classification", dnn_prediction=0.9, classical_prediction=0.9,
+                            threshold=0.1, input_validity_share=1.0)
+    assert partial["renormalised"] and "explanation_stability" not in partial["components"]
+    w, c = trust.WEIGHTS, partial["components"]
+    present = [k for k in c]
+    weighted_mean = sum(w[k] * c[k] for k in present) / sum(w[k] for k in present)
+    zero_filled = sum(w[k] * c[k] for k in present)          # what scoring the gap as 0 would give
+    assert partial["trust_score"] == pytest.approx(weighted_mean, abs=1e-4)
+    assert partial["trust_score"] > zero_filled + 0.05
+
+
+def test_input_validity_flags_values_outside_the_training_range():
+    X_train = np.random.default_rng(0).normal(size=(500, 4))
+    assert trust.input_validity(np.zeros(4), X_train) == 1.0
+    assert trust.input_validity(np.array([0, 0, 50, 50]), X_train) == 0.5
+
+
+# ---------------------------------------------------------------------------
+# 5. F1-specific performance stratification
+# ---------------------------------------------------------------------------
+def test_stratification_reports_groups_and_flags_small_samples():
+    ids = pd.DataFrame({"Driver": ["A"] * 40 + ["B"] * 5, "Team": ["T"] * 45, "Compound": ["SOFT"] * 45})
+    y = np.r_[np.zeros(35), np.ones(5), np.zeros(5)]
+    p = np.r_[np.full(35, 0.05), np.full(5, 0.9), np.full(5, 0.05)]
+    s = stratification.stratify("classification", ids, y, p, threshold=0.5)
+    overall = s[s.group_type == "overall"].iloc[0]
+    assert overall.n_laps == 45 and overall.recall == 1.0
+    b = s[(s.group_type == "Driver") & (s.group == "B")].iloc[0]
+    assert b.sample_note.startswith("INSUFFICIENT")
+
+
+@_artifacts
+def test_xai_deliverables_exist():
+    from app.core.paths import XAI_DIR
+
+    for rel in ("feature_importance.png", "counterfactual_analysis.csv", "trust_score_report.csv",
+                "fairness_assessment.csv", "xai_metadata.json", "SHAP_Report.md", "LIME_Report.md"):
+        assert (XAI_DIR / rel).exists(), rel
+    assert any((XAI_DIR / "shap").glob("*_shap_summary.png"))
+    assert any((XAI_DIR / "lime").glob("*_lime.png"))

@@ -268,3 +268,51 @@ def test_strategy_rejects_a_deep_model_it_cannot_load():
                     json={**_race_state(client), "laptime_model": "dnn_mlp"})
     assert r.status_code == 422
     assert "dnn_mlp" in str(r.json()["detail"])
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for the defects found while implementing the 2026-09-21
+# Task 7 / Task 8 specification. Each pins one of them so it cannot return
+# silently. (They lived in test_task7_task8_fixes.py until the files were
+# merged by subject.)
+# ---------------------------------------------------------------------------
+@_xai
+def test_stratification_endpoint_serves_driver_team_and_compound():
+    body = client.get("/api/xai/stratification").json()
+    for target, s in body.items():
+        kinds = {r["group_type"] for r in s["rows"]}
+        assert {"overall", "Driver", "Team", "Compound"} <= kinds, target
+
+
+@_xai
+def test_lap_inspector_endpoint_returns_a_full_scenario():
+    laps = client.get("/api/xai/laps", params={"target": "target_pit_next_lap"}).json()["laps"]
+    assert laps
+    body = client.get("/api/xai/lap", params={"target": "target_pit_next_lap", "row_index": 0}).json()
+    assert set(body) >= {"lap", "race_state", "shap_factors", "counterfactual", "decision_threshold"}
+    cf = body["counterfactual"]
+    assert cf.get("derived_features_recomputed"), "the live counterfactual must recompute tyre-derived features"
+    # SHAP additivity: base + contributions == the model's prediction for this lap
+    total = body["shap_base_value"] + sum(f["shap_value"] for f in body["shap_factors"])
+    assert total == pytest.approx(body["lap"]["dnn_prediction"], abs=2e-3)
+
+
+
+# ---------------------------------------------------------------------------
+# 6. The API decides pit/no-pit at the tuned threshold
+# ---------------------------------------------------------------------------
+@_dl
+def test_dl_pit_predicted_class_uses_the_tuned_threshold():
+    from app.api.routers.dl import _pit_threshold
+
+    report = json.loads(DL_METRICS_JSON.read_text())
+    tuned = report["models"]["target_pit_next_lap"]["threshold"]["threshold"]
+    assert _pit_threshold() == pytest.approx(tuned)
+
+
+@_xai
+def test_xai_metadata_is_strict_json_so_every_endpoint_can_serve_it():
+    # json.dumps writes NaN for an undefined metric (recall on a compound with no
+    # pit laps); the API then fails with a 500. Undefined must be stored as null.
+    json.loads(XAI_RESULTS_JSON.read_text(), parse_constant=lambda c: pytest.fail(f"non-JSON constant {c}"))
+    assert client.get("/api/xai/stratification").status_code == 200

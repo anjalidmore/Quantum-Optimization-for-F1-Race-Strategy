@@ -15,6 +15,7 @@ from app.core.runtime import prepare_dl_runtime
 prepare_dl_runtime()
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from app.core.paths import (
@@ -320,3 +321,78 @@ def test_restore_registry_entries_rebuilds_from_committed_artifacts():
     n_deep_after = sum(1 for m in after["models"] if m.get("family") == "deep")
 
     assert restored == n_deep_after == n_deep_before, "restore changed the deep entry count"
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for the defects found while implementing the 2026-09-21
+# Task 7 / Task 8 specification. Each pins one of them so it cannot return
+# silently. (They lived in test_task7_task8_fixes.py until the files were
+# merged by subject.)
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# 1. Class weighting must actually change the model
+# ---------------------------------------------------------------------------
+def test_class_weighting_inside_the_loss_moves_the_predictions():
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(600, 8)).astype("float32")
+    y = (rng.random(600) < 0.05).astype("float32")
+
+    def mean_p(cw):
+        training.set_seeds(1)
+        m = models.build_classification_mlp(8, (16,), dropout=0.0, l2=0.0, learning_rate=1e-2, class_weight=cw)
+        m.fit(X, y, epochs=30, batch_size=32, verbose=0)
+        return float(m.predict(X, verbose=0).mean())
+
+    unweighted, weighted = mean_p(None), mean_p({0: 0.5, 1: 10.0})
+    # Up-weighting the rare class 20:1 must push its probabilities up materially
+    # (fit(class_weight=...) moved this from 0.039 to only 0.050 when measured).
+    assert weighted > unweighted + 0.10, (unweighted, weighted)
+
+
+def test_training_never_passes_class_weight_to_fit():
+    import inspect
+    import re
+
+    src = inspect.getsource(training.fit_fold)
+    call = re.search(r"model\.fit\((.*?)verbose=verbose", src, re.S)
+    assert call, "could not locate the model.fit call"
+    assert "class_weight" not in call.group(1), "class weights must go into the loss, not into fit()"
+
+
+# ---------------------------------------------------------------------------
+# 2. The final fit is time-aware and its validation rows are unseen
+# ---------------------------------------------------------------------------
+@_artifacts
+def test_final_fit_validates_on_later_unseen_laps_and_tests_on_the_last_laps():
+    report = json.loads(DL_METRICS_JSON.read_text())
+    for target, m in report["models"].items():
+        s = m["final_fit_split"]
+        assert max(s["train_laps"]) < min(s["validation_laps"]), f"{target}: validation laps overlap training"
+        assert max(s["validation_laps"]) < min(s["test_laps"]), f"{target}: test laps are not the latest"
+        assert set(s["train_laps"]).isdisjoint(s["validation_laps"])
+
+
+@_artifacts
+def test_saved_models_are_h5_and_reload_verified():
+    from app.core.paths import ARTIFACTS_DIR
+
+    report = json.loads(DL_METRICS_JSON.read_text())
+    for target, m in report["models"].items():
+        mf = m["model_file"]
+        assert mf["path"].endswith("f1_dnn_model.h5")
+        assert mf["reload_verified"] is True
+        assert (ARTIFACTS_DIR.parent / mf["path"]).exists()
+
+
+@_artifacts
+def test_hyperparameter_report_covers_the_specified_values_and_selects_one_per_target():
+    from app.core.paths import DEEP_LEARNING_DIR
+
+    hp = pd.read_csv(DEEP_LEARNING_DIR / "hyperparameter_report.csv")
+    for target, sub in hp.groupby("Target"):
+        assert (sub.Selected == "YES").sum() == 1, f"{target}: exactly one selected configuration"
+        assert {0.001, 0.0005, 0.0001} <= set(sub["Learning Rate"].round(6))
+        assert {16, 32, 64} <= set(sub["Batch Size"])
+        assert {0.2, 0.3, 0.4, 0.5} <= set(sub["Dropout"].round(2))
+        assert {"Adam", "RMSprop"} <= set(sub["Optimizer"])
+    assert set(hp[hp.Target == "target_pit_next_lap"]["Class Weighting"]) >= {"none", "balanced (inside the loss)"}

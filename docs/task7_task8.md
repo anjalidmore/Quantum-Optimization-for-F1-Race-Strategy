@@ -37,7 +37,7 @@ Rebuild or re-check:
 python scripts/build_all.py            # Tasks 1-8; skips stages whose artifacts exist
 python scripts/build_all.py --force    # regenerate everything
 python scripts/build_all.py --skip-dl  # Tasks 1-6 only
-pytest tests/test_dl_training.py tests/test_xai_explanations.py
+pytest tests/test_dl_training.py tests/test_xai.py tests/test_dl_xai_api.py
 ```
 
 Tasks 7 and 8 depend on Task 6, so `build_all.py` refuses to run them when Task 6 was
