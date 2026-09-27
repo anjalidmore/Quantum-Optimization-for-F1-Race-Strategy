@@ -14,6 +14,7 @@ Deep technical reference for the F1 Race Strategy Intelligence platform. See the
 - [Data sources](#data-sources)
 - [Synthetic vs. real data](#synthetic-vs-real-data)
 - [Design principles](#design-principles)
+- [End-to-end flow](#end-to-end-flow)
 
 ## Repository layout
 
@@ -118,10 +119,10 @@ Latest run in this repository — real FastF1 data (2023 Bahrain GP, Race; see [
 
 | | Best model | CV metric | Test metric |
 |---|---|---|---|
-| Lap-time regression | `decision_tree` | MAE 1.19s | MAE 0.87s, R² −0.17 |
-| Pit-decision classification | `random_forest` | ROC-AUC 0.85 | ROC-AUC 0.98 |
+| Lap-time regression | `svr` | MAE 1.381 s | MAE 0.781 s, R² 0.302 |
+| Pit-decision classification | `random_forest` | PR-AUC 0.386 | PR-AUC 0.25, ROC-AUC 0.983 |
 
-The regression test R² being negative is an honest result, not a bug: a single real race, a compact feature-selected model, and a fuel/tyre state very different from the training laps in the final stint is a genuinely hard extrapolation. Full tables, per-fold metrics, and the full discussion live in `artifacts/reports/*.md` and are served live by `GET /api/ml/comparison` / the Machine Learning dashboard.
+The classifier is selected and scored on PR-AUC, not ROC-AUC: pit events are 4.8% of laps, and at that prevalence ROC-AUC stays high for a model that almost never fires. Its threshold is tuned on pooled out-of-fold predictions (0.4803), not left at 0.5. Full tables, per-fold metrics and the discussion live in `artifacts/reports/*.md`, and are served live by `GET /api/ml/comparison` and the Machine Learning dashboard.
 
 ## Leakage prevention
 
@@ -217,7 +218,7 @@ python scripts/build_all.py --force
 
 What changed once real strategic variation entered the data:
 
-- **Regression got harder, honestly.** CV MAE went from 0.27s (synthetic) to ~1.2s (real); the best model changed from `linear_regression` to `decision_tree`. Real lap times have far more structure a 6-feature linear model can't capture.
+- **Regression got harder, honestly.** CV MAE went from 0.27s (synthetic) to ~1.2s (real); the best model changed from `linear_regression` to `svr`. Real lap times have far more structure a 6-feature linear model can't capture.
 - **Classification stopped being trivially easy.** Real pit stops are spread across 21 distinct laps instead of clustered at 2–3, so the chronological holdout test set actually contains pit events, and test-set ROC-AUC/PR-AUC are defined (not `undefined*`) for every model.
 - **Feature selection picked 45 regression features**, not 6 — with 20 real drivers and 10 real teams, one-hot driver/team identity dummies survived the automated selection funnel. With only ~800 development rows this is a real overfitting risk the funnel doesn't itself guard against.
 
@@ -241,3 +242,162 @@ What changed once real strategic variation entered the data:
 9. The frontend consumes backend-generated results exclusively
 10. Synthetic vs. real data is always explicitly labelled, never assumed
 11. Every recommendation has traceable evidence back to real computation
+
+## End-to-end flow
+
+What happens from raw CSV to a number on the dashboard. Each stage is marked **real**, **partial** or **stub** from what was actually executed and verified here, not from what was planned.
+
+
+```text
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │ data/raw/                                          [REAL DATA]      │
+ │   circuits, constructors, drivers, lap_times, pit_stops, races,     │
+ │   results, fastf1_laps                                              │
+ │   .data_source.json → real_fastf1, 2023 Bahrain GP (R),             │
+ │                       1055 laps, 20 drivers                         │
+ └────────────────────────────────┬────────────────────────────────────┘
+                                  │  scripts/run_eda.py
+                                  │  app/intelligence/data/pipeline.py
+                                  ▼
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │ STAGE 4 · Cleaning & EDA                                    [REAL]  │
+ │   dedupe → dtype coercion → m:ss.mmm → seconds → categorical        │
+ │   normalisation → imputation → IQR outlier detection                │
+ │   → artifacts/data_engineering/{clean,figures,reports}              │
+ │   Full audit trail in reports/cleaning_audit.md                     │
+ └────────────────────────────────┬────────────────────────────────────┘
+                                  │
+                                  ▼
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │ STAGE 5 · Feature engineering                    [REAL, but NOT     │
+ │                                                   in the pipeline]  │
+ │   docs/notebooks/task5_feature_engineering.ipynb                    │
+ │   4-stage funnel: near-zero variance → correlation → VIF →          │
+ │   importance with fold stability                                    │
+ │   → data/processed/f1_features_selected.csv                         │
+ │     data/processed/feature_metadata.json   ← the contract           │
+ └────────────────────────────────┬────────────────────────────────────┘
+                                  │  app/intelligence/features/contract.py
+                                  ▼
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │ STAGE 6 · Machine learning                                  [REAL]  │
+ │   app/intelligence/ml/pipeline.py                                   │
+ │   splits (expanding-window, lap-forward) → preprocessing (fitted    │
+ │   INSIDE each fold) → 5 regressors + 4 classifiers → tuning →       │
+ │   evaluation → selection → persistence → registry                   │
+ │   → artifacts/models/{laptime,pit_decision}/*.joblib                │
+ │     artifacts/metrics/*.json, artifacts/reports/*.md                │
+ │     artifacts/metadata/model_registry.json                          │
+ └────────────────────────────────┬────────────────────────────────────┘
+                                  │
+                                  ▼
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │ STAGE 7 · Deep learning                                     [REAL]  │
+ │   app/intelligence/dl/pipeline.py                                   │
+ │   imports ml.splits + ml.evaluation directly, so DL and classical   │
+ │   numbers are produced by the SAME code                             │
+ │   Keras MLPs (torch backend): linear head / sigmoid head            │
+ │   → artifacts/models/deep_learning/*/f1_dnn_model.h5 (private)      │
+ │     artifacts/deep_learning/ (reports, curves, comparison)          │
+ │     model_registry.json extended (not duplicated)                   │
+ └────────────────────────────────┬────────────────────────────────────┘
+                                  │
+                                  ▼
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │ STAGE 8 · Explainable AI                                    [REAL]  │
+ │   app/intelligence/xai/pipeline.py                                  │
+ │   explains Task 6's PERSISTED pipelines + Task 7's saved networks    │
+ │   permutation importance · SHAP (Tree exact / Kernel sampled) ·      │
+ │   LIME · counterfactual scan + DiCE · trust score · fairness         │
+ │   → artifacts/xai/xai_metadata.json                                 │
+ │     artifacts/xai/{shap,lime,counterfactual,stratification}/, *.md  │
+ └────────────────────────────────┬────────────────────────────────────┘
+                                  │  app/services/model_cache.py (load once, cache)
+                                  ▼
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │ API · FastAPI                                               [REAL]  │
+ │   /api/health              /api/ml/{models,metrics,comparison,…}    │
+ │   /api/ml/predict/laptime  /api/ml/predict/pit                      │
+ │   /api/strategy/predict    ← ML + Expert System + Search combined   │
+ │   /api/data/*              /api/tasks/evidence                      │
+ │   /artifacts/*             ← static mount, serves figures/reports   │
+ └────────────────────────────────┬────────────────────────────────────┘
+                                  │  frontend/lib/api.ts (typed fetch, no local data)
+                                  ▼
+ ┌─────────────────────────────────────────────────────────────────────┐
+ │ FRONTEND · Next.js 14                                    [PARTIAL]  │
+ │   /                 Dashboard              [real]                   │
+ │   /strategy         Race Strategy Simulator[real]                   │
+ │   /machine-learning Metrics + live predict [real]                   │
+ │   /data-analysis    Task 4 figures/reports [real]                   │
+ │   /evidence         Task 1-9 artifact index[real]                   │
+ │   dedicated KR / Expert System / Search pages  [NOT BUILT]          │
+ └─────────────────────────────────────────────────────────────────────┘
+```
+
+
+### Why Task 7 and 8 sit where they do
+
+**Task 7 does not branch off** — it reads the same Task 5 contract Task 6 reads, and
+imports Task 6's `splits.py` and `evaluation.py` rather than copying them. That is
+deliberate: the deep-versus-classical comparison is only meaningful if both sides are
+scored by the same code on the same holdout. The comparison table's classical rows are
+read from `artifacts/metrics/*.json` — Task 6's own committed numbers, the same ones the
+Machine Learning dashboard shows.
+
+**Task 8 depends on both and trains nothing.** It loads Task 6's persisted `.joblib`
+pipeline through `ModelCache` — the exact model the API serves — and Task 7's saved
+`f1_dnn_model.h5` network, then explains the network (Task 6's model is the second opinion). If either is missing it raises
+`ExplainerUnavailableError` rather than substituting a stand-in, so an explanation is
+always an explanation *of the deployed model*.
+
+
+### The side branch: symbolic engines
+
+Tasks 1–3 do not sit in the data pipeline. They are built by
+`scripts/build_all.py` into `artifacts/`, surfaced read-only through
+`/api/tasks/evidence` and the Evidence page, and — importantly — two of them are
+**wired into the live strategy recommendation**:
+
+```text
+app/services/strategy_service.py
+    ├── ML          → predicted lap time, pit probability
+    ├── Expert Sys  → triggered_expert_rules  (e.g. R-TYRE-002, R-RISK-002)
+    └── Search      → expected_cost_seconds, recommended_action
+```
+
+A single `POST /api/strategy/predict` returns all three. That is the one place
+where the symbolic and statistical halves of the project actually meet, and it
+is real — verified in this audit returning `recommended_action: "PIT_NOW"` with
+two triggered rule ids and a search cost.
+
+
+### Which stages are real, and which are not
+
+| Stage | Status | Evidence |
+|---|---|---|
+| Raw data ingest | **Real** | `data/raw/.data_source.json` → real FastF1, 2023 Bahrain GP |
+| Task 1 Knowledge Representation | **Real** | 61 entities / 29 relationships, OWL 2 ontology regenerated identically |
+| Task 2 Expert System | **Real** | 32 rules, static validator passes, 5 worked inference reports |
+| Task 3 Search | **Real** | A\* == UCS == 2262.42 s, invariant asserted at build time |
+| Task 4 Cleaning & EDA | **Real** | full cleaning audit; cleaned CSVs regenerate byte-identically |
+| Task 5 Feature engineering | **Real, but a stub in `build_all.py`** | see below |
+| Task 6 Machine learning | **Real** | 10 models trained in 25 s; metrics reproduce to ~1e-14 |
+| Task 7 Deep learning | **Real** | 2 Keras MLPs, one-factor-at-a-time search over the same folds, saved as reload-verified `.h5` |
+| Task 8 Explainable AI | **Real** | SHAP + LIME + consistent tyre-age counterfactuals + trust + driver/team/compound stratification, on the Task 7 DNN |
+| API | **Real** | all endpoints verified live; values traced to artifacts |
+| Frontend | **Real** | every page builds and reads its values from the API |
+| Tasks 9–10, Quantum | **Not started** | listed as planned in the README status table |
+
+
+### The one thing to be careful about
+
+**`scripts/build_all.py`'s Task 5 stage does not regenerate anything.** Under
+`--force` it logs `Task 5 contract present: f1_features_selected.csv,
+feature_metadata.json` and finishes in 0.0 s. It is a *presence check*, not a
+build step. The real feature engineering lives in
+`docs/notebooks/task5_feature_engineering.ipynb` and must be re-run by hand
+(see "Using real data" below) after changing the underlying data. If you point Task 4 at a
+new session and only run `build_all.py --force`, Task 6 will silently retrain on
+the **old** feature matrix.
+

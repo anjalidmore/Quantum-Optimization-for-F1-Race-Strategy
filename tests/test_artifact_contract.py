@@ -1,7 +1,7 @@
 """
 The "no fabricated results" contract, enforced.
 
-`docs/PROJECT_REPORT.md` §8 claims every value this platform displays traces to
+The README's "Nothing is hard-coded" section claims every value this platform displays traces to
 a generated artifact rather than a hard-coded constant. That claim was verified
 by hand during the repository audit — mutate an artifact on disk, confirm the
 API returns the mutated value — but nothing enforced it, so a future hard-coded

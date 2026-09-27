@@ -1,8 +1,47 @@
-# Study Guide — Tasks 7 & 8 (Deep Learning and Explainable AI)
+# Tasks 7 & 8 — Deep Learning and Explainable AI
 
-This file prepares you to be **examined on the tools and concepts**, independently of
-this codebase. For what *this project* actually built, see
-[`TASK7_TASK8_DETAILS.md`](TASK7_TASK8_DETAILS.md).
+Two things in one file: **what this project built** (below) and the **concepts and tools
+behind it**, so any team member can be examined on them without reading the code.
+
+All measured results live in one place, the README sections
+[Task 7](../README.md#task-7--deep-learning-model-development) and
+[Task 8](../README.md#task-8--explainable-artificial-intelligence-xai). They are not
+repeated here, so there is only ever one set of numbers to keep current.
+
+## 0. What we built, and where it lives
+
+Task 7 trains one small Keras network per target on the same folds and the same holdout as
+Task 6's classical models, so the comparison is like-for-like. Task 8 trains nothing: it
+loads the saved network and explains it, using Task 6's selected model as a second opinion.
+
+| Deliverable | Path |
+|---|---|
+| Trained networks (HDF5, reload-verified) | `artifacts/models/deep_learning/{laptime,pit_decision}/f1_dnn_model.h5` |
+| Fitted scalers + feature spec | same folders: `feature_scaler.joblib`, `target_scaler.joblib`, `model_spec.json` |
+| Task 7 metrics, history, comparison | `artifacts/deep_learning/*.json`, `*/training_history.csv` |
+| Task 7 curves and evaluation plots | `artifacts/deep_learning/{laptime,pit_decision}/*.png` |
+| Task 7 reports | `artifacts/deep_learning/{evaluation_report,hyperparameter_report}.md` |
+| Task 8 SHAP / LIME / counterfactuals | `artifacts/xai/{shap,lime,counterfactual}/` |
+| Task 8 CSVs (importance, counterfactuals, trust, stratification) | `artifacts/xai/*.csv` |
+| Task 8 reports | `artifacts/xai/*_Report.md`, `Explainability_Dashboard.md` |
+| Machine-readable Task 8 results | `artifacts/xai/xai_metadata.json` |
+| Registry | `artifacts/metadata/model_registry.json` (extended, not duplicated) |
+| API | `GET /api/dl/*`, `POST /api/dl/predict/{laptime,pit}`, `GET /api/xai/*` |
+| Dashboard | the Deep Learning and Explainability pages |
+
+Model weights live under `artifacts/models/`, which the API does not serve.
+
+Rebuild or re-check:
+
+```bash
+python scripts/build_all.py            # Tasks 1-8; skips stages whose artifacts exist
+python scripts/build_all.py --force    # regenerate everything
+python scripts/build_all.py --skip-dl  # Tasks 1-6 only
+pytest tests/test_dl_training.py tests/test_xai_explanations.py
+```
+
+Tasks 7 and 8 depend on Task 6, so `build_all.py` refuses to run them when Task 6 was
+skipped and has no artifacts, rather than comparing against nothing.
 
 Everything here is written to be defensible under follow-up questions. Where this
 project's real results contradict the textbook expectation, the textbook expectation is

@@ -70,7 +70,7 @@ This started as a 10-part computational-intelligence coursework specification (k
                     Task 4 cleaning  ←  FastF1 session data
 ```
 
-Full technical write-up — module layout, the Task 5 feature contract, leakage prevention, validation strategy, and the real-vs-synthetic data path — is in [`docs/architecture.md`](docs/architecture.md). End-to-end data flow, with each stage marked real or stub, is in [`FLOW.md`](FLOW.md).
+Full technical write-up — module layout, the Task 5 feature contract, leakage prevention, validation strategy, and the real-vs-synthetic data path — is in [`docs/architecture.md`](docs/architecture.md). End-to-end data flow, with each stage marked real or stub, is in the same document's [End-to-end flow](docs/architecture.md#end-to-end-flow) section.
 
 ### "Nothing is hard-coded" — verified, not asserted
 
@@ -85,7 +85,7 @@ MUTATION TEST
    ⇒ reads from the artifact, not a constant
 ```
 
-A matching value proves nothing on its own — a constant could coincide. Changing the artifact and watching the API follow is what proves the read path is real. A full `python scripts/build_all.py --force` rebuild also reproduced every committed artifact: entity counts (61/29), rule count (32) and search costs (2262.42 s) identical, ML metrics agreeing to ~1e-14. More in [`SHOWCASE.md`](SHOWCASE.md).
+A matching value proves nothing on its own — a constant could coincide. Changing the artifact and watching the API follow is what proves the read path is real. A full `python scripts/build_all.py --force` rebuild also reproduced every committed artifact: entity counts (61/29), rule count (32) and search costs (2262.42 s) identical, ML metrics agreeing to ~1e-14.
 
 ## Getting Started
 
@@ -661,10 +661,8 @@ the dashboard's **Explainability** page.
 
 | Document | What it answers |
 |---|---|
-| [`docs/architecture.md`](docs/architecture.md) | Module layout, feature contract, leakage prevention, validation strategy |
-| [`FLOW.md`](FLOW.md) | End-to-end data flow, and which stages are real vs. stubs |
-| [`SHOWCASE.md`](SHOWCASE.md) | What to look at first, and what the project is honest about |
-| [`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md) | The full 17-section technical report |
+| [`docs/architecture.md`](docs/architecture.md) | Module layout, feature contract, leakage prevention, validation strategy, end-to-end flow |
+| [`docs/task7_task8.md`](docs/task7_task8.md) | Tasks 7-8: what we built, and the concepts behind deep learning and XAI |
 | `TODO.md` (on the `proj-mode` branch) | 28-entry gap analysis — a working backlog, deliberately kept off `main` |
 | `task-mode` branch | The five practicals as standalone submissions, each with its own README, FLOW and SHOWCASE |
 

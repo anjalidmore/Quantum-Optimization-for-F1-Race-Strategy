@@ -36,3 +36,9 @@ fastf1_cache/
 .idea/
 .vscode/
 *.swp
+
+# Submission packaging (assembled separately, not tracked)
+practicals/
+
+# TypeScript incremental build cache
+frontend/*.tsbuildinfo
