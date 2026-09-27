@@ -204,14 +204,10 @@ python scripts/fetch_real_session.py --year 2023 --event Bahrain --session R
 #    --regenerate-synthetic guard in scripts/build_all.py)
 python scripts/build_all.py --force
 
-# 3. Re-run Task 5's feature-engineering notebook against the new clean data.
-#    It is fully parameterised (paths + TOTAL_LAPS are derived from the data,
-#    not hard-coded), so re-running it end to end is enough:
-jupyter nbconvert --to notebook --execute --inplace \
-  docs/notebooks/task5_feature_engineering.ipynb
-
-# 4. Retrain Task 6 on the new, real feature matrix
-python scripts/build_all.py --force
+# 3. Steps 1 and 2 are all that is needed: build_all.py --force rebuilds Task 5
+#    as a pipeline stage (app/intelligence/features/build.py) before retraining
+#    Tasks 6-8 on the new feature matrix. To rebuild features alone:
+python scripts/build_features.py
 ```
 
 **This has been done in this repository** — the committed `artifacts/`, `data/processed/`, and model registry reflect the **2023 Bahrain Grand Prix (Race)**, 995 modelling rows across 20 drivers, not the synthetic demo.
@@ -269,9 +265,9 @@ What happens from raw CSV to a number on the dashboard. Each stage is marked **r
                                   │
                                   ▼
  ┌─────────────────────────────────────────────────────────────────────┐
- │ STAGE 5 · Feature engineering                    [REAL, but NOT     │
- │                                                   in the pipeline]  │
- │   docs/notebooks/task5_feature_engineering.ipynb                    │
+ │ STAGE 5 · Feature engineering                               [REAL]  │
+ │   app/intelligence/features/build.py                                │
+ │   (scripts/build_features.py; the notebook is a walkthrough)         │
  │   4-stage funnel: near-zero variance → correlation → VIF →          │
  │   importance with fold stability                                    │
  │   → data/processed/f1_features_selected.csv                         │
@@ -381,7 +377,7 @@ two triggered rule ids and a search cost.
 | Task 2 Expert System | **Real** | 32 rules, static validator passes, 5 worked inference reports |
 | Task 3 Search | **Real** | A\* == UCS == 2262.42 s, invariant asserted at build time |
 | Task 4 Cleaning & EDA | **Real** | full cleaning audit; cleaned CSVs regenerate byte-identically |
-| Task 5 Feature engineering | **Real, but a stub in `build_all.py`** | see below |
+| Task 5 Feature engineering | **Real** | a `build_all.py` stage since 2026-09-27; regenerates the committed contract exactly |
 | Task 6 Machine learning | **Real** | 10 models trained in 25 s; metrics reproduce to ~1e-14 |
 | Task 7 Deep learning | **Real** | 2 Keras MLPs, one-factor-at-a-time search over the same folds, saved as reload-verified `.h5` |
 | Task 8 Explainable AI | **Real** | SHAP + LIME + consistent tyre-age counterfactuals + trust + driver/team/compound stratification, on the Task 7 DNN |
@@ -390,14 +386,12 @@ two triggered rule ids and a search cost.
 | Tasks 9–10, Quantum | **Not started** | listed as planned in the README status table |
 
 
-### The one thing to be careful about
+### Rebuilding the feature contract
 
-**`scripts/build_all.py`'s Task 5 stage does not regenerate anything.** Under
-`--force` it logs `Task 5 contract present: f1_features_selected.csv,
-feature_metadata.json` and finishes in 0.0 s. It is a *presence check*, not a
-build step. The real feature engineering lives in
-`docs/notebooks/task5_feature_engineering.ipynb` and must be re-run by hand
-(see "Using real data" below) after changing the underlying data. If you point Task 4 at a
-new session and only run `build_all.py --force`, Task 6 will silently retrain on
-the **old** feature matrix.
+`scripts/build_all.py`'s Task 5 stage used to be a presence check that finished in 0.0 s: the
+real feature engineering lived only in the notebook, so pointing Task 4 at a new session and
+running `build_all.py --force` left Task 6 training on the **previous** race's feature matrix.
 
+The logic now lives in `app/intelligence/features/build.py`, and the stage rebuilds the
+contract like any other. It reproduces the committed `f1_features_selected.csv` and
+`feature_metadata.json` exactly — every stochastic step is seeded with `random_state=42`.

@@ -138,13 +138,23 @@ def build_data_engineering(force: bool, regenerate_synthetic: bool) -> None:
 
 
 @_stage("Feature engineering (Task 5)")
-def check_feature_engineering() -> None:
-    if not (TASK5_FEATURES_CSV.exists() and TASK5_FEATURE_METADATA_JSON.exists()):
-        raise SystemExit(
-            "Task 5 outputs missing. Run docs/notebooks/task5_feature_engineering.ipynb "
-            f"to produce {TASK5_FEATURES_CSV} and {TASK5_FEATURE_METADATA_JSON}."
-        )
-    log.info("Task 5 contract present: %s, %s", TASK5_FEATURES_CSV.name, TASK5_FEATURE_METADATA_JSON.name)
+def build_features(force: bool) -> None:
+    """Rebuild the Task 5 contract, or report the existing one.
+
+    This used to be a presence check only, with the real work in a notebook -
+    which meant pointing Task 4 at a new session and re-running this script left
+    Task 6 training on the previous race's feature matrix.
+    """
+    if not force and TASK5_FEATURES_CSV.exists() and TASK5_FEATURE_METADATA_JSON.exists():
+        log.info("Already built (%s exists). Use --force to regenerate.", TASK5_FEATURES_CSV.name)
+        return
+    from app.intelligence.features import build as feature_build
+
+    result = feature_build.build()
+    selected = result["metadata"]["selected_features"]
+    log.info("Task 5 rebuilt: %d rows x %d columns (%d regression / %d classification features)",
+             *result["export"].shape, len(selected["target_laptime"]),
+             len(selected["target_pit_next_lap"]))
 
 
 @_stage("Machine learning (Task 6)")
@@ -263,7 +273,7 @@ def main() -> int:
     build_expert_system(args.force)
     build_search(args.force)
     build_data_engineering(args.force, args.regenerate_synthetic)
-    check_feature_engineering()
+    build_features(args.force)
 
     ml_summary = None
     if not args.skip_ml:
