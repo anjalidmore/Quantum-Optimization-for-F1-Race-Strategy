@@ -192,6 +192,7 @@ def run_classification(models_dir: Path) -> dict:
         "test_metrics": evaluation.classification_metrics(
             d.y_test, (k_p_test >= k_thr.threshold).astype(int), y_proba=k_p_test),
         "n_support_vectors": k_final["n_support_vectors"],
+        "n_support_per_class": k_final["n_support_per_class"],
         "kernel_matrix_shape": k_final["kernel_matrix_shape"],
     }
     joblib.dump(k_final["svc"], models_dir / "quantum_kernel_svc.joblib")

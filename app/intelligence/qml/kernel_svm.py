@@ -88,7 +88,10 @@ def train(
         # The SVM's learned parameters are its dual coefficients plus the
         # intercept; the circuit itself has none to train.
         "n_parameters": int(svc.dual_coef_.size + 1),
-        "n_support_vectors": int(svc.support_vectors_.shape[0]) if hasattr(svc, "support_vectors_") else int(sum(svc.n_support_)),
+        # With kernel="precomputed" sklearn leaves support_vectors_ empty and keeps
+        # the indices in support_ instead, so counting rows there reports 0.
+        "n_support_vectors": int(svc.support_.shape[0]),
+        "n_support_per_class": [int(n) for n in svc.n_support_],
         "kernel_matrix_shape": list(K.shape),
         "seed": seed,
     }

@@ -124,7 +124,8 @@ classical models with a similar parameter count on those same reduced inputs.
 The VQC edges out both parameter-matched classical models on the pit decision; the VQR does not beat a linear
 model on lap time; neither comes near Task 6 with all features. **This is a noiseless simulation of tiny
 circuits on one race and demonstrates nothing about quantum advantage** — and the fold spreads overlap, so it
-does not cleanly separate these models either. Full discussion:
+does not cleanly separate these models either. Quantum computing explained from zero, for this
+circuit: [`docs/QML_README.md`](docs/QML_README.md). Results discussion:
 [`artifacts/reports/classical_vs_quantum_report.md`](artifacts/reports/classical_vs_quantum_report.md).
 
 The lap-time network is the best model in the project. The pit-decision result is genuinely inconclusive, and the reason matters more than the number: **the test laps contain exactly one labelled pit stop.** Precision, recall and F1 on one event are noise, so we lean on the cross-validated figures and say so everywhere the number appears.
@@ -332,6 +333,7 @@ The suite writes to a temporary directory, so running it never modifies the comm
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | Module layout, the feature contract, leakage prevention, end-to-end flow |
 | [`docs/task7_task8.md`](docs/task7_task8.md) | Tasks 7–8: what we built, and the concepts behind deep learning and XAI |
+| [`docs/QML_README.md`](docs/QML_README.md) | Quantum ML from zero: qubits, our circuit, how it trains, our results, viva prep |
 | [`docs/task1_knowledge_representation.md`](docs/task1_knowledge_representation.md) … [`task4_data_engineering.md`](docs/task4_data_engineering.md) | One note per early task |
 | [`docs/notebooks/task5_feature_engineering.ipynb`](docs/notebooks/task5_feature_engineering.ipynb) | Task 5 walkthrough over the functions in `app/intelligence/features/build.py` |
 | `artifacts/**/*.md` | The generated reports — every table in them was computed, not written |
