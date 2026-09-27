@@ -1,6 +1,6 @@
 # Architecture
 
-Deep technical reference for the F1 Race Strategy Intelligence platform. See the [README](../README.md) for a quick overview, screenshots, and setup instructions.
+Deep technical reference for the F1 Race Strategy Intelligence platform. See the [README](../README.md) for a quick overview and setup instructions.
 
 ## Contents
 

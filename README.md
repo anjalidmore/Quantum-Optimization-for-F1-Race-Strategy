@@ -9,17 +9,11 @@ We take a real Grand Prix session, clean it, engineer features from it, and then
 ![Python](https://img.shields.io/badge/Python-3.14-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black)
-![Tests](https://img.shields.io/badge/tests-261%20passing-brightgreen)
-
-| Dashboard | Race Strategy Simulator |
-|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Strategy Simulator](docs/screenshots/strategy-simulator.png) |
-
-(More in [`docs/screenshots/`](docs/screenshots/). The Machine Learning and Data screenshots were taken before those pages were merged into `/models` and `/data`, so their layout is older than the code.)
+![Tests](https://img.shields.io/badge/tests-284%20passing-brightgreen)
 
 ## What we built
 
-The lab specification is ten tasks. Eight are implemented, and they are one application rather than eight folders:
+The lab specification is ten tasks. Nine are implemented and the tenth is partly written; they are one application rather than ten folders. What is still missing is listed in [`docs/DELIVERABLES_CHECKLIST.md`](docs/DELIVERABLES_CHECKLIST.md):
 
 | Task | What it does | Where it lives |
 |---|---|---|
@@ -31,8 +25,9 @@ The lab specification is ten tasks. Eight are implemented, and they are one appl
 | 6 · Machine learning | 10 classical models, time-aware validation, tuned decision thresholds | `app/intelligence/ml/` |
 | 7 · Deep learning | Two Keras networks on the same folds and the same holdout | `app/intelligence/dl/` |
 | 8 · Explainable AI | SHAP, LIME, counterfactuals, a trust score, per-group performance | `app/intelligence/xai/` |
-| 9 · Quantum ML | Three PennyLane models simulated on the same split, with fair classical baselines | `app/intelligence/qml/` |
-| 10 | Formal responsible-AI evaluation — not started | — |
+| 9 · System integration | A dashboard page per task, a race-strategy report generator, deployment docs | `frontend/`, `app/services/strategy_report.py` |
+| 10 · Evaluation & documentation | Partial: testing report and deployment guide written; six documents still missing | `docs/` |
+| Extension · Quantum ML | Three PennyLane models simulated on the same split, with fair classical baselines | `app/intelligence/qml/` |
 
 Two predictions run through everything: **lap time** (regression) and **does this driver pit at the end of this lap?** (classification).
 
