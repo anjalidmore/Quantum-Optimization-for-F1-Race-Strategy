@@ -2,27 +2,21 @@
 app.intelligence.xai.live
 =========================
 
-On-demand explanation of a **single, arbitrary** feature row — as opposed to
-``pipeline.py``, which explains a fixed set of representative test rows and
-writes the committed artifacts.
+**Why this exists:** a reduced-budget version of the batch SHAP in
+``pipeline.py``, for explaining one arbitrary race state while a caller waits.
 
-This is what ``POST /api/strategy/predict?explain=true`` calls. The row it
-explains is the one ``feature_approximation.build_feature_row`` just built from
-the race state the caller sent, so the explanation is of *this* recommendation
-rather than of a stored example that merely resembles it.
+``pipeline.py`` explains a fixed set of representative test rows and writes the
+committed artifacts. This module explains the row
+``feature_approximation.build_feature_row`` just built from a live request, so
+``POST /api/strategy/predict?explain=true`` explains *that* recommendation
+rather than a stored example resembling it. Task 9's strategy-report generator
+needs the same per-race-state path.
 
-Two deliberate differences from the batch path, both about latency:
-
-* ``KernelExplainer`` runs with a smaller ``nsamples`` budget and a smaller
-  k-means background. A strategy call happens while someone is waiting; the
-  committed reports do not. The budget actually used is returned in the
-  response, so a reader can see the explanation is coarser than the report's.
-* LIME is not run. Its only role in the trust score is the
-  ``explanation_stability`` term, and fitting a 2000-perturbation surrogate per
-  request is not worth ~1s of pit-wall latency. The trust score is therefore
-  computed from its other components, **renormalised**, and the response
-  says so explicitly rather than silently reporting a differently-defined score
-  under the same name.
+Two differences from the batch path, both latency, both declared in the
+response rather than hidden: ``KernelExplainer`` runs with a smaller
+``nsamples`` and background, and LIME is skipped — a 2,000-perturbation
+surrogate per request is not worth the wait, so the trust score renormalises
+over its remaining components instead of quietly redefining itself.
 """
 from __future__ import annotations
 
