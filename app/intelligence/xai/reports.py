@@ -88,6 +88,13 @@ def shap_report(results: dict, out_path: Path) -> Path:
                     f"| `{c['feature']}` | {ex['feature_values'].get(c['feature'], float('nan')):.4g} | "
                     f"{c['shap_value']:+.6f} | {c['direction']} the prediction |"
                 )
+            if ex.get("shap_classical"):
+                top = ", ".join(f"`{c['feature']}` ({c['shap_value']:+.4f})"
+                                for c in ex["shap_classical"][:3])
+                lines += ["",
+                          f"Same lap, {r['classical_name']} ({ex['shap_classical_explainer']}): {top}.",
+                          "Comparing the two families on one lap shows whether they credit the same factors.",
+                          ""]
             lines += ["", f"![waterfall]({_img(ex['figures']['shap_waterfall'])})", ""]
         lines += [f"![summary]({_img(r['figures']['shap_summary_dnn'])})", "", "---", ""]
     return _write(out_path, lines)

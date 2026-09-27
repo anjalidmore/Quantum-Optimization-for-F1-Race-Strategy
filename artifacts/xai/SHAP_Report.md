@@ -1,6 +1,6 @@
 # Task 8 - SHAP Report
 
-_Generated 2026-09-21 07:16 UTC._
+_Generated 2026-09-27 16:54 UTC._
 
 SHAP distributes the gap between a prediction and the average prediction
 among the input features, using Shapley values from cooperative game theory.
@@ -139,6 +139,10 @@ Deep network prediction: **96.0613**  |  svr: **96.4529**
 | `tracktemp_dev_x_tyrelife` | -6.365 | -0.272205 | decreases the prediction |
 | `track_status` | 1 | -0.117946 | decreases the prediction |
 
+Same lap, svr (KernelExplainer (sampled) on 45 model inputs): `stint_number` (-0.8666), `form_vs_baseline` (-0.4012), `tyre_life` (-0.3635).
+Comparing the two families on one lap shows whether they credit the same factors.
+
+
 ![waterfall](shap/target_laptime_fastest_predicted_lap_waterfall.png)
 
 #### Median Predicted Lap (test row 6, lap 53)
@@ -153,6 +157,10 @@ Deep network prediction: **97.6160**  |  svr: **98.1056**
 | `gap_expanding` | 0.3635 | +0.177155 | increases the prediction |
 | `gap_roll3_mean` | 0.128 | +0.172163 | increases the prediction |
 | `form_vs_baseline` | -0.09151 | -0.136046 | decreases the prediction |
+
+Same lap, svr (KernelExplainer (sampled) on 45 model inputs): `stint_number` (-0.5523), `field_median_lag1` (-0.3858), `form_vs_baseline` (-0.2306).
+Comparing the two families on one lap shows whether they credit the same factors.
+
 
 ![waterfall](shap/target_laptime_median_predicted_lap_waterfall.png)
 
@@ -169,6 +177,10 @@ Deep network prediction: **100.8445**  |  svr: **102.2228**
 | `stint_number` | 4 | +0.196493 | increases the prediction |
 | `gap_roll3_std` | 1.851 | -0.181040 | decreases the prediction |
 
+Same lap, svr (KernelExplainer (sampled) on 45 model inputs): `form_vs_baseline` (+2.3797), `tyre_life` (+0.9113), `gap_roll3_mean` (-0.6295).
+Comparing the two families on one lap shows whether they credit the same factors.
+
+
 ![waterfall](shap/target_laptime_slowest_predicted_lap_waterfall.png)
 
 #### Freshest Tyres (test row 86, lap 48)
@@ -184,6 +196,10 @@ Deep network prediction: **100.1272**  |  svr: **101.1514**
 | `tyre_life` | 5 | +0.159825 | increases the prediction |
 | `tyrelife_x_soft` | 5 | -0.130054 | decreases the prediction |
 
+Same lap, svr (KernelExplainer (sampled) on 45 model inputs): `form_vs_baseline` (+1.7272), `stint_number` (-0.6747), `tyre_life` (+0.4077).
+Comparing the two families on one lap shows whether they credit the same factors.
+
+
 ![waterfall](shap/target_laptime_freshest_tyres_waterfall.png)
 
 #### Oldest Tyres (test row 42, lap 56)
@@ -198,6 +214,10 @@ Deep network prediction: **98.9026**  |  svr: **99.1979**
 | `gap_roll3_mean` | 1.285 | +0.458783 | increases the prediction |
 | `gap_expanding` | 0.9587 | +0.376375 | increases the prediction |
 | `stint_number` | 3 | -0.276458 | decreases the prediction |
+
+Same lap, svr (KernelExplainer (sampled) on 45 model inputs): `tracktemp_dev_x_tyrelife` (-1.1989), `tyre_life` (+0.9155), `stint_number` (-0.3102).
+Comparing the two families on one lap shows whether they credit the same factors.
+
 
 ![waterfall](shap/target_laptime_oldest_tyres_waterfall.png)
 
@@ -254,6 +274,10 @@ Deep network prediction: **0.0025**  |  random_forest: **0.0960**
 | `compound_soft` | 1 | -0.008445 | decreases the prediction |
 | `tyre_life` | 8 | -0.004849 | decreases the prediction |
 
+Same lap, random_forest (TreeExplainer (exact) on 8 model inputs): `tyre_life` (-0.1693), `form_vs_baseline` (-0.1028), `tyrelife_x_soft` (-0.0486).
+Comparing the two families on one lap shows whether they credit the same factors.
+
+
 ![waterfall](shap/target_pit_next_lap_lowest_pit_probability_waterfall.png)
 
 #### Closest To Decision Boundary (test row 171, lap 48)
@@ -269,6 +293,10 @@ Deep network prediction: **0.1287**  |  random_forest: **0.4034**
 | `compound_soft` | 1 | -0.010420 | decreases the prediction |
 | `gap_roll3_mean` | 1.131 | -0.008565 | decreases the prediction |
 
+Same lap, random_forest (TreeExplainer (exact) on 8 model inputs): `field_median_lag1` (-0.2086), `tracktemp_dev_x_tyrelife` (-0.1533), `tyre_life` (+0.0975).
+Comparing the two families on one lap shows whether they credit the same factors.
+
+
 ![waterfall](shap/target_pit_next_lap_closest_to_decision_boundary_waterfall.png)
 
 #### Actual Pit Lap (test row 177, lap 54)
@@ -283,6 +311,10 @@ Deep network prediction: **0.0630**  |  random_forest: **0.5793**
 | `compound_soft` | 1 | -0.012362 | decreases the prediction |
 | `field_pace_trend` | 0.189 | -0.008864 | decreases the prediction |
 | `gap_roll3_mean` | 0.9977 | -0.004509 | decreases the prediction |
+
+Same lap, random_forest (TreeExplainer (exact) on 8 model inputs): `tracktemp_dev_x_tyrelife` (-0.1427), `tyre_life` (+0.1239), `tyrelife_x_soft` (+0.0845).
+Comparing the two families on one lap shows whether they credit the same factors.
+
 
 ![waterfall](shap/target_pit_next_lap_actual_pit_lap_waterfall.png)
 

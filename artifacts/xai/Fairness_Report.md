@@ -1,6 +1,6 @@
 # Task 8 - Fairness Assessment
 
-_Generated 2026-09-21 07:16 UTC._
+_Generated 2026-09-27 16:54 UTC._
 
 **The question:** is the model predicting from *race state*, or from *who is driving*?
 

@@ -14,12 +14,12 @@ seaborn>=0.12
 tabulate>=0.9
 
 # --- Machine Learning (Task 6) ---
-scikit-learn>=1.3
+scikit-learn==1.9.0
 joblib>=1.3
 # Optional. If the native libomp runtime is unavailable, the ML pipeline
 # detects this at import time and reports "XGBoost unavailable — skipped"
 # instead of failing or fabricating results.
-xgboost>=2.0
+xgboost==3.4.1
 
 # --- Deep Learning (Task 7) ---
 # Keras 3 is backend-agnostic. TensorFlow publishes NO wheel for Python 3.14
@@ -31,12 +31,12 @@ xgboost>=2.0
 # if it initialises against PyTorch's copy. app/core/runtime.py imports XGBoost
 # first to claim the OpenMP runtime - always go through prepare_dl_runtime()
 # rather than importing keras or torch directly.
-keras>=3.5
-torch>=2.4
+keras==3.15.1
+torch==2.14.0
 
 # --- Explainable AI (Task 8) ---
-shap>=0.44          # Shapley attributions (TreeExplainer exact, KernelExplainer model-agnostic)
-lime>=0.2           # local linear surrogates, for comparison against SHAP
+shap==0.52.0          # Shapley attributions (TreeExplainer exact, KernelExplainer model-agnostic)
+lime==0.2.0.1           # local linear surrogates, for comparison against SHAP
 dice-ml>=0.11       # diverse counterfactuals (time-bounded; see xai/counterfactual.py)
 
 # --- Quantum machine learning (Task 9 / QML) ---
@@ -50,6 +50,10 @@ pennylane==0.45.1
 fastapi>=0.110
 uvicorn[standard]>=0.29
 pydantic>=2.6
+
+# Note: the libraries that produce committed metrics are pinned exactly
+# (keras, torch, shap, lime, scikit-learn, xgboost, pennylane), so a rebuild
+# reproduces the numbers in artifacts/ rather than drifting with a new release.
 
 # --- Testing & linting ---
 pytest>=7.4

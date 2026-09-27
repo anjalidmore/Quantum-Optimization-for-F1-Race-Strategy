@@ -167,6 +167,16 @@ def explain_target(target: str, quick: bool = False, with_figures: bool = True,
             "feature_values": fvals,
             "shap_dnn": shap_row,
             "shap_top3": shap_top3,
+            # The same local explanation for Task 6's selected model, so a reader
+            # can see whether the two model families credit the same factors on
+            # this lap. Tree SHAP works in the pipeline's transformed feature
+            # space, which is why the feature names can differ from the DNN's.
+            "shap_classical": (
+                shap_analysis.explain_row(shap_cls, idx, top_n=min(6, len(t.features)))
+                if shap_cls else None),
+            "shap_classical_explainer": (
+                f"{shap_cls['explainer']} ({'exact' if shap_cls['exact'] else 'sampled'}) on "
+                f"{len(shap_cls['feature_names'])} model inputs" if shap_cls else None),
             "lime": {k: v for k, v in lm.items() if k != "explanation"},
             "lime_top3": lime_top3,
             "trust": ts,
