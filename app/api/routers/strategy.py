@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import PlainTextResponse
 
 from app.api.routers.data import _options
 from app.api.schemas import RaceStateRequest
+from app.services import strategy_report
 from app.services.model_cache import get_model_cache
 from app.services.strategy_service import run_strategy_analysis
 
@@ -34,7 +36,14 @@ def _validate_model_choice(target: str, model_name: str | None) -> None:
         return
     cache = get_model_cache()
     registry = cache.registry()
-    valid = {m["model_name"] for m in (registry or {}).get("models", []) if m["target"] == target and m["artifact"]}
+    # Deep models are excluded: this endpoint serves Task 6 sklearn pipelines
+    # through ModelCache, which cannot load a .keras archive. They are reachable
+    # via /api/dl/predict/* instead.
+    valid = {
+        m["model_name"]
+        for m in (registry or {}).get("models", [])
+        if m["target"] == target and m["artifact"] and m.get("family") != "deep"
+    }
     if model_name not in valid:
         raise HTTPException(
             status_code=422,
@@ -47,4 +56,36 @@ def predict_strategy(race_state: RaceStateRequest):
     _validate_against_known_options(race_state)
     _validate_model_choice("target_laptime", race_state.laptime_model)
     _validate_model_choice("target_pit_next_lap", race_state.pit_model)
-    return run_strategy_analysis(race_state, laptime_model=race_state.laptime_model, pit_model=race_state.pit_model)
+    return run_strategy_analysis(
+        race_state,
+        laptime_model=race_state.laptime_model,
+        pit_model=race_state.pit_model,
+        explain=race_state.explain,
+    )
+
+
+@router.post("/report", response_class=PlainTextResponse)
+def strategy_report_markdown(race_state: RaceStateRequest):
+    """The Task 9 race-strategy report: one race state in, a Markdown briefing out.
+
+    Returned as a file download (``Content-Disposition: attachment``) so the
+    dashboard's button saves it directly. Explanations are always included here
+    — a report without them would hide why the call was made.
+    """
+    _validate_against_known_options(race_state)
+    _validate_model_choice("target_laptime", race_state.laptime_model)
+    _validate_model_choice("target_pit_next_lap", race_state.pit_model)
+
+    analysis = run_strategy_analysis(
+        race_state,
+        laptime_model=race_state.laptime_model,
+        pit_model=race_state.pit_model,
+        explain=True,
+    )
+    markdown = strategy_report.render_markdown(analysis)
+    filename = strategy_report.filename_for(analysis["race_state"])
+    return PlainTextResponse(
+        content=markdown,
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

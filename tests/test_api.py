@@ -202,10 +202,10 @@ def test_task_evidence_endpoint_reports_honest_status(client):
     body = r.json()
     assert len(body["tasks"]) == 10
     statuses = {t["id"]: t["status"] for t in body["tasks"]}
-    # Tasks 1-6 have real generated artifacts in this repo; 7-10 do not exist yet.
-    for tid in ("task1", "task2", "task3", "task4", "task5", "task6"):
+    # Tasks 1-8 have real generated artifacts in this repo; 9-10 do not exist yet.
+    for tid in ("task1", "task2", "task3", "task4", "task5", "task6", "task7", "task8"):
         assert statuses[tid] == "completed"
-    for tid in ("task7", "task8", "task9", "task10"):
+    for tid in ("task9", "task10"):
         assert statuses[tid] == "upcoming"
     # Every listed artifact path must actually exist on disk (never a fabricated filename).
     import os
@@ -224,3 +224,185 @@ def test_top_features_endpoint_returns_exactly_n_with_descriptions(client):
         assert f["display_name"]
         assert f["description"]
     assert "ranking_method" in body
+
+
+# ---------------------------------------------------------------------------
+# Security: static artifact serving (TODO.md — "The whole artifacts tree is
+# served unauthenticated as static files")
+# ---------------------------------------------------------------------------
+def test_trained_model_weights_are_not_served_statically(client):
+    """Anyone who can reach the API used to be able to download every trained
+    model. Only figures and reports are mounted now."""
+    for path in (
+        "/artifacts/models/laptime/decision_tree.joblib",
+        "/artifacts/models/pit_decision/random_forest.joblib",
+        "/artifacts/models/deep_learning/laptime/f1_dnn_model.h5",
+        "/artifacts/deep_learning/../models/deep_learning/laptime/f1_dnn_model.h5",
+    ):
+        assert client.get(path).status_code == 404, f"{path} is still downloadable"
+
+
+def test_metadata_directory_is_not_served_statically(client):
+    assert client.get("/artifacts/metadata/model_registry.json").status_code == 404
+
+
+def test_public_artifact_directories_are_still_served(client):
+    """The restriction must not break the dashboard: every directory the
+    frontend reads has to stay reachable."""
+    for path in (
+        "/artifacts/figures/roc_curves.png",
+        "/artifacts/reports/regression_report.md",
+        "/artifacts/data_engineering/figures/dashboard.png",
+        "/artifacts/expert_system/reports/rule_catalogue.md",
+        "/artifacts/search/reports/comparison_report.md",
+        "/artifacts/knowledge_representation/reports/entity_table.md",
+    ):
+        assert client.get(path).status_code == 200, f"{path} is no longer served"
+
+
+def test_private_dirs_are_excluded_structurally_not_by_a_filter(client):
+    """The exclusion is 'no mount exists', which cannot be bypassed by path
+    tricks the way a string filter could."""
+    from app.api.main import PRIVATE_ARTIFACT_DIRS, PUBLIC_ARTIFACT_DIRS
+
+    assert set(PRIVATE_ARTIFACT_DIRS).isdisjoint(PUBLIC_ARTIFACT_DIRS)
+    for path in (
+        "/artifacts/figures/../models/laptime/decision_tree.joblib",
+        "/artifacts/figures/%2e%2e/models/laptime/decision_tree.joblib",
+    ):
+        assert client.get(path).status_code in (403, 404), f"{path} escaped the mount"
+
+
+# ---------------------------------------------------------------------------
+# Security: CORS (TODO.md — "API allows every origin, method and header")
+# ---------------------------------------------------------------------------
+def test_cors_rejects_an_unlisted_origin(client):
+    r = client.get("/api/health", headers={"Origin": "https://evil.example.com"})
+    assert r.headers.get("access-control-allow-origin") is None
+
+
+def test_cors_allows_the_frontend_origin(client):
+    r = client.get("/api/health", headers={"Origin": "http://localhost:3000"})
+    assert r.headers.get("access-control-allow-origin") == "http://localhost:3000"
+
+
+def test_cors_does_not_advertise_wildcard_methods_or_headers(client):
+    r = client.options(
+        "/api/health",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert r.headers.get("access-control-allow-methods") != "*"
+    assert r.headers.get("access-control-allow-headers") != "*"
+
+
+def test_allowed_origins_are_configurable_by_environment():
+    """A deployment must be able to set its real origin without a code change."""
+    import importlib
+    import os
+
+    import app.api.main as main_mod
+
+    original = os.environ.get("F1_ALLOWED_ORIGINS")
+    os.environ["F1_ALLOWED_ORIGINS"] = "https://example.test, https://second.test"
+    try:
+        reloaded = importlib.reload(main_mod)
+        assert reloaded.ALLOWED_ORIGINS == ["https://example.test", "https://second.test"]
+    finally:
+        if original is None:
+            os.environ.pop("F1_ALLOWED_ORIGINS", None)
+        else:
+            os.environ["F1_ALLOWED_ORIGINS"] = original
+        importlib.reload(main_mod)
+
+
+# ---------------------------------------------------------------------------
+# Task 9 — the reasoning endpoints (Tasks 1-3) and the strategy report generator
+# ---------------------------------------------------------------------------
+REPORT_RACE_STATE = {
+    "driver": "ALO", "team": "ASTON MARTIN", "current_lap": 20, "total_laps": 55,
+    "tyre_compound": "MEDIUM", "tyre_age": 15, "track_temperature": 40.0,
+    "weather": "dry", "fuel_kg": 70, "track_status": "GREEN", "current_position": 6,
+}
+
+
+def test_knowledge_endpoint_counts_match_the_schema_it_was_built_from(client):
+    from app.intelligence.knowledge_representation import schema
+
+    body = client.get("/api/reasoning/knowledge").json()
+    assert body["available"] is True
+    assert body["n_entities"] == len(schema.entities_by_name())
+    assert body["n_relationships"] == len(schema.relationship_names())
+    # the per-category counts must add up to the total, not be a separate claim
+    assert sum(body["entities_by_category"].values()) == body["n_entities"]
+
+
+def test_expert_system_endpoint_matches_the_committed_rule_base(client):
+    import json
+
+    from app.api.routers.reasoning import RULE_BASE_JSON
+
+    body = client.get("/api/reasoning/expert-system").json()
+    if not RULE_BASE_JSON.exists():
+        assert body["available"] is False and "Run:" in body["reason"]
+        return
+    rules = json.loads(RULE_BASE_JSON.read_text())
+    rules = rules.get("rules", rules) if isinstance(rules, dict) else rules
+    assert body["n_rules"] == len(rules)
+    assert sum(body["rules_by_category"].values()) == body["n_rules"]
+    assert {r["rule_id"] for r in body["rules"]} == {r["rule_id"] for r in rules}
+
+
+def test_search_endpoint_reports_the_optimality_invariant(client):
+    body = client.get("/api/reasoning/search").json()
+    if not body.get("available"):
+        assert "Run:" in body["reason"]
+        return
+    costs = {a["algorithm"]: a["solution_cost"] for a in body["algorithms"] if a["found"]}
+    # A* with an admissible heuristic must match uniform-cost search exactly.
+    assert costs["A*"] == pytest.approx(costs["UCS"])
+    assert set(body["summary"]["optimal_algorithms"]) == {"UCS", "A*"}
+
+
+def test_missing_artifact_reports_not_generated_rather_than_a_number(client, tmp_path, monkeypatch):
+    """The dashboard must be able to print 'Not generated yet' instead of a zero."""
+    import app.api.routers.reasoning as mod
+
+    monkeypatch.setattr(mod, "SEARCH_JSON", tmp_path / "absent.json")
+    body = client.get("/api/reasoning/search").json()
+    assert body["available"] is False
+    assert "scripts/run_search.py" in body["reason"]
+
+
+def test_strategy_report_is_a_downloadable_markdown_briefing(client):
+    r = client.post("/api/strategy/report", json=REPORT_RACE_STATE)
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/markdown")
+    assert "attachment; filename=" in r.headers["content-disposition"]
+    assert ".md" in r.headers["content-disposition"]
+
+
+def test_strategy_report_contains_every_section_the_lab_requires(client):
+    body = client.post("/api/strategy/report", json=REPORT_RACE_STATE).text
+    for heading in ("# Race Strategy Report", "## 1. Race state", "## 2. Recommendation",
+                    "## 3. Expert-system rules that fired", "## 4. Search plan",
+                    "## 5. Why this prediction", "## 6. Provenance"):
+        assert heading in body, heading
+    # prediction, search plan, explanation and trust must all carry real values
+    assert "Predicted lap time" in body and "Expected cost, remaining stint" in body
+    assert "Trust score" in body
+    assert "SHAP" in body
+
+
+def test_strategy_report_never_shows_a_placeholder_number(client):
+    """A missing value must read as text, never as a stand-in figure like 0.000."""
+    body = client.post("/api/strategy/report", json=REPORT_RACE_STATE).text
+    for placeholder in ("TODO", "TBD", "lorem", "XXX", "placeholder", "clinical", "patient", "diagnosis"):
+        assert placeholder.lower() not in body.lower(), placeholder
+
+
+def test_strategy_report_validates_its_race_state(client):
+    bad = {**REPORT_RACE_STATE, "driver": "NOT_A_DRIVER"}
+    assert client.post("/api/strategy/report", json=bad).status_code == 422

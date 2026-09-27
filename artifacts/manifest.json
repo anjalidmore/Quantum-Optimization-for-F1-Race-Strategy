@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-30T16:42:27.080701+00:00",
+  "generated_at": "2026-09-27T17:43:32.998140+00:00",
   "dataset": "data/processed/f1_features_selected.csv",
   "dataset_source": {
     "source": "real_fastf1",
@@ -11,7 +11,7 @@
     "n_drivers": 20
   },
   "synthetic_data_warning": false,
-  "best_regression_model": "decision_tree",
+  "best_regression_model": "svr",
   "best_classification_model": "random_forest",
   "models": [
     "artifacts/models/laptime/decision_tree.joblib",
@@ -29,6 +29,7 @@
     "artifacts/metrics/classification_metrics.json",
     "artifacts/metrics/cv_fold_metrics.json",
     "artifacts/metrics/model_comparison.json",
+    "artifacts/metrics/qml_metrics.json",
     "artifacts/metrics/regression_metrics.json"
   ],
   "figures": [
@@ -36,7 +37,6 @@
     "artifacts/figures/prediction_vs_actual.png",
     "artifacts/figures/residuals.png",
     "artifacts/figures/residuals_vs_predictions.png",
-    "artifacts/figures/feature_importance.png",
     "artifacts/figures/classification_model_comparison.png",
     "artifacts/figures/roc_curves.png",
     "artifacts/figures/precision_recall_curves.png",

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { TaskEvidence, artifactUrl } from "@/lib/api";
+import { basename, prettify } from "@/lib/format";
 import { Modal } from "@/components/Modal";
 import { ArtifactImage } from "@/components/ArtifactImage";
 
@@ -13,17 +14,6 @@ function StatusBadge({ status }: { status: TaskEvidence["status"] }) {
   };
   const { label, cls } = map[status];
   return <span className={`badge border ${cls}`}>{label}</span>;
-}
-
-function basename(path: string): string {
-  return path.split("/").pop() ?? path;
-}
-
-function prettify(filename: string): string {
-  return filename
-    .replace(/\.[a-z0-9]+$/i, "")
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function TaskCard({ task }: { task: TaskEvidence }) {

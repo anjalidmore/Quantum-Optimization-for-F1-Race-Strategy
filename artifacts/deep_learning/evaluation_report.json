@@ -1,0 +1,448 @@
+{
+  "generated_at": "2026-09-27T17:55:36.819498+00:00",
+  "task": "Task 7 - Deep Learning Model Development",
+  "dataset_source": {
+    "source": "real_fastf1",
+    "year": 2023,
+    "event": "Bahrain",
+    "session": "R",
+    "fetched_at": "2026-08-30T12:34:08.172714+00:00",
+    "n_laps": 1055,
+    "n_drivers": 20
+  },
+  "evaluation_split": "chronological holdout: the last 20% of laps, never used for hyperparameter selection, threshold tuning or early stopping",
+  "models": {
+    "target_laptime": {
+      "task": "regression",
+      "train_metrics": {
+        "mae": 0.5221582370334201,
+        "rmse": 0.8643257240227681,
+        "r2": 0.7817794609123342,
+        "mape": 0.517131567968913,
+        "n": 675
+      },
+      "validation_metrics": {
+        "mae": 1.5001073019845146,
+        "rmse": 2.3751773428571763,
+        "r2": 0.248223296768473,
+        "mape": 1.4971580593931222,
+        "n": 140
+      },
+      "test_metrics": {
+        "mae": 0.5651487986246745,
+        "rmse": 0.9083166156712367,
+        "r2": 0.4563625697811138,
+        "mape": 0.5729953048791535,
+        "n": 180
+      },
+      "overfitting": {
+        "verdict": "OVERFITTING (large train/validation gap at the saved weights)",
+        "epochs_run": 35,
+        "best_epoch": 10,
+        "still_improving_at_stop": false,
+        "val_loss_min": 1.7906494140625,
+        "val_loss_final": 2.517834186553955,
+        "val_loss_rise_after_best_pct": 40.6101142289863,
+        "train_loss_at_best": 0.4692467749118805,
+        "train_loss_final": 0.27086469531059265,
+        "overfitting_emerged_after_best_epoch": true,
+        "train_mae": 0.5221582370334201,
+        "val_mae": 1.5001073019845146
+      },
+      "threshold": null,
+      "architecture": {
+        "name": "laptime_mlp",
+        "layers": [
+          {
+            "name": "hidden_1",
+            "type": "Dense",
+            "units": 128,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_1",
+            "type": "Dropout",
+            "rate": 0.2
+          },
+          {
+            "name": "hidden_2",
+            "type": "Dense",
+            "units": 64,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_2",
+            "type": "Dropout",
+            "rate": 0.2
+          },
+          {
+            "name": "hidden_3",
+            "type": "Dense",
+            "units": 32,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_3",
+            "type": "Dropout",
+            "rate": 0.2
+          },
+          {
+            "name": "laptime_seconds",
+            "type": "Dense",
+            "units": 1,
+            "activation": "linear"
+          }
+        ],
+        "total_parameters": 16257,
+        "trainable_parameters": 16257,
+        "non_trainable_parameters": 0,
+        "optimizer": "RMSprop",
+        "loss": "mse"
+      },
+      "hyperparameters": {
+        "hidden_units": [
+          128,
+          64,
+          32
+        ],
+        "dropout": 0.2,
+        "learning_rate": 0.001,
+        "batch_size": 16,
+        "optimizer": "rmsprop",
+        "l2": 0.001,
+        "loss": "mse"
+      },
+      "class_weights_used": null,
+      "n_train": 675,
+      "n_validation": 140,
+      "n_test": 180,
+      "final_fit_split": {
+        "train_laps": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38
+        ],
+        "validation_laps": [
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "test_laps": [
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57
+        ]
+      },
+      "epochs_run": 35,
+      "best_epoch": 10,
+      "model_file": {
+        "path": "artifacts/models/deep_learning/laptime/f1_dnn_model.h5",
+        "bytes": 167128,
+        "reload_verified": true
+      },
+      "figures": {
+        "loss_curve": "loss_curve.png",
+        "mae_curve": "mae_curve.png",
+        "prediction_vs_actual": "prediction_vs_actual.png",
+        "model_comparison": "model_comparison.png"
+      }
+    },
+    "target_pit_next_lap": {
+      "task": "classification",
+      "train_metrics": {
+        "accuracy": 0.837037037037037,
+        "precision": 0.15151515151515152,
+        "recall": 0.36585365853658536,
+        "f1": 0.21428571428571427,
+        "roc_auc": 0.6804262522120489,
+        "pr_auc": 0.18398682680773404,
+        "confusion_matrix": [
+          [
+            550,
+            84
+          ],
+          [
+            26,
+            15
+          ]
+        ],
+        "confusion_matrix_labels": [
+          0,
+          1
+        ],
+        "undefined_reason": null,
+        "n": 675,
+        "n_positive": 41,
+        "decision_threshold": 0.1524
+      },
+      "validation_metrics": {
+        "accuracy": 0.9642857142857143,
+        "precision": 1.0,
+        "recall": 0.16666666666666666,
+        "f1": 0.2857142857142857,
+        "roc_auc": 0.9676616915422885,
+        "pr_auc": 0.6059704184704184,
+        "confusion_matrix": [
+          [
+            134,
+            0
+          ],
+          [
+            5,
+            1
+          ]
+        ],
+        "confusion_matrix_labels": [
+          0,
+          1
+        ],
+        "undefined_reason": null,
+        "n": 140,
+        "n_positive": 6,
+        "decision_threshold": 0.1524
+      },
+      "test_metrics": {
+        "accuracy": 0.9944444444444445,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 0.776536312849162,
+        "pr_auc": 0.024390243902439025,
+        "confusion_matrix": [
+          [
+            179,
+            0
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        "confusion_matrix_labels": [
+          0,
+          1
+        ],
+        "undefined_reason": null,
+        "n": 180,
+        "n_positive": 1,
+        "decision_threshold": 0.1524,
+        "at_default_threshold": {
+          "accuracy": 0.9944444444444445,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        }
+      },
+      "overfitting": {
+        "verdict": "REASONABLE FIT",
+        "epochs_run": 35,
+        "best_epoch": 10,
+        "still_improving_at_stop": false,
+        "val_loss_min": 0.12620343267917633,
+        "val_loss_final": 0.1639198511838913,
+        "val_loss_rise_after_best_pct": 29.885414131796594,
+        "train_loss_at_best": 0.2546285092830658,
+        "train_loss_final": 0.18816682696342468,
+        "overfitting_emerged_after_best_epoch": true,
+        "train_pr_auc": 0.18398682680773404,
+        "val_pr_auc": 0.6059704184704184
+      },
+      "threshold": {
+        "threshold": 0.1524,
+        "objective": "f1",
+        "chosen_on": "pooled out-of-fold CV predictions",
+        "n_samples": 635,
+        "n_positive": 36,
+        "at_threshold": {
+          "f1": 0.4578,
+          "precision": 0.4043,
+          "recall": 0.5278,
+          "expected_cost": 113.0
+        },
+        "at_default_0.5": {
+          "threshold": 0.5,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "expected_cost": 180.0
+        },
+        "note": "Chosen on 635 pooled out-of-fold predictions containing 36 positives. F1 0.0000 at the default 0.5 -> 0.4578 at 0.1524 (+0.4578)."
+      },
+      "architecture": {
+        "name": "pit_decision_mlp",
+        "layers": [
+          {
+            "name": "hidden_1",
+            "type": "Dense",
+            "units": 16,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_1",
+            "type": "Dropout",
+            "rate": 0.3
+          },
+          {
+            "name": "hidden_2",
+            "type": "Dense",
+            "units": 8,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_2",
+            "type": "Dropout",
+            "rate": 0.3
+          },
+          {
+            "name": "pit_probability",
+            "type": "Dense",
+            "units": 1,
+            "activation": "sigmoid"
+          }
+        ],
+        "total_parameters": 289,
+        "trainable_parameters": 289,
+        "non_trainable_parameters": 0,
+        "optimizer": "RMSprop",
+        "loss": "binary_crossentropy"
+      },
+      "hyperparameters": {
+        "hidden_units": [
+          16,
+          8
+        ],
+        "dropout": 0.3,
+        "learning_rate": 0.001,
+        "batch_size": 32,
+        "optimizer": "rmsprop",
+        "l2": 0.0001,
+        "class_weighted": false
+      },
+      "class_weights_used": null,
+      "n_train": 675,
+      "n_validation": 140,
+      "n_test": 180,
+      "final_fit_split": {
+        "train_laps": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38
+        ],
+        "validation_laps": [
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "test_laps": [
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57
+        ]
+      },
+      "epochs_run": 35,
+      "best_epoch": 10,
+      "model_file": {
+        "path": "artifacts/models/deep_learning/pit_decision/f1_dnn_model.h5",
+        "bytes": 34048,
+        "reload_verified": true
+      },
+      "figures": {
+        "loss_curve": "loss_curve.png",
+        "accuracy_curve": "accuracy_curve.png",
+        "confusion_matrix": "confusion_matrix.png",
+        "roc_curve": "roc_curve.png",
+        "model_comparison": "model_comparison.png"
+      }
+    }
+  }
+}

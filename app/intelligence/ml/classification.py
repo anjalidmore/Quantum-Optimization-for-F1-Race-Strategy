@@ -5,12 +5,16 @@ app.intelligence.ml.classification
 Pit-decision classification: predict ``target_pit_next_lap`` — should the
 driver pit at the end of this lap?
 
-Pit events are rare (~3% of rows) and, in this synthetic session, clustered
-almost deterministically at specific laps (see ``feature_metadata.json``'s
-``validation_scores.caveat``). Every model here uses class weighting /
-imbalance handling so a trivial "always predict no-pit" classifier is not
-rewarded by accuracy alone — which is also why Task 6 ranks classifiers by
-ROC-AUC / PR-AUC / F1, not accuracy.
+Pit events are rare (4.8% of rows: 48 of 995) and clustered towards specific
+laps. Every model here uses class weighting or its equivalent, so a trivial
+"always predict no-pit" classifier is not rewarded by accuracy alone.
+
+Class weighting alone was not enough. At the default 0.5 cut-off these models
+still either fired on nothing or fired on everything, because 0.5 is only the
+right decision boundary when the classes are balanced and the errors cost the
+same. The threshold is therefore tuned on pooled out-of-fold predictions - see
+``app/intelligence/ml/threshold.py`` - and selection is by **PR-AUC**, not
+ROC-AUC, which stays flatteringly high at this prevalence.
 
 XGBoost is optional, mirroring ``regression.py``: skipped with an honest
 status if the package or its native runtime is unavailable.
@@ -21,6 +25,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
@@ -57,6 +62,11 @@ class ClassificationModelSpec:
 
 RANDOM_STATE = 42
 
+# negative / positive in the Task 5 matrix (947 / 48). XGBoost's analogue of
+# class_weight="balanced"; without it, xgboost was the one classifier in this
+# set with no imbalance handling at all.
+XGBOOST_SCALE_POS_WEIGHT = 19.7
+
 CLASSIFICATION_MODEL_SPECS: list[ClassificationModelSpec] = [
     ClassificationModelSpec(
         name="logistic_regression",
@@ -88,10 +98,22 @@ CLASSIFICATION_MODEL_SPECS: list[ClassificationModelSpec] = [
     ClassificationModelSpec(
         name="svm",
         needs_scaling=True,
-        build_estimator=lambda rs: SVC(
-            class_weight="balanced", probability=True, random_state=rs
+        # SVC(probability=True) is deprecated in scikit-learn 1.9 and removed in
+        # 1.11 - it would have broken this project on a routine `pip install`
+        # with no code change. CalibratedClassifierCV is the documented
+        # replacement and is arguably the better default anyway: SVC's internal
+        # Platt scaling refits the model on internal folds, whereas this makes
+        # the calibration explicit and inspectable. `ensemble=False` matches the
+        # deprecation notice's suggested form.
+        build_estimator=lambda rs: CalibratedClassifierCV(
+            SVC(class_weight="balanced", random_state=rs), ensemble=False, cv=3
         ),
-        param_grid={"C": [1.0, 10.0], "gamma": ["scale", "auto"], "kernel": ["rbf"]},
+        # The grid now addresses the wrapped estimator rather than SVC directly.
+        param_grid={
+            "estimator__C": [1.0, 10.0],
+            "estimator__gamma": ["scale", "auto"],
+            "estimator__kernel": ["rbf"],
+        },
         supports_importance="none",
     ),
 ]
@@ -99,10 +121,18 @@ CLASSIFICATION_MODEL_SPECS: list[ClassificationModelSpec] = [
 if xgboost_available():
 
     def _xgb_classifier(rs: int):
+        # XGBoost has no class_weight parameter; scale_pos_weight is its
+        # equivalent, and it was the only classifier here without imbalance
+        # handling. Set to negative/positive so the rare class is weighted up in
+        # the same spirit as class_weight="balanced" elsewhere. The value is the
+        # dataset's ratio (about 19.7 at a 4.8% positive rate); it is passed as
+        # a constant rather than computed per fold so the model is identical
+        # across folds, which keeps the CV comparison clean.
         return XGBClassifier(
             random_state=rs,
             objective="binary:logistic",
             eval_metric="logloss",
+            scale_pos_weight=XGBOOST_SCALE_POS_WEIGHT,
             n_jobs=-1,
             verbosity=0,
         )

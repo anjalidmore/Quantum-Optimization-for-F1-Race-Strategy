@@ -14,17 +14,46 @@ seaborn>=0.12
 tabulate>=0.9
 
 # --- Machine Learning (Task 6) ---
-scikit-learn>=1.3
+scikit-learn==1.9.0
 joblib>=1.3
 # Optional. If the native libomp runtime is unavailable, the ML pipeline
 # detects this at import time and reports "XGBoost unavailable — skipped"
 # instead of failing or fabricating results.
-xgboost>=2.0
+xgboost==3.4.1
+
+# --- Deep Learning (Task 7) ---
+# Keras 3 is backend-agnostic. TensorFlow publishes NO wheel for Python 3.14
+# (verified: `pip index versions tensorflow` returns no distribution), so the
+# PyTorch backend is used and app/core/runtime.py sets KERAS_BACKEND=torch.
+# The Keras API in app/intelligence/dl/ is identical on either backend.
+#
+# Import-order note: torch ships its own libomp, and XGBoost segfaults on macOS
+# if it initialises against PyTorch's copy. app/core/runtime.py imports XGBoost
+# first to claim the OpenMP runtime - always go through prepare_dl_runtime()
+# rather than importing keras or torch directly.
+keras==3.15.1
+torch==2.14.0
+
+# --- Explainable AI (Task 8) ---
+shap==0.52.0          # Shapley attributions (TreeExplainer exact, KernelExplainer model-agnostic)
+lime==0.2.0.1           # local linear surrogates, for comparison against SHAP
+dice-ml>=0.11       # diverse counterfactuals (time-bounded; see xai/counterfactual.py)
+
+# --- Quantum machine learning (Task 9 / QML) ---
+# Simulated only: every circuit runs on PennyLane's noiseless `default.qubit`
+# state-vector simulator. No quantum hardware, no cloud quantum backend, and no
+# other quantum SDK - see app/intelligence/qml/ and the classical-vs-quantum
+# report for what this can and cannot show.
+pennylane==0.45.1
 
 # --- Backend API ---
 fastapi>=0.110
 uvicorn[standard]>=0.29
 pydantic>=2.6
+
+# Note: the libraries that produce committed metrics are pinned exactly
+# (keras, torch, shap, lime, scikit-learn, xgboost, pennylane), so a rebuild
+# reproduces the numbers in artifacts/ rather than drifting with a new release.
 
 # --- Testing & linting ---
 pytest>=7.4
@@ -34,6 +63,19 @@ ruff>=0.6
 # --- Real data (Task 5/6 on genuine FastF1 telemetry instead of the
 #     synthetic demo) ---
 fastf1>=3.5
+# Pinned above fastf1's own floor: msgpack 1.1.2 carries PYSEC-2026-3625 and
+# reaches us transitively via fastf1 -> signalrcore. Only exercised when
+# fetching a live session, but it was the single flagged Python dependency.
+#
+# TRADE-OFF, recorded deliberately: signalrcore 1.0.2 hard-pins msgpack==1.1.2,
+# so satisfying this constraint makes pip resolve signalrcore down to 0.8.8,
+# which has no such pin. Verified after the change: `pip check` reports no
+# broken requirements, `pip-audit` is clean, and fastf1 3.8.3 still imports —
+# including fastf1.livetiming.SignalRClient, the only consumer of signalrcore.
+# This project reads historical sessions rather than live timing, so the older
+# signalrcore is not on any path it exercises. Revisit if signalrcore publishes
+# a release that relaxes the pin.
+msgpack>=1.2.1
 # Needed only to programmatically execute docs/notebooks/task5_feature_engineering.ipynb
 # after fetching real data (see scripts/fetch_real_session.py). Not needed if
 # you re-run the notebook by hand in Jupyter/VS Code instead.

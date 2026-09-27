@@ -141,7 +141,31 @@ def _run_search(race_state) -> dict:
     }
 
 
-def run_strategy_analysis(race_state, laptime_model: str | None = None, pit_model: str | None = None) -> dict:
+def _explain(ml: dict) -> dict:
+    """Task 8 explanation of the feature rows this request just built.
+
+    Opt-in, because the SHAP sampling adds latency a caller may not want. It
+    explains *this* recommendation's rows, not a stored example. Import is
+    local so a strategy call that does not ask for an explanation never pays
+    the cost of loading the deep-learning stack.
+    """
+    from app.intelligence.xai.live import explain_feature_row
+
+    out = {}
+    for target, row in ml.get("feature_rows", {}).items():
+        try:
+            out[target] = explain_feature_row(target, row)
+        except Exception as exc:  # pragma: no cover - never fail the prediction
+            out[target] = {"available": False, "reason": f"{type(exc).__name__}: {exc}"}
+    return out
+
+
+def run_strategy_analysis(
+    race_state,
+    laptime_model: str | None = None,
+    pit_model: str | None = None,
+    explain: bool = False,
+) -> dict:
     ml = _run_ml(race_state, laptime_model, pit_model)
     expert = _run_expert_system(race_state)
     search = _run_search(race_state)
@@ -150,7 +174,7 @@ def run_strategy_analysis(race_state, laptime_model: str | None = None, pit_mode
     if pit_decision is None and ml["pit_probability"] is not None:
         pit_decision = "PIT_NOW" if ml["pit_probability"]["predicted_class"] == 1 else "STAY_OUT"
 
-    return {
+    response = {
         "race_state": race_state.model_dump(),
         "prediction": {
             "predicted_lap_time_seconds": ml["laptime"]["value"] if ml["laptime"] else None,
@@ -170,3 +194,6 @@ def run_strategy_analysis(race_state, laptime_model: str | None = None, pit_mode
         "evidence": expert["decisions"],
         "data_source": load_feature_contract().dataset_source["source"],
     }
+    if explain:
+        response["explanation"] = _explain(ml)
+    return response

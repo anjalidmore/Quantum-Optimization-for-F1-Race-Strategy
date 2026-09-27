@@ -1,9 +1,16 @@
-"""Task 6 data-contract tests: the Task 5 -> Task 6 hand-off must hold."""
+"""Task 6 data-contract tests: the Task 5 -> Task 6 hand-off must hold.
+
+Also covers the Task 5 builder itself (``app.intelligence.features.build``), which
+produces that contract: its leakage exclusions and its lap-forward splits are the
+two rules everything downstream depends on.
+"""
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import pytest
 
+from app.intelligence.features import build as feature_build
 from app.intelligence.features.contract import load_feature_contract, load_feature_matrix
 from app.intelligence.ml.data_contract import DataContractError, build_task_frame, load_and_validate
 
@@ -71,3 +78,41 @@ def test_data_contract_error_on_missing_leakage_free_guarantee():
 
     with pytest.raises(DataContractError):
         _validate_no_leakage(corrupted, dataset.contract)
+
+
+# ---------------------------------------------------------------------------
+# The Task 5 builder (ported out of the notebook on 2026-09-27)
+# ---------------------------------------------------------------------------
+def test_committed_contract_matches_what_the_builder_would_select():
+    """The committed metadata must name the same feature counts the builder uses.
+
+    A cheap guard that the contract on disk came from this code and not from a
+    stale notebook run. The full value-for-value check is
+    `python scripts/build_features.py --check`.
+    """
+    contract = load_feature_contract()
+    assert len(contract.selected_features("target_pit_next_lap")) == feature_build.K_CLASSIFICATION
+    assert contract.raw["random_state"] == feature_build.RANDOM_STATE
+    funnel = contract.raw["selection_funnel"]["4_importance_and_stability"]
+    assert "within 2% of best CV MAE" in funnel
+
+
+def test_builder_excludes_every_leakage_column():
+    matrix = load_feature_matrix()
+    for column in feature_build.LEAKAGE_COLS:
+        assert column not in matrix.columns, f"{column} is leakage and must never be exported"
+
+
+def test_lap_forward_splits_never_train_on_a_later_lap():
+    laps = pd.Series(np.repeat(np.arange(1, 21), 3))      # 20 laps, 3 drivers
+    splits = list(feature_build.lap_forward_splits(laps))
+    assert splits
+    for train_idx, test_idx in splits:
+        assert laps.iloc[train_idx].max() < laps.iloc[test_idx].min()
+        # whole laps stay on one side, or a field-median feature would leak across
+        assert set(laps.iloc[train_idx]).isdisjoint(set(laps.iloc[test_idx]))
+
+
+def test_near_zero_variance_drops_a_constant_column():
+    frame = pd.DataFrame({"useful": np.arange(100.0), "constant": np.ones(100)})
+    assert feature_build.near_zero_variance(frame) == ["constant"]

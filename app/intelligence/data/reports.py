@@ -132,10 +132,75 @@ def eda_report_md(analyses: Dict[str, pd.DataFrame]) -> str:
     return "\n".join(parts) + "\n"
 
 
+def visualization_report_md(figures: Dict[str, Path], analyses: Dict[str, pd.DataFrame],
+                            output_dir: Path) -> str:
+    """Index every figure this run rendered, with what it shows and how to read it.
+
+    The figures are the Task 4 visual deliverable; this report is the written
+    companion, so a reader knows what each PNG is without opening all seven. A
+    figure that failed to render is listed as missing rather than omitted.
+    """
+    captions = {
+        "correlation": ("Correlation heatmap",
+                        "Pairwise correlation across the numeric columns. The block that matters is the "
+                        "sector times against lap time: they are near-perfectly correlated, which is the "
+                        "evidence for excluding them as leakage in Task 5."),
+        "driver": ("Points by driver",
+                   "Championship points per driver in the loaded season tables — a sanity check that the "
+                   "results table joins correctly to drivers."),
+        "constructor": ("Points by constructor",
+                        "The same aggregation at team level."),
+        "laptime": ("Lap-time distribution",
+                    "How lap times are spread. The right tail is in-laps, out-laps and traffic, which is "
+                    "why Task 4 caps IQR outliers rather than deleting the rows."),
+        "pit": ("Pit-stop duration",
+                "Box plot of stationary time. Useful for the pit-loss constant the Task 3 search uses."),
+        "tyre": ("Tyre degradation",
+                 "Lap time against tyre age per compound — the physical relationship every later model "
+                 "is trying to learn."),
+        "dashboard": ("Composite dashboard",
+                      "All of the above on one canvas, for a single-glance overview."),
+    }
+
+    parts = [
+        "# Visualization Report",
+        "",
+        f"_Generated {_ts()} — {len(figures)} figures._",
+        "",
+        "Every figure below was rendered by `app/intelligence/data/visualize.py` from the cleaned "
+        "tables in this same run. None is a stock image.",
+        "",
+        "| Figure | File | What it shows |",
+        "|---|---|---|",
+    ]
+    for key in ("correlation", "driver", "constructor", "laptime", "pit", "tyre", "dashboard"):
+        title, description = captions.get(key, (key.title(), ""))
+        path = figures.get(key)
+        if path is None:
+            path = output_dir.parent / "figures" / f"{key}.png"
+        exists = Path(path).exists()
+        name = Path(path).name
+        cell = f"`figures/{name}`" if exists else "**not generated**"
+        parts.append(f"| {title} | {cell} | {description} |")
+
+    parts += ["", "## How to read them together", "",
+              "The correlation heatmap explains a modelling decision (the leakage exclusions). The "
+              "tyre-degradation plot shows the effect the models are asked to predict. The lap-time "
+              "distribution explains why the cleaning step caps outliers instead of dropping rows. The "
+              "remaining three are data-integrity checks on the season tables.", ""]
+
+    if "driver" in analyses and not analyses["driver"].empty:
+        parts += [f"Figures cover {len(analyses['driver'])} drivers"
+                  + (f" and {len(analyses['constructor'])} constructors" if "constructor" in analyses else "")
+                  + " from the loaded tables.", ""]
+    return "\n".join(parts) + "\n"
+
+
 def generate_all(output_dir: Path, *, cleaning: List[CleaningReport],
                  quality: List[QualityReport], correlation: CorrelationResult,
                  summaries: Dict[str, pd.DataFrame],
-                 analyses: Dict[str, pd.DataFrame]) -> Dict[str, Path]:
+                 analyses: Dict[str, pd.DataFrame],
+                 figures: Dict[str, Path] | None = None) -> Dict[str, Path]:
     output_dir = Path(output_dir)
     return {
         "cleaning": _write(output_dir / "cleaning_audit.md",
@@ -147,4 +212,6 @@ def generate_all(output_dir: Path, *, cleaning: List[CleaningReport],
         "statistics": _write(output_dir / "statistical_summary.md",
                              statistical_summary_md(summaries)),
         "eda": _write(output_dir / "eda_report.md", eda_report_md(analyses)),
+        "visualization": _write(output_dir / "visualization_report.md",
+                                visualization_report_md(figures or {}, analyses, output_dir)),
     }

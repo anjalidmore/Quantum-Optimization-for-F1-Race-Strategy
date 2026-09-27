@@ -26,6 +26,8 @@ Usage
 from __future__ import annotations
 
 import argparse
+import dataclasses
+import json
 import logging
 import sys
 from pathlib import Path
@@ -98,6 +100,40 @@ def main(laps: int, output_dir: Path) -> int:
     written = rep.generate_all(reports_dir, problem, rows, results)
     for name, path in written.items():
         log.info("  wrote %s -> %s", name, path.relative_to(output_dir))
+
+    # --- 6. Machine-readable copy for the API and dashboard ----------------
+    # The markdown above is for people; this is the same numbers as JSON, so the
+    # Task 9 dashboard can show them without parsing prose.
+    # astar.solution is the node path from the root; the root has no action.
+    astar_plan = []
+    if astar.found:
+        for node in astar.solution:
+            if node.action is None:
+                continue
+            astar_plan.append({
+                "lap": node.state.lap,
+                "type": node.action.type.value,
+                "compound": node.action.compound.value if node.action.compound else None,
+                "tyre_age": node.state.tyre_age,
+                "stops_made": node.state.stops_made,
+                "cumulative_cost_seconds": round(float(node.path_cost), 2),
+            })
+    payload = {
+        "problem": {
+            "total_laps": problem.total_laps,
+            "start_compound": problem.start_compound.value,
+            "pit_loss_seconds": problem.pit_loss,
+            "track_temperature_c": problem.track_temp,
+            "max_stops": problem.max_stops,
+            "allowed_compounds": [c.value for c in problem.allowed_compounds],
+        },
+        "algorithms": [dataclasses.asdict(r) for r in rows],
+        "summary": summary,
+        "optimal_plan": astar_plan,
+    }
+    json_path = reports_dir / "comparison.json"
+    json_path.write_text(json.dumps(payload, indent=2, default=str))
+    log.info("  wrote comparison.json -> %s", json_path.relative_to(output_dir))
 
     # --- Correctness gate: A* must match UCS optimal cost -----------------
     ucs, astar_r = results["UCS"], results["A*"]

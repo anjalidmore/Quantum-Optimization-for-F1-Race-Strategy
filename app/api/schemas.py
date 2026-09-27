@@ -61,6 +61,14 @@ class RaceStateRequest(BaseModel):
     # registry's selected-best model for that task.
     laptime_model: str | None = None
     pit_model: str | None = None
+    # Opt-in Task 8 explanation. Defaults to false so the response shape and
+    # latency are unchanged for every existing caller; SHAP sampling costs
+    # roughly a second per target, which a pit-wall caller may not want to pay.
+    explain: bool = Field(
+        False,
+        description="Attach a Task 8 explanation (SHAP factors, trust score, "
+                    "plain-English narrative) for this prediction's feature rows.",
+    )
 
     @model_validator(mode="after")
     def _check_race_consistency(self) -> "RaceStateRequest":
@@ -82,3 +90,21 @@ class DataOptionsResponse(BaseModel):
     total_laps_hint: int
     track_temperature_range: dict  # {min, mean, max} — the real range this session's model was trained on
     dataset_source: dict
+
+
+class DeepPredictionResponse(BaseModel):
+    """Task 7 prediction from a Keras network.
+
+    ``prediction`` is lap time in seconds for the regression target and a pit
+    probability in [0, 1] for the classification target; ``predicted_class`` is
+    populated only for the latter, at Task 7's tuned decision threshold.
+    """
+
+    model: str
+    target: str
+    prediction: float
+    predicted_class: int | None = None
+    model_format: str
+    data_source: str
+
+    model_config = {"protected_namespaces": ()}

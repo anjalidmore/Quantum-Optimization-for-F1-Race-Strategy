@@ -1,0 +1,291 @@
+{
+  "problem": {
+    "total_laps": 24,
+    "start_compound": "SOFT",
+    "pit_loss_seconds": 22.0,
+    "track_temperature_c": 38.0,
+    "max_stops": 2,
+    "allowed_compounds": [
+      "SOFT",
+      "MEDIUM",
+      "HARD"
+    ]
+  },
+  "algorithms": [
+    {
+      "algorithm": "BFS",
+      "found": true,
+      "solution_cost": 2270.66,
+      "cost_gap_pct": 0.36418515637629345,
+      "is_optimal": false,
+      "nodes_expanded": 1455,
+      "nodes_generated": 1590,
+      "max_frontier_size": 135,
+      "elapsed_ms": 14.355541999975685,
+      "peak_memory_kb": 927.3828125,
+      "solution_depth": 24,
+      "n_pit_stops": 1
+    },
+    {
+      "algorithm": "DFS",
+      "found": true,
+      "solution_cost": 2299.9305999999997,
+      "cost_gap_pct": 1.6579587367618251,
+      "is_optimal": false,
+      "nodes_expanded": 24,
+      "nodes_generated": 29,
+      "max_frontier_size": 5,
+      "elapsed_ms": 0.13566699635703117,
+      "peak_memory_kb": 12.4453125,
+      "solution_depth": 24,
+      "n_pit_stops": 2
+    },
+    {
+      "algorithm": "UCS",
+      "found": true,
+      "solution_cost": 2262.4206000000004,
+      "cost_gap_pct": 0.0,
+      "is_optimal": true,
+      "nodes_expanded": 1589,
+      "nodes_generated": 1723,
+      "max_frontier_size": 135,
+      "elapsed_ms": 19.180458002665546,
+      "peak_memory_kb": 785.453125,
+      "solution_depth": 24,
+      "n_pit_stops": 1
+    },
+    {
+      "algorithm": "Greedy",
+      "found": true,
+      "solution_cost": 2270.66,
+      "cost_gap_pct": 0.36418515637629345,
+      "is_optimal": false,
+      "nodes_expanded": 26,
+      "nodes_generated": 72,
+      "max_frontier_size": 47,
+      "elapsed_ms": 0.5204999979468994,
+      "peak_memory_kb": 39.78125,
+      "solution_depth": 24,
+      "n_pit_stops": 1
+    },
+    {
+      "algorithm": "A*",
+      "found": true,
+      "solution_cost": 2262.4206000000004,
+      "cost_gap_pct": 0.0,
+      "is_optimal": true,
+      "nodes_expanded": 1005,
+      "nodes_generated": 1139,
+      "max_frontier_size": 134,
+      "elapsed_ms": 13.661958997545298,
+      "peak_memory_kb": 504.453125,
+      "solution_depth": 24,
+      "n_pit_stops": 1
+    }
+  ],
+  "summary": {
+    "n_algorithms": 5,
+    "n_found": 5,
+    "optimal_algorithms": [
+      "UCS",
+      "A*"
+    ],
+    "fastest": "DFS",
+    "fewest_nodes_expanded": "DFS",
+    "leanest_frontier": "DFS"
+  },
+  "optimal_plan": [
+    {
+      "lap": 1,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 1,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 93.2
+    },
+    {
+      "lap": 2,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 2,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 186.44
+    },
+    {
+      "lap": 3,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 3,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 279.72
+    },
+    {
+      "lap": 4,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 4,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 373.04
+    },
+    {
+      "lap": 5,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 5,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 466.4
+    },
+    {
+      "lap": 6,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 6,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 559.79
+    },
+    {
+      "lap": 7,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 7,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 653.23
+    },
+    {
+      "lap": 8,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 8,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 746.71
+    },
+    {
+      "lap": 9,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 9,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 840.23
+    },
+    {
+      "lap": 10,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 10,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 933.78
+    },
+    {
+      "lap": 11,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 11,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 1027.38
+    },
+    {
+      "lap": 12,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 12,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 1121.01
+    },
+    {
+      "lap": 13,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 13,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 1214.69
+    },
+    {
+      "lap": 14,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 14,
+      "stops_made": 0,
+      "cumulative_cost_seconds": 1308.4
+    },
+    {
+      "lap": 15,
+      "type": "PIT",
+      "compound": "MEDIUM",
+      "tyre_age": 1,
+      "stops_made": 1,
+      "cumulative_cost_seconds": 1423.6
+    },
+    {
+      "lap": 16,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 2,
+      "stops_made": 1,
+      "cumulative_cost_seconds": 1516.79
+    },
+    {
+      "lap": 17,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 3,
+      "stops_made": 1,
+      "cumulative_cost_seconds": 1609.99
+    },
+    {
+      "lap": 18,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 4,
+      "stops_made": 1,
+      "cumulative_cost_seconds": 1703.19
+    },
+    {
+      "lap": 19,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 5,
+      "stops_made": 1,
+      "cumulative_cost_seconds": 1796.39
+    },
+    {
+      "lap": 20,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 6,
+      "stops_made": 1,
+      "cumulative_cost_seconds": 1889.59
+    },
+    {
+      "lap": 21,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 7,
+      "stops_made": 1,
+      "cumulative_cost_seconds": 1982.8
+    },
+    {
+      "lap": 22,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 8,
+      "stops_made": 1,
+      "cumulative_cost_seconds": 2076.0
+    },
+    {
+      "lap": 23,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 9,
+      "stops_made": 1,
+      "cumulative_cost_seconds": 2169.21
+    },
+    {
+      "lap": 24,
+      "type": "RUN",
+      "compound": null,
+      "tyre_age": 10,
+      "stops_made": 1,
+      "cumulative_cost_seconds": 2262.42
+    }
+  ]
+}

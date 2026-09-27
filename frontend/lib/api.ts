@@ -65,6 +65,8 @@ export type RegistryModel = {
 
 export type Registry = { generated_at: string; task: string; models: RegistryModel[] };
 
+// Rows carry per-task fields (cv_mae / cv_pr_auc / decision_threshold / …), so
+// this stays permissive rather than two near-duplicate interfaces.
 export type ComparisonRow = Record<string, any>;
 export type Comparison = { regression: ComparisonRow[]; classification: ComparisonRow[] };
 
@@ -173,11 +175,242 @@ export type StrategyResponse = {
   data_source: string;
 };
 
+// --- Task 7 (Deep Learning) -------------------------------------------------
+export type DlModel = {
+  model_name: string;
+  family: string;
+  target: string;
+  task: string;
+  architecture: { name: string; total_parameters: number; layers: any[]; optimizer: string; loss: string };
+  hyperparameters: Record<string, any>;
+  metrics: { test: Record<string, any> };
+  model_format: string;
+  format_note: string;
+  training_rows: number;
+  test_rows: number;
+};
+export type DlComparison = {
+  generated_at: string;
+  note: string;
+  dataset_source: DatasetSource;
+  targets: Record<
+    string,
+    {
+      task: string;
+      selection_metric: string;
+      task6_best_model: string | null;
+      comparison: { model: string; family: string; metrics: Record<string, any> }[];
+      verdict: string;
+    }
+  >;
+};
+export type DlHistory = Record<
+  string,
+  {
+    epochs_run: number;
+    best_epoch: number;
+    early_stopping_patience: number;
+    max_epochs: number;
+    hyperparameters: Record<string, any>;
+    history: Record<string, number[]>;
+  }
+>;
+export type DlArtifacts = {
+  figures: string[];
+  models: string[];
+  reports: string[];
+  model_format: string;
+  models_served_over_http: boolean;
+};
+
+// --- Task 8: stratification and per-lap inspection ---------------------------
+export type XaiStratRow = Record<string, any> & { group_type: string; group: string; sample_note: string };
+export type XaiStratification = Record<string, { task: string; rows: XaiStratRow[]; figure?: string }>;
+export type XaiLapRow = Record<string, any> & {
+  row_index: number; driver?: string; team?: string; compound?: string; lap: number;
+  dnn_prediction: number; trust_score: number; trust_band: string;
+};
+export type XaiLaps = { target: string; task: string; laps: XaiLapRow[] };
+export type XaiLap = {
+  target: string; task: string; lap: XaiLapRow; race_state: Record<string, number>;
+  shap_base_value: number; shap_factors: { feature: string; value: number; shap_value: number }[];
+  counterfactual: Record<string, any>; decision_threshold: number | null;
+};
+
+// --- Task 8 (Explainable AI) ------------------------------------------------
+export type TrustBand = { label: string; meaning: string };
+export type XaiSummary = {
+  feature_importance_figure?: string;
+  trust_weights?: Record<string, number>;
+  generated_at: string;
+  dataset_source: DatasetSource;
+  targets: Record<
+    string,
+    {
+      task: string;
+      classical_model_explained: string;
+      n_features: number;
+      n_identity_features: number;
+      identity_attribution_share: number;
+      concentration_ratio: number | null;
+      trust: { n: number; mean: number | null; min: number | null; max: number | null; bands: Record<string, number> };
+      explained_rows: string[];
+    }
+  >;
+};
+export type ShapAttribution = { feature: string; shap_value: number; direction: string };
+export type XaiExplanation = {
+  target: string;
+  classical_model_explained: string;
+  rows: Record<
+    string,
+    {
+      row_index: number;
+      lap: number;
+      prediction: number;
+      classical_prediction: number;
+      narrative: string;
+      counterfactual_sentence: string;
+      trust_score: number;
+      trust_band: TrustBand;
+      top_factors: ShapAttribution[];
+      trust_components?: Record<string, number>;
+      driver?: string;
+      team?: string;
+      compound?: string;
+      actual?: number;
+      race_state?: Record<string, number>;
+      shap_top3?: string[];
+      lime_top3?: string[];
+      lime?: { contributions?: { condition: string; weight: number }[]; local_r2?: number; local_prediction?: number };
+      counterfactual?: Record<string, any>;
+      figures?: Record<string, string>;
+    }
+  >;
+  model_explained?: Record<string, any>;
+};
+export type XaiFairness = Record<
+  string,
+  {
+    n_features: number;
+    n_identity_features: number;
+    identity_features: string[];
+    identity_attribution_share: number;
+    expected_share_if_uniform: number;
+    concentration_ratio: number | null;
+    race_state_attribution_share: number;
+    top_race_state_features: string[];
+    reading: string;
+    figure?: string;
+  }
+>;
+export type XaiShap = {
+  target: string;
+  deep_network: { ranking: { feature: string; mean_abs_shap: number }[]; note: string; explainer: string; exact: boolean };
+  classical: { ranking: { feature: string; mean_abs_shap: number }[]; note: string; explainer: string | null; model: string };
+  figure?: string;
+  available_rows: string[];
+};
+export type XaiTrust = {
+  target: string;
+  formula: string;
+  weights: Record<string, number>;
+  bands: Record<string, string>;
+  note?: string;
+  all_test_laps?: { n: number; mean: number; bands: Record<string, number> };
+  summary: { n: number; mean: number | null; bands: Record<string, number> };
+  rows: Record<
+    string,
+    {
+      row_index: number;
+      lap: number;
+      trust_score: number;
+      components: Record<string, number>;
+      band: TrustBand;
+      narrative: string;
+    }
+  >;
+};
+
+
+// Quantum ML (PennyLane, simulated)
+export type QmlModelRow = {
+  model: string;
+  family: string;
+  description: string;
+  n_parameters: number;
+  train_seconds: number | null;
+  cv_mean: number | null;
+  cv_std: number | null;
+  test_metrics: Record<string, any>;
+};
+
+export type QmlTarget = {
+  task: string;
+  selection_metric: string;
+  encoding: { method: string; n_qubits: number; explained_variance_ratio: number | null; values_clipped_to_range: number; fitted_on: string };
+  n_dev: number;
+  n_test: number;
+  n_test_positive?: number | null;
+  n_folds: number;
+  notes: string[];
+  models: QmlModelRow[];
+  task6_reference: { model: string; test_metrics: Record<string, any>; cv_summary: Record<string, any> } | null;
+};
+
+export type QmlSummary = {
+  generated_at: string;
+  simulator: string;
+  framework: { pennylane: string };
+  seed: number;
+  search_space: { n_layers: number[]; learning_rate: number[]; selected_on: string };
+  dataset_source: DatasetSource;
+  wall_seconds: number;
+  figures: Record<string, string>;
+  report: string;
+  targets: Record<string, QmlTarget>;
+  honesty_note: string;
+};
+
+
+// Tasks 1-3 — symbolic reasoning
+export type Unavailable = { available: false; reason: string };
+
+export type KnowledgeSummary = {
+  available: true;
+  n_entities: number;
+  n_relationships: number;
+  n_attributes: number;
+  entities_by_category: Record<string, number>;
+  categories: string[];
+  relationships: string[];
+  files: Record<string, boolean>;
+};
+
+export type ExpertSystemSummary = {
+  available: true;
+  n_rules: number;
+  rules_by_category: Record<string, number>;
+  salience_levels: number[];
+  rules: { rule_id: string; name: string; category: string; salience: number; description: string; n_conditions: number; actions: string[] }[];
+};
+
+export type SearchSummary = {
+  available: true;
+  problem: Record<string, any>;
+  algorithms: Record<string, any>[];
+  summary: Record<string, any>;
+  pit_stops: Record<string, any>[];
+  n_plan_steps: number;
+  final_cost_seconds: number | null;
+};
+
 export const api = {
   health: () => getJson<HealthResponse>("/api/health"),
   models: () => getJson<Registry>("/api/ml/models"),
   comparison: () => getJson<Comparison>("/api/ml/comparison"),
   artifacts: () => getJson<Manifest>("/api/ml/artifacts"),
+  metrics: () => getJson<Record<string, any>>("/api/ml/metrics"),
   featureImportance: () => getJson<Record<string, any>>("/api/ml/feature-importance"),
   dataOptions: () => getJson<DataOptions>("/api/data/options"),
   topFeatures: (target: string, n = 8) => getJson<TopFeaturesResponse>(`/api/ml/top-features?target=${target}&n=${n}`),
@@ -193,4 +426,52 @@ export const api = {
       features
     ),
   strategyPredict: (raceState: RaceState) => postJson<StrategyResponse>("/api/strategy/predict", raceState),
+
+  // Task 7 — Deep Learning
+  dlModels: () => getJson<{ models: DlModel[] }>("/api/dl/models"),
+  dlMetrics: () => getJson<Record<string, any>>("/api/dl/metrics"),
+  dlComparison: () => getJson<DlComparison>("/api/dl/comparison"),
+  dlHistory: () => getJson<DlHistory>("/api/dl/history"),
+  dlArtifacts: () => getJson<DlArtifacts>("/api/dl/artifacts"),
+  dlPredictLaptime: (features: Record<string, number>) =>
+    postJson<{ model: string; target: string; prediction: number; model_format: string; data_source: string }>(
+      "/api/dl/predict/laptime",
+      features
+    ),
+
+  // Task 8 — Explainable AI
+  xaiSummary: () => getJson<XaiSummary>("/api/xai/summary"),
+  xaiExplanation: (target: string) => getJson<XaiExplanation>(`/api/xai/explanation?target=${target}`),
+  xaiShap: (target: string) => getJson<XaiShap>(`/api/xai/shap?target=${target}`),
+  xaiTrust: (target: string) => getJson<XaiTrust>(`/api/xai/trust-score?target=${target}`),
+  xaiFairness: () => getJson<XaiFairness>("/api/xai/fairness"),
+  xaiFeatureImportance: (target: string) =>
+    getJson<Record<string, any>>(`/api/xai/feature-importance?target=${target}`),
+  xaiCounterfactual: (target: string) => getJson<Record<string, any>>(`/api/xai/counterfactual?target=${target}`),
+  xaiStratification: () => getJson<XaiStratification>("/api/xai/stratification"),
+  xaiLaps: (target: string) => getJson<XaiLaps>(`/api/xai/laps?target=${target}`),
+  xaiLap: (target: string, rowIndex: number) =>
+    getJson<XaiLap>(`/api/xai/lap?target=${target}&row_index=${rowIndex}`),
+
+  // Quantum ML
+  qmlSummary: () => getJson<QmlSummary>("/api/qml/summary"),
+
+  // Tasks 1-3 — symbolic reasoning
+  knowledge: () => getJson<KnowledgeSummary | Unavailable>("/api/reasoning/knowledge"),
+  expertSystem: () => getJson<ExpertSystemSummary | Unavailable>("/api/reasoning/expert-system"),
+  searchComparison: () => getJson<SearchSummary | Unavailable>("/api/reasoning/search"),
+
+  // Task 9 — the race-strategy report generator. Returns markdown, not JSON.
+  strategyReport: async (raceState: RaceState): Promise<{ filename: string; markdown: string }> => {
+    const res = await fetch(`${API_BASE}/api/strategy/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(raceState),
+      cache: "no-store",
+    });
+    if (!res.ok) throw new ApiError(res.status, `Report generation failed (${res.status})`);
+    const disposition = res.headers.get("content-disposition") ?? "";
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    return { filename: match?.[1] ?? "strategy_report.md", markdown: await res.text() };
+  },
 };

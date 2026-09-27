@@ -1,6 +1,6 @@
 # Rule Catalogue
 
-_Generated 2026-08-30 11:23 UTC — 32 rules across 10 categories._
+_Generated 2026-09-27 17:42 UTC — 32 rules across 10 categories._
 
 Salience convention: 100 weather-critical · 80 safety-car · 60 pit/deg · 40 tyre · 20-30 tactical · 0 advisory.
 

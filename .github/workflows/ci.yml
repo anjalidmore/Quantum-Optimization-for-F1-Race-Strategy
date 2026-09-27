@@ -28,6 +28,73 @@ jobs:
       - name: Test (pytest)
         run: pytest tests/ -v
 
+      # The test suite used to retrain Task 6 and overwrite ten tracked files
+      # under artifacts/, so a clean checkout went dirty just from running the
+      # tests. That is now fixed by giving the pipelines a tmp output root —
+      # this step enforces it structurally so it cannot regress by convention
+      # drifting.
+      - name: Assert the test run left the working tree clean
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::pytest modified tracked files. The suite must be hermetic."
+            git status --porcelain
+            git diff --stat
+            exit 1
+          fi
+          echo "Working tree clean after pytest."
+
+  security:
+    name: Security (dependency + secret scanning)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # gitleaks needs history to scan past commits, not just the tip.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pip-audit
+
+      # Fails the build on a known-vulnerable Python dependency. msgpack 1.1.2
+      # (PYSEC-2026-3625) was found this way and is pinned out in
+      # requirements.txt.
+      # Audits the declared dependency set rather than the installed
+      # environment: the latter includes this repo's own editable package,
+      # which is not on PyPI, and --strict treats that as an error.
+      - name: Audit Python dependencies (pip-audit)
+        run: pip-audit -r requirements.txt --strict
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # Reported but not gating: the only fix for the current Next.js
+      # advisories is a major-version bump (14.2.35 -> 16.x), which is an App
+      # Router migration and a deliberate decision rather than something CI
+      # should force. Remove `continue-on-error` once that upgrade lands.
+      - name: Audit frontend dependencies (npm audit)
+        working-directory: frontend
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+      - name: Scan history for secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   frontend:
     name: Frontend (lint + build)
     runs-on: ubuntu-latest

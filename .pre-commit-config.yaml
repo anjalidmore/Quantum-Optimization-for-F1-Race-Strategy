@@ -1,0 +1,35 @@
+# Pre-commit hooks. Install once with:
+#   pip install pre-commit && pre-commit install
+#
+# The secret scanner is the important one: this repository has never committed
+# a credential (verified across the full history of every branch during the
+# 2026-09-05 audit), and this hook is what keeps that true rather than lucky.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        name: Detect hard-coded secrets
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        name: Lint (ruff)
+        args: [--fix]
+        files: ^(app|scripts|tests)/
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        # frontend/node_modules and .next were accidentally committed once
+        # (9,957 files, including a 109 MB binary that GitHub would have
+        # rejected outright). This is the cheap structural guard against a
+        # repeat.
+        args: [--maxkb=5000]
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+        files: ^(app|scripts|tests)/.*\.py$
+      - id: trailing-whitespace
+        files: ^(app|scripts|tests)/.*\.py$

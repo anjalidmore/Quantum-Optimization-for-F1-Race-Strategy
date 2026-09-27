@@ -1,0 +1,365 @@
+{
+  "generated_at": "2026-09-27T17:55:36.819498+00:00",
+  "task": "Task 7 - Deep Learning Model Development",
+  "framework": "Keras 3.15.1 (backend: torch)",
+  "dataset_source": {
+    "source": "real_fastf1",
+    "year": 2023,
+    "event": "Bahrain",
+    "session": "R",
+    "fetched_at": "2026-08-30T12:34:08.172714+00:00",
+    "n_laps": 1055,
+    "n_drivers": 20
+  },
+  "models": {
+    "target_laptime": {
+      "target": "target_laptime",
+      "task": "regression",
+      "model_file": {
+        "path": "artifacts/models/deep_learning/laptime/f1_dnn_model.h5",
+        "bytes": 167128,
+        "reload_verified": true
+      },
+      "input_features": [
+        "field_median_lag1",
+        "stint_number",
+        "gap_expanding",
+        "track_status",
+        "tracktemp_dev_x_tyrelife",
+        "form_vs_baseline",
+        "field_pace_trend",
+        "gap_roll3_std",
+        "wind_speed",
+        "tyrelife_x_soft",
+        "tyre_life",
+        "gap_roll3_mean",
+        "team_red_bull_racing",
+        "driver_dev",
+        "driver_oco",
+        "team_aston_martin",
+        "driver_per",
+        "driver_rus",
+        "compound_soft",
+        "humidity",
+        "team_mclaren",
+        "driver_gas",
+        "driver_zho",
+        "driver_alo",
+        "driver_bot",
+        "driver_ver",
+        "team_mercedes",
+        "driver_str",
+        "team_alpine",
+        "is_fresh_tyre",
+        "team_williams",
+        "driver_nor",
+        "driver_pia",
+        "team_alphatauri",
+        "driver_sar",
+        "driver_lec",
+        "tyrelife_x_medium",
+        "team_haas_f1_team",
+        "driver_mag",
+        "driver_ham",
+        "driver_hul",
+        "driver_sai",
+        "driver_tsu",
+        "team_ferrari",
+        "compound_medium"
+      ],
+      "n_features": 45,
+      "architecture": {
+        "name": "laptime_mlp",
+        "layers": [
+          {
+            "name": "hidden_1",
+            "type": "Dense",
+            "units": 128,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_1",
+            "type": "Dropout",
+            "rate": 0.2
+          },
+          {
+            "name": "hidden_2",
+            "type": "Dense",
+            "units": 64,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_2",
+            "type": "Dropout",
+            "rate": 0.2
+          },
+          {
+            "name": "hidden_3",
+            "type": "Dense",
+            "units": 32,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_3",
+            "type": "Dropout",
+            "rate": 0.2
+          },
+          {
+            "name": "laptime_seconds",
+            "type": "Dense",
+            "units": 1,
+            "activation": "linear"
+          }
+        ],
+        "total_parameters": 16257,
+        "trainable_parameters": 16257,
+        "non_trainable_parameters": 0,
+        "optimizer": "RMSprop",
+        "loss": "mse"
+      },
+      "hyperparameters": {
+        "hidden_units": [
+          128,
+          64,
+          32
+        ],
+        "dropout": 0.2,
+        "learning_rate": 0.001,
+        "batch_size": 16,
+        "optimizer": "rmsprop",
+        "l2": 0.001,
+        "loss": "mse"
+      },
+      "class_weights_used": null,
+      "decision_threshold": null,
+      "preprocessing": "StandardScaler fitted on the training laps only; binary indicator columns passed through unscaled; lap-time target standardised on the training laps and inverse-transformed before every metric",
+      "split": {
+        "test": "chronological holdout (last 20% of laps)",
+        "tuning": "4 expanding-window lap-forward folds",
+        "final_fit": {
+          "train_laps": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38
+          ],
+          "validation_laps": [
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46
+          ],
+          "test_laps": [
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57
+          ]
+        },
+        "rows": {
+          "train": 675,
+          "validation": 140,
+          "test": 180
+        }
+      },
+      "training": {
+        "epochs_run": 35,
+        "best_epoch": 10,
+        "early_stopping": "val_loss, patience 25, restore_best_weights=True",
+        "max_epochs": 300
+      }
+    },
+    "target_pit_next_lap": {
+      "target": "target_pit_next_lap",
+      "task": "classification",
+      "model_file": {
+        "path": "artifacts/models/deep_learning/pit_decision/f1_dnn_model.h5",
+        "bytes": 34048,
+        "reload_verified": true
+      },
+      "input_features": [
+        "tyre_life",
+        "tracktemp_dev_x_tyrelife",
+        "form_vs_baseline",
+        "field_median_lag1",
+        "field_pace_trend",
+        "tyrelife_x_soft",
+        "gap_roll3_mean",
+        "compound_soft"
+      ],
+      "n_features": 8,
+      "architecture": {
+        "name": "pit_decision_mlp",
+        "layers": [
+          {
+            "name": "hidden_1",
+            "type": "Dense",
+            "units": 16,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_1",
+            "type": "Dropout",
+            "rate": 0.3
+          },
+          {
+            "name": "hidden_2",
+            "type": "Dense",
+            "units": 8,
+            "activation": "relu"
+          },
+          {
+            "name": "dropout_2",
+            "type": "Dropout",
+            "rate": 0.3
+          },
+          {
+            "name": "pit_probability",
+            "type": "Dense",
+            "units": 1,
+            "activation": "sigmoid"
+          }
+        ],
+        "total_parameters": 289,
+        "trainable_parameters": 289,
+        "non_trainable_parameters": 0,
+        "optimizer": "RMSprop",
+        "loss": "binary_crossentropy"
+      },
+      "hyperparameters": {
+        "hidden_units": [
+          16,
+          8
+        ],
+        "dropout": 0.3,
+        "learning_rate": 0.001,
+        "batch_size": 32,
+        "optimizer": "rmsprop",
+        "l2": 0.0001,
+        "class_weighted": false
+      },
+      "class_weights_used": null,
+      "decision_threshold": 0.1524,
+      "preprocessing": "StandardScaler fitted on the training laps only; binary indicator columns passed through unscaled",
+      "split": {
+        "test": "chronological holdout (last 20% of laps)",
+        "tuning": "4 expanding-window lap-forward folds",
+        "final_fit": {
+          "train_laps": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38
+          ],
+          "validation_laps": [
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46
+          ],
+          "test_laps": [
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57
+          ]
+        },
+        "rows": {
+          "train": 675,
+          "validation": 140,
+          "test": 180
+        }
+      },
+      "training": {
+        "epochs_run": 35,
+        "best_epoch": 10,
+        "early_stopping": "val_loss, patience 25, restore_best_weights=True",
+        "max_epochs": 300
+      }
+    }
+  }
+}

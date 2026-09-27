@@ -66,6 +66,14 @@ def _read_json(path):
 
 @router.get("/models")
 def list_models():
+    """Task 6's classical models.
+
+    Task 7 extends the *same* registry file with ``family: "deep"`` entries
+    rather than keeping a parallel one, so there is a single source of truth
+    for "what models exist". This endpoint serves the classical view of it and
+    ``/api/dl/models`` serves the deep view — a caller asking Task 6 for its
+    models should not be handed a Keras network it cannot load as a pipeline.
+    """
     cache = get_model_cache()
     registry = cache.registry()
     if not registry:
@@ -73,7 +81,10 @@ def list_models():
             status_code=404,
             detail="No model registry found. Run the training pipeline (scripts/build_all.py) first.",
         )
-    return registry
+    return {
+        **registry,
+        "models": [m for m in registry["models"] if m.get("family") != "deep"],
+    }
 
 
 @router.get("/metrics")
