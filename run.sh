@@ -224,6 +224,20 @@ python scripts/build_all.py $BUILD_ARGS
 # ---------------------------------------------------------------------------
 # 4. Start the backend API
 # ---------------------------------------------------------------------------
+# The API's CORS allow-list defaults to :3000. The moment the dashboard lands
+# anywhere else - because Docker holds :3000, or you set FRONTEND_PORT - every
+# fetch the browser makes is blocked and the client-rendered pages show their
+# "Backend unreachable" state while the server-rendered ones look fine. So the
+# port the dashboard actually got is added to the list the backend starts with.
+# An allow-list you set yourself is kept, with this origin appended.
+FRONTEND_ORIGINS="http://127.0.0.1:${FRONTEND_PORT},http://localhost:${FRONTEND_PORT}"
+if [[ -n "${F1_ALLOWED_ORIGINS:-}" ]]; then
+  F1_ALLOWED_ORIGINS="${F1_ALLOWED_ORIGINS},${FRONTEND_ORIGINS}"
+else
+  F1_ALLOWED_ORIGINS="$FRONTEND_ORIGINS"
+fi
+export F1_ALLOWED_ORIGINS
+
 info "Starting backend API on $BACKEND_URL ..."
 nohup uvicorn app.api.main:app --host 127.0.0.1 --port "$BACKEND_PORT" \
   > "$BACKEND_LOG" 2>&1 &
