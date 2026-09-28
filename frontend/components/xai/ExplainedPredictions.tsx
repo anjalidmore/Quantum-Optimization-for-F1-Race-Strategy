@@ -21,8 +21,8 @@ export function ExplainedPredictions({
 }) {
   return (
     <section>
-      <h2 className="text-lg font-semibold text-white mb-1">Explained predictions</h2>
-      <p className="text-sm text-white/50 mb-3">
+      <h2 className="text-lg font-semibold text-paper-900 mb-1">Explained predictions</h2>
+      <p className="text-sm text-paper-500 mb-3">
         The sentence a race engineer would read, with the SHAP factors behind it and what would have to change
         to flip the call.
       </p>
@@ -33,9 +33,9 @@ export function ExplainedPredictions({
           if (!exp) return null;
           return (
             <div key={target} className="space-y-3">
-              <h3 className="font-semibold text-white">
+              <h3 className="font-semibold text-paper-900">
                 {TARGET_LABEL[target] ?? target}
-                <span className="text-white/40 font-normal text-sm ml-2">
+                <span className="text-paper-400 font-normal text-sm ml-2">
                   deep network vs {exp.classical_model_explained}
                 </span>
               </h3>
@@ -45,34 +45,34 @@ export function ExplainedPredictions({
                   return (
                     <div key={label} className="card">
                       <div className="flex items-start justify-between gap-2 flex-wrap">
-                        <span className="text-sm text-white/50">
+                        <span className="text-sm text-paper-500">
                           {label.replace(/_/g, " ")} · {row.driver} ({row.team}, {row.compound}) · lap {row.lap}
                         </span>
                         <span className={`badge ${BAND_CLASS[row.trust_band.label] ?? ""}`}>
                           trust {row.trust_score.toFixed(2)} · {row.trust_band.label}
                         </span>
                       </div>
-                      <p className="text-white/90 text-sm mt-3">{row.narrative}</p>
+                      <p className="text-paper-900 text-sm mt-3">{row.narrative}</p>
 
                       {comps && (
-                        <dl className="grid grid-cols-2 gap-x-3 text-xs mt-3 text-white/50">
+                        <dl className="grid grid-cols-2 gap-x-3 text-xs mt-3 text-paper-500">
                           {Object.entries(comps).map(([k, v]) => (
                             <div key={k} className="contents">
                               <dt>{k.replace(/_/g, " ")}</dt>
-                              <dd className="text-right text-white/70">{fmt(v as number)}</dd>
+                              <dd className="text-right text-paper-700">{fmt(v as number)}</dd>
                             </div>
                           ))}
                         </dl>
                       )}
 
                       <div className="mt-3">
-                        <div className="text-xs text-white/40 uppercase tracking-wide mb-1">Top factors (SHAP)</div>
+                        <div className="text-xs text-paper-400 uppercase tracking-wide mb-1">Top factors (SHAP)</div>
                         <ul className="text-sm space-y-1">
                           {row.top_factors.map((f) => (
                             <li key={f.feature} className="flex justify-between gap-2">
-                              <code className="text-white/70">{f.feature}</code>
+                              <code className="text-paper-700">{f.feature}</code>
                               <span
-                                className={f.shap_value > 0 ? "text-red-400 tabular-nums" : "text-sky-400 tabular-nums"}
+                                className={f.shap_value > 0 ? "data-pos tabular-nums" : "data-neg tabular-nums"}
                               >
                                 {f.shap_value > 0 ? "+" : ""}
                                 {f.shap_value.toFixed(4)}
@@ -83,20 +83,20 @@ export function ExplainedPredictions({
                       </div>
 
                       {row.lime_top3 && (
-                        <p className="text-xs text-white/50 mt-3">
-                          LIME top 3: <code className="text-white/70">{row.lime_top3.join(", ")}</code>
+                        <p className="text-xs text-paper-500 mt-3">
+                          LIME top 3: <code className="text-paper-700">{row.lime_top3.join(", ")}</code>
                           {row.lime?.local_r2 !== undefined && ` (surrogate R² ${fmt(row.lime.local_r2)})`} · SHAP
-                          top 3: <code className="text-white/70">{(row.shap_top3 ?? []).join(", ")}</code>
+                          top 3: <code className="text-paper-700">{(row.shap_top3 ?? []).join(", ")}</code>
                         </p>
                       )}
 
-                      <p className="text-xs text-white/50 mt-3 border-t border-white/5 pt-2">
+                      <p className="text-xs text-paper-500 mt-3 border-t border-track-300 pt-2">
                         {row.counterfactual_sentence}
                       </p>
 
                       {row.figures && (
                         <details className="mt-2">
-                          <summary className="text-xs text-sky-400 cursor-pointer">
+                          <summary className="text-xs text-paper-500 cursor-pointer hover:text-paper-900">
                             SHAP · LIME · counterfactual plots
                           </summary>
                           <div className="space-y-2 mt-2">

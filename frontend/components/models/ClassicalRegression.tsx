@@ -25,12 +25,12 @@ export function ClassicalRegression({
 
   return (
     <section>
-      <h2 className="text-lg font-semibold text-white mb-3">Lap-Time Regression</h2>
+      <h2 className="text-lg font-semibold text-paper-900 mb-3">Lap-Time Regression</h2>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <div className="card">
           <div className="stat-label">Best model</div>
-          <div className="text-lg font-semibold text-white">{best?.model ?? "—"}</div>
+          <div className="text-lg font-semibold text-paper-900">{best?.model ?? "—"}</div>
         </div>
         <div className="card">
           <div className="stat-label">CV MAE</div>
@@ -73,8 +73,8 @@ export function ClassicalRegression({
           <tbody>
             {comparison.regression.map((r) => (
               <tr key={r.model}>
-                <td className="text-white">{r.model}</td>
-                <td className="text-white/50">{r.status === "skipped" ? `skipped — ${r.reason}` : "trained"}</td>
+                <td className="text-paper-900">{r.model}</td>
+                <td className="text-paper-500">{r.status === "skipped" ? `skipped — ${r.reason}` : "trained"}</td>
                 <td>{fmt(r.cv_mae)}</td>
                 <td>{fmt(r.cv_rmse)}</td>
                 <td>{fmt(r.cv_r2)}</td>

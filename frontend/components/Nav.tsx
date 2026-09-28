@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const LINKS: { href: string; label: string }[] = [
   { href: "/", label: "Overview" },
@@ -50,23 +51,30 @@ export default function Nav() {
           ))}
         </nav>
 
-        {/* Below lg the site had no navigation at all. */}
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-          aria-controls="mobile-nav"
-          className="btn-secondary ml-auto flex items-center gap-2 px-3 py-1.5 text-[13px] lg:hidden"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden focusable="false">
-            {open ? (
-              <path d="M2 2 L12 12 M12 2 L2 12" stroke="currentColor" strokeWidth="1.5" fill="none" />
-            ) : (
-              <path d="M1 3h12M1 7h12M1 11h12" stroke="currentColor" strokeWidth="1.5" fill="none" />
-            )}
-          </svg>
-          {open ? "Close" : "Menu"}
-        </button>
+        {/* The toggle sits at the end in both layouts; below lg it shares the
+            row with the menu button, which is why they share one flex box
+            rather than each claiming ml-auto. */}
+        <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
+
+          {/* Below lg the site had no navigation at all. */}
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            className="btn-secondary flex items-center gap-2 px-3 py-1.5 text-[13px] lg:hidden"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden focusable="false">
+              {open ? (
+                <path d="M2 2 L12 12 M12 2 L2 12" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              ) : (
+                <path d="M1 3h12M1 7h12M1 11h12" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              )}
+            </svg>
+            {open ? "Close" : "Menu"}
+          </button>
+        </div>
       </div>
 
       {open && (

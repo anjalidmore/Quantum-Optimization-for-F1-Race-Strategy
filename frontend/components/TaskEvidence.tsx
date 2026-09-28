@@ -62,7 +62,7 @@ export function TaskArtifactList({ task }: { task: TaskEvidence }) {
   const hasArtifacts = task.reports.length + task.figures.length + task.other_artifacts.length > 0;
 
   if (!hasArtifacts) {
-    return <p className="text-sm text-white/40">Artifact not generated yet.</p>;
+    return <p className="text-sm text-paper-400">Artifact not generated yet.</p>;
   }
 
   return (
@@ -72,7 +72,7 @@ export function TaskArtifactList({ task }: { task: TaskEvidence }) {
           <div className="stat-label mb-2">Figures</div>
           <div className="grid grid-cols-2 gap-2">
             {task.figures.map((f) => (
-              <ArtifactImage key={f} src={artifactUrl(f)} alt={prettify(basename(f))} className="rounded border border-white/10" />
+              <ArtifactImage key={f} src={artifactUrl(f)} alt={prettify(basename(f))} className="rounded border border-track-300" />
             ))}
           </div>
         </div>
@@ -87,7 +87,7 @@ export function TaskArtifactList({ task }: { task: TaskEvidence }) {
                   href={artifactUrl(r)}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-sm text-sky-400 hover:underline"
+                  className="text-sm text-paper-900 underline decoration-edge underline-offset-[3px] hover:decoration-paper-900"
                 >
                   {prettify(basename(r))}
                 </a>
@@ -101,7 +101,7 @@ export function TaskArtifactList({ task }: { task: TaskEvidence }) {
           <div className="stat-label mb-2">Other generated artifacts</div>
           <ul className="space-y-1">
             {task.other_artifacts.map((a) => (
-              <li key={a} className="text-sm text-white/60 font-mono text-xs">
+              <li key={a} className="text-sm text-paper-500 font-mono text-xs">
                 {a}
               </li>
             ))}

@@ -10,8 +10,8 @@ import { pct, TARGET_LABEL } from "@/lib/format";
 export function FairnessCards({ fairness }: { fairness: XaiFairness }) {
   return (
     <section>
-      <h2 className="text-lg font-semibold text-white mb-1">Fairness — race state, or who is driving?</h2>
-      <p className="text-sm text-white/50 mb-3 max-w-3xl">
+      <h2 className="text-lg font-semibold text-paper-900 mb-1">Fairness — race state, or who is driving?</h2>
+      <p className="text-sm text-paper-500 mb-3 max-w-3xl">
         Task 5 kept one-hot driver and team dummies. A model leaning on them cannot generalise to an unseen
         driver, and would give two cars in an identical race state different calls purely because of the name on
         the car.
@@ -22,14 +22,14 @@ export function FairnessCards({ fairness }: { fairness: XaiFairness }) {
           return (
             <div key={target} className="card">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <h3 className="font-semibold text-white">{TARGET_LABEL[target] ?? target}</h3>
+                <h3 className="font-semibold text-paper-900">{TARGET_LABEL[target] ?? target}</h3>
                 <span className={`badge ${healthy ? "badge-info" : "badge-warning"}`}>
                   {f.concentration_ratio === null
                     ? "no identity features"
                     : `${f.concentration_ratio}× concentration`}
                 </span>
               </div>
-              <div className="mt-3 h-3 w-full rounded-full overflow-hidden bg-white/5 flex">
+              <div className="mt-3 h-3 w-full rounded-full overflow-hidden bg-track-100 flex">
                 <div
                   className="bg-accent"
                   style={{ width: `${f.identity_attribution_share * 100}%` }}
@@ -41,19 +41,19 @@ export function FairnessCards({ fairness }: { fairness: XaiFairness }) {
                   title={`race state: ${pct(f.race_state_attribution_share)}`}
                 />
               </div>
-              <div className="flex justify-between text-xs text-white/50 mt-1">
+              <div className="flex justify-between text-xs text-paper-500 mt-1">
                 <span>identity {pct(f.identity_attribution_share)}</span>
                 <span>race state {pct(f.race_state_attribution_share)}</span>
               </div>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-4">
-                <dt className="text-white/50">Identity features</dt>
-                <dd className="text-white/80 text-right">
+                <dt className="text-paper-500">Identity features</dt>
+                <dd className="text-paper-700 text-right">
                   {f.n_identity_features} of {f.n_features}
                 </dd>
-                <dt className="text-white/50">Expected if uniform</dt>
-                <dd className="text-white/80 text-right">{pct(f.expected_share_if_uniform)}</dd>
+                <dt className="text-paper-500">Expected if uniform</dt>
+                <dd className="text-paper-700 text-right">{pct(f.expected_share_if_uniform)}</dd>
               </dl>
-              <p className="text-sm text-white/60 mt-3">{f.reading.replace(/\*\*/g, "")}</p>
+              <p className="text-sm text-paper-500 mt-3">{f.reading.replace(/\*\*/g, "")}</p>
               {f.figure && (
                 <div className="mt-3">
                   <ArtifactImage src={artifactUrl(f.figure)} alt={`${target} fairness`} className="w-full rounded" />

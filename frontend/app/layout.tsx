@@ -25,9 +25,20 @@ export const metadata: Metadata = {
   description: "Race-engineering analytics for the 2023 Bahrain Grand Prix — computational intelligence over one real session.",
 };
 
+/* Applied before the first paint, which is the whole point: a stored choice
+   read in useEffect lands after the browser has already painted the other
+   theme, and the flash is exactly what that looks like. No stored choice
+   leaves data-theme unset, so the media query in globals.css follows the OS.
+   Wrapped in try/catch because a browser with site data blocked throws on
+   the localStorage read, and a theme script must never break the page. */
+const NO_FLASH = `try{var t=localStorage.getItem("pitwall-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t)}}catch(e){}`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${text.variable}`}>
+    <html lang="en" className={`${display.variable} ${text.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
+      </head>
       <body>
         <Nav />
         <main className="mx-auto max-w-[1320px] px-5 pb-20 sm:px-8">{children}</main>

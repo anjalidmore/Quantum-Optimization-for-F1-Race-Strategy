@@ -3,8 +3,9 @@
  *
  * The letter inside the chip is deliberate: compound colour must never be the
  * only carrier of meaning (WCAG 1.4.1), and a red square alone is unreadable
- * to anyone who cannot separate it from the accent. Chip ink is --track-000,
- * which clears 4.8:1 on the worst case (soft).
+ * to anyone who cannot separate it from the accent. Chip ink is --compound-ink,
+ * which flips with the theme: dark ink on the bright dark-mode chips (4.8:1 at
+ * worst), white ink on the darkened light-mode ones (5.0:1 at worst).
  *
  * These five colours appear nowhere else in the app.
  */
@@ -34,8 +35,8 @@ export function TyreBadge({
     <span className="inline-flex items-center gap-2 whitespace-nowrap">
       <span
         aria-hidden
-        style={{ backgroundColor: c.color }}
-        className="grid h-[15px] w-[15px] place-items-center rounded-sm font-display text-[10px] font-semibold leading-none text-track-000"
+        style={{ backgroundColor: c.color, color: "var(--compound-ink)" }}
+        className="grid h-[15px] w-[15px] place-items-center rounded-sm font-display text-[10px] font-semibold leading-none"
       >
         {c.letter}
       </span>

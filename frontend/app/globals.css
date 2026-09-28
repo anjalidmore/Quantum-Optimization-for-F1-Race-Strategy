@@ -40,6 +40,16 @@
      paper-500 would measure 4.1:1 there and fail. */
   --nav-surface: rgba(14, 16, 19, 0.78);
 
+  /* The letter inside a compound chip. Dark ink on the bright dark-mode
+     chips; see the light block for its counterpart. */
+  --compound-ink: #08090b;
+
+  /* Sign of a contribution (SHAP, LIME). Not the accent by coincidence:
+     "pushed the prediction up" is the same emphasis the accent carries
+     elsewhere. Both clear 4.5 on the card in both themes. */
+  --data-pos: #ff2d16; /* 4.8:1 on track-100 */
+  --data-neg: #6fb6f2; /* 8.2:1 on track-100 */
+
   /* Tyre compounds carry data meaning only: never chrome, never decoration,
      and never the sole carrier of meaning (the chip also shows its letter). */
   --compound-soft: #e8382b;
@@ -55,6 +65,78 @@
   --t-fast: 120ms;
   --t-base: 180ms;
   --ease: cubic-bezier(0.2, 0, 0.3, 1);
+}
+
+/* ==========================================================================
+   Light theme
+   The same roles, re-measured - not the dark values lightened. Every pair
+   below was checked with the same script as the dark block; the figures in
+   the comments are the measured ratios, not intentions.
+
+   `[data-theme]` wins over the media query so an explicit choice always
+   beats the OS setting, and the media query is scoped with
+   `:not([data-theme="dark"])` so choosing dark on a light OS still works.
+   ========================================================================== */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --track-000: #ffffff;
+    --track-050: #f7f5f0;
+    --track-100: #efece5;
+    --track-200: #e4e0d7;
+    --track-300: #d2cdc2;
+
+    --paper-900: #15181c; /* 16.3:1 on track-050 */
+    --paper-700: #3a3f46; /*  9.7:1 */
+    --paper-500: #5c626b; /*  5.6:1 */
+    --paper-400: #646970; /*  5.1:1 on page, 4.7:1 on card */
+
+    --accent: #c41202;     /* 5.6:1 on track-050, 5.2:1 on card */
+    --accent-ink: #ffffff; /* 6.1:1 on the accent fill */
+
+    --edge: #83888f; /* 3.3:1, matching the dark edge's role exactly */
+    --focus: #15181c;
+
+    /* Darkened so each chip clears 3.0 against the pale card and carries
+       white ink at 4.5+. Hard is the exception worth naming: the real hard
+       tyre is white, and a white chip on paper is invisible, so light mode
+       gives that role the neutral instead. The letter still says which. */
+    --compound-soft: #d42d1f;   /* chip 4.2:1, ink 5.0:1 */
+    --compound-medium: #856a00; /* chip 4.4:1, ink 5.2:1 */
+    --compound-hard: #4a4f57;   /* chip 7.0:1, ink 8.2:1 */
+    --compound-inter: #1a7f37;  /* chip 4.3:1, ink 5.1:1 */
+    --compound-wet: #1059b8;    /* chip 5.7:1, ink 6.7:1 */
+    --compound-ink: #ffffff;
+
+    --data-pos: #c41202; /* 5.2:1 on track-100 */
+    --data-neg: #0d4f9e; /* 6.8:1 on track-100 */
+    --nav-surface: rgba(247, 245, 240, 0.78);
+  }
+}
+
+/* The explicit choice, which must work regardless of the OS preference. */
+:root[data-theme="light"] {
+  --track-000: #ffffff;
+  --track-050: #f7f5f0;
+  --track-100: #efece5;
+  --track-200: #e4e0d7;
+  --track-300: #d2cdc2;
+  --paper-900: #15181c;
+  --paper-700: #3a3f46;
+  --paper-500: #5c626b;
+  --paper-400: #646970;
+  --accent: #c41202;
+  --accent-ink: #ffffff;
+  --edge: #83888f;
+  --focus: #15181c;
+  --compound-soft: #d42d1f;
+  --compound-medium: #856a00;
+  --compound-hard: #4a4f57;
+  --compound-inter: #1a7f37;
+  --compound-wet: #1059b8;
+  --compound-ink: #ffffff;
+  --data-pos: #c41202; /* 5.2:1 on track-100 */
+  --data-neg: #0d4f9e; /* 6.8:1 on track-100 */
+  --nav-surface: rgba(247, 245, 240, 0.78);
 }
 
 /* ==========================================================================
@@ -391,6 +473,13 @@ table tbody tr.is-marked td:first-child {
   font-size: 11px;
   font-weight: 600;
 }
+
+/* Contribution sign. Colour is never the only signal: every use sits beside
+   a signed number. */
+.data-pos { color: var(--data-pos); }
+.data-neg { color: var(--data-neg); }
+.bar-pos { background-color: var(--data-pos); }
+.bar-neg { background-color: var(--data-neg); }
 
 /* A hairline rule between sections; more space above a heading than below. */
 .rule {

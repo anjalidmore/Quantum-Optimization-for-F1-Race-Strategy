@@ -29,9 +29,9 @@ export default async function ReasoningPage() {
 
   if (error) {
     return (
-      <div className="card border-red-500/30 bg-red-500/5">
+      <div className="card border-accent">
         <div className="badge badge-warning">Backend unreachable</div>
-        <p className="text-sm text-white/70 mt-2">{error}</p>
+        <p className="text-sm text-paper-700 mt-2">{error}</p>
       </div>
     );
   }
@@ -40,10 +40,10 @@ export default async function ReasoningPage() {
     <div className="space-y-10">
       <section>
         <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl font-bold text-white">Reasoning</h1>
+          <h1 className="text-2xl font-bold text-paper-900">Reasoning</h1>
           <span className="badge">Tasks 1 – 3</span>
         </div>
-        <p className="text-white/60 mt-1 max-w-3xl">
+        <p className="text-paper-500 mt-1 max-w-3xl">
           The symbolic half of the platform: what the system <em>knows</em> (an ontology and knowledge graph),
           what it <em>concludes</em> (a forward-chaining rule base), and what it <em>plans</em> (a state-space
           search over pit strategies). Two of these feed the live strategy recommendation alongside the models.

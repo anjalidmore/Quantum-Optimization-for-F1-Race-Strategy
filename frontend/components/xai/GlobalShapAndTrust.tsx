@@ -33,7 +33,7 @@ export function GlobalShapAndTrust({
   return (
     <>
       <section>
-        <h2 className="text-lg font-semibold text-white mb-3">Global SHAP attribution</h2>
+        <h2 className="text-lg font-semibold text-paper-900 mb-3">Global SHAP attribution</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {targets.map((target, i) => {
             const s = shap[i];
@@ -42,8 +42,8 @@ export function GlobalShapAndTrust({
             const max = Math.max(...top.map((r) => r.mean_abs_shap), 1e-12);
             return (
               <div key={target} className="card">
-                <h3 className="font-semibold text-white">{TARGET_LABEL[target] ?? target}</h3>
-                <p className="text-xs text-white/40 mt-1">
+                <h3 className="font-semibold text-paper-900">{TARGET_LABEL[target] ?? target}</h3>
+                <p className="text-xs text-paper-400 mt-1">
                   deep network: {s.deep_network.explainer}
                   {s.deep_network.exact ? " (exact)" : " (sampled)"} · classical: {s.classical.explainer ?? "—"} on{" "}
                   {s.classical.model}
@@ -52,12 +52,12 @@ export function GlobalShapAndTrust({
                   {top.map((r) => (
                     <li key={r.feature} className="text-sm">
                       <div className="flex justify-between gap-2">
-                        <code className="text-white/70 truncate">{r.feature}</code>
-                        <span className="text-white/50 tabular-nums">{r.mean_abs_shap.toFixed(5)}</span>
+                        <code className="text-paper-700 truncate">{r.feature}</code>
+                        <span className="text-paper-500 tabular-nums">{r.mean_abs_shap.toFixed(5)}</span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-white/5 mt-1">
+                      <div className="h-1.5 rounded-full bg-track-100 mt-1">
                         <div
-                          className="h-full rounded-full bg-sky-500/70"
+                          className="h-full rounded-full bar-neg"
                           style={{ width: `${(r.mean_abs_shap / max) * 100}%` }}
                         />
                       </div>
@@ -81,24 +81,24 @@ export function GlobalShapAndTrust({
 
       {weights && (
         <section className="card">
-          <h2 className="font-semibold text-white mb-2">How the trust score works</h2>
-          <code className="text-sm text-sky-300">{weights.formula}</code>
-          {weights.note && <p className="text-xs text-amber-400/70 mt-2">{weights.note}</p>}
+          <h2 className="font-semibold text-paper-900 mb-2">How the trust score works</h2>
+          <code className="t-code text-sm text-paper-900">{weights.formula}</code>
+          {weights.note && <p className="text-xs text-paper-500 mt-2">{weights.note}</p>}
           <dl className="grid md:grid-cols-4 gap-4 mt-4 text-sm">
             {Object.entries(weights.weights).map(([k, w]) => (
               <div key={k}>
-                <dt className="text-white/80">
+                <dt className="text-paper-700">
                   {k.replace(/_/g, " ")} ({w.toFixed(2)})
                 </dt>
-                <dd className="text-white/50 mt-1">{TRUST_TEXT[k] ?? ""}</dd>
+                <dd className="text-paper-500 mt-1">{TRUST_TEXT[k] ?? ""}</dd>
               </div>
             ))}
           </dl>
           <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
             {Object.entries(weights.bands).map(([band, meaning]) => (
-              <div key={band} className="rounded border border-white/10 p-2">
+              <div key={band} className="rounded border border-track-300 p-2">
                 <span className={`badge ${BAND_CLASS[band] ?? ""}`}>{band}</span>
-                <p className="text-white/50 mt-1">{meaning}</p>
+                <p className="text-paper-500 mt-1">{meaning}</p>
               </div>
             ))}
           </div>

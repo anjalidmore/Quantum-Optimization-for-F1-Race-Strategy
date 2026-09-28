@@ -256,6 +256,39 @@ with a `micro` caption naming the source file.
 **Every page:** one focal element, then density. Hierarchy by size and weight — never by adding
 another box.
 
+## Themes
+
+Two themes, one set of roles. The light values are not the dark ones lightened; each was measured
+against the surface it actually sits on, with the same script, and the ratios are recorded beside
+the tokens in `globals.css`.
+
+| Role | Dark | Light | Measured |
+|---|---|---|---|
+| Page ground | `#0e1013` | `#f7f5f0` | — |
+| Card | `#15181c` | `#efece5` | — |
+| Primary text | `#f4f1ea` | `#15181c` | 15.8:1 / 16.3:1 on the card |
+| Secondary | `#d8d4ca` | `#3a3f46` | 12.0:1 / 9.7:1 |
+| Tertiary | `#a9a59b` | `#5c626b` | 7.2:1 / 5.6:1 |
+| Micro | `#8b8780` | `#646970` | 5.0:1 / 4.7:1 |
+| Accent | `#ff2d16` | `#c41202` | 5.1:1 / 5.2:1 as text on the card |
+| Accent ink | `#0a0b0d` | `#ffffff` | 5.3:1 / 6.1:1 on the fill |
+| Control edge | `#5e6773` | `#83888f` | 3.3:1 both |
+
+**Compound chips change value, not hue**, except one. Light mode darkens each so it clears 3.0
+against the pale card and carries white ink at 4.5+: soft `#d42d1f`, medium `#856a00`,
+intermediate `#1a7f37`, wet `#1059b8`. Hard is the exception worth naming — the real hard tyre is
+white, and a white chip on paper is invisible, so light mode gives that role the neutral `#4a4f57`.
+The letter inside the chip still says which compound it is, which is why the substitution is safe.
+
+**Contribution sign** (`--data-pos` / `--data-neg`) is its own pair, because "pushed the prediction
+up" is a different idea from a tyre compound and must not borrow its colours.
+
+**Resolution order.** No stored choice means the OS decides, via `prefers-color-scheme`. A stored
+choice always wins: `:root[data-theme]` is a higher-specificity block than the media query, and the
+media query is additionally scoped with `:not([data-theme="dark"])` so choosing dark on a light OS
+is not overridden. An inline script in `layout.tsx` applies the stored value before first paint;
+reading it in `useEffect` instead is what a flash of the wrong theme looks like.
+
 ## Constraints
 
 **No circuit or position map.** Checked: no X/Y or track-outline data exists anywhere in the

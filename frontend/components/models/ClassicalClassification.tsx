@@ -30,12 +30,12 @@ export function ClassicalClassification({
 
   return (
     <section>
-      <h2 className="text-lg font-semibold text-white mb-3">Pit-Decision Classification</h2>
+      <h2 className="text-lg font-semibold text-paper-900 mb-3">Pit-Decision Classification</h2>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <div className="card">
           <div className="stat-label">Best model</div>
-          <div className="text-lg font-semibold text-white">{best?.model ?? "—"}</div>
+          <div className="text-lg font-semibold text-paper-900">{best?.model ?? "—"}</div>
         </div>
         <div className="card">
           <div className="stat-label">CV PR-AUC</div>
@@ -81,9 +81,9 @@ export function ClassicalClassification({
           <tbody>
             {comparison.classification.map((r) => (
               <tr key={r.model}>
-                <td className="text-white">{r.model}</td>
-                <td className="text-white/50">{r.status === "skipped" ? `skipped — ${r.reason}` : "trained"}</td>
-                <td className="text-white">{fmt(r.cv_pr_auc)}</td>
+                <td className="text-paper-900">{r.model}</td>
+                <td className="text-paper-500">{r.status === "skipped" ? `skipped — ${r.reason}` : "trained"}</td>
+                <td className="text-paper-900">{fmt(r.cv_pr_auc)}</td>
                 <td>{fmt(r.cv_roc_auc)}</td>
                 <td>{fmt(r.cv_f1)}</td>
                 <td>{r.decision_threshold === undefined || r.decision_threshold === null ? "—" : fmt(r.decision_threshold)}</td>
@@ -96,7 +96,7 @@ export function ClassicalClassification({
             ))}
           </tbody>
         </table>
-        <div className="text-xs text-white/40 mt-2 space-y-1">
+        <div className="text-xs text-paper-400 mt-2 space-y-1">
           <p>
             *Models are selected on <strong>CV PR-AUC</strong>, not ROC-AUC. Pit events are a small minority of
             laps, and at that prevalence ROC-AUC stays high for a model that never fires — it measures ranking,
@@ -107,7 +107,7 @@ export function ClassicalClassification({
             default 0.5, which is only optimal for balanced classes with equal error costs. Neither holds here.
           </p>
           {holdout.positives !== undefined && holdout.laps !== undefined && (
-            <p className="text-amber-400/70">
+            <p className="text-paper-500">
               The chronological holdout contains{" "}
               <strong>
                 {holdout.positives} pit event(s) in {holdout.laps} laps

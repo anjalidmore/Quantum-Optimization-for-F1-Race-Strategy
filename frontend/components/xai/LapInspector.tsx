@@ -52,16 +52,16 @@ export default function LapInspector() {
   return (
     <div className="card space-y-4">
       <div className="flex flex-wrap gap-3 items-end">
-        <label className="text-sm text-white/60">
+        <label className="text-sm text-paper-500">
           Model
-          <select className="block mt-1 bg-white/5 rounded px-2 py-1 text-white" value={target}
+          <select className="block mt-1 bg-track-100 rounded px-2 py-1 text-paper-900" value={target}
                   onChange={(e) => setTarget(e.target.value)}>
             {Object.entries(TARGETS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </label>
-        <label className="text-sm text-white/60 grow">
+        <label className="text-sm text-paper-500 grow">
           Test lap
-          <select className="block mt-1 w-full bg-white/5 rounded px-2 py-1 text-white" value={rowIndex}
+          <select className="block mt-1 w-full bg-track-100 rounded px-2 py-1 text-paper-900" value={rowIndex}
                   onChange={(e) => setRowIndex(Number(e.target.value))}>
             {laps.map((l) => (
               <option key={l.row_index} value={l.row_index}>
@@ -72,73 +72,73 @@ export default function LapInspector() {
         </label>
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      {loading && <p className="text-sm text-white/40">Loading…</p>}
+      {error && <p className="text-sm text-accent">{error}</p>}
+      {loading && <p className="text-sm text-paper-400">Loading…</p>}
 
       {lap && row && (
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="space-y-2">
-            <h4 className="text-xs uppercase tracking-wide text-white/40">Prediction</h4>
-            <p className="text-2xl font-bold text-white">
+            <h4 className="text-xs uppercase tracking-wide text-paper-400">Prediction</h4>
+            <p className="text-2xl font-bold text-paper-900">
               {isPit ? `P(pit) ${fmt(row.dnn_prediction, 4)}` : `${fmt(row.dnn_prediction, 3)} s`}
             </p>
-            <p className="text-sm text-white/60">
+            <p className="text-sm text-paper-500">
               {isPit
-                ? <>Decision at threshold {fmt(lap.decision_threshold, 4)}: <strong className="text-white">{row.dnn_decision}</strong> · actually {row.actual === 1 ? "pitted" : "stayed out"}</>
+                ? <>Decision at threshold {fmt(lap.decision_threshold, 4)}: <strong className="text-paper-900">{row.dnn_decision}</strong> · actually {row.actual === 1 ? "pitted" : "stayed out"}</>
                 : <>Actual {fmt(row.actual, 3)} s · error {fmt(row.dnn_abs_error_s, 3)} s</>}
             </p>
-            <p className="text-sm text-white/60">
+            <p className="text-sm text-paper-500">
               Task 6 {isPit ? "P(pit)" : "prediction"}: {fmt(row.classical_prediction, isPit ? 4 : 3)}
             </p>
-            <h4 className="text-xs uppercase tracking-wide text-white/40 pt-2">Trust (project-defined)</h4>
-            <p className="text-white"><strong>{fmt(row.trust_score, 3)}</strong> — {row.trust_band}</p>
-            <dl className="grid grid-cols-2 gap-x-3 text-xs text-white/50">
+            <h4 className="text-xs uppercase tracking-wide text-paper-400 pt-2">Trust (project-defined)</h4>
+            <p className="text-paper-900"><strong>{fmt(row.trust_score, 3)}</strong> — {row.trust_band}</p>
+            <dl className="grid grid-cols-2 gap-x-3 text-xs text-paper-500">
               {Object.entries(row).filter(([k]) => k.startsWith("component_")).map(([k, v]) => (
                 <div key={k} className="contents">
                   <dt>{k.replace("component_", "").replace(/_/g, " ")}</dt>
-                  <dd className="text-right text-white/70">{fmt(v as number, 3)}</dd>
+                  <dd className="text-right text-paper-700">{fmt(v as number, 3)}</dd>
                 </div>
               ))}
             </dl>
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-xs uppercase tracking-wide text-white/40">SHAP — what moved this prediction</h4>
+            <h4 className="text-xs uppercase tracking-wide text-paper-400">SHAP — what moved this prediction</h4>
             <ul className="space-y-1.5">
               {lap.shap_factors.slice(0, 8).map((f) => (
                 <li key={f.feature} className="text-sm">
                   <div className="flex justify-between gap-2">
-                    <span><code className="text-white/70">{f.feature}</code> <span className="text-white/40">= {fmt(f.value, 3)}</span></span>
-                    <span className={f.shap_value > 0 ? "text-red-400 tabular-nums" : "text-sky-400 tabular-nums"}>
+                    <span><code className="text-paper-700">{f.feature}</code> <span className="text-paper-400">= {fmt(f.value, 3)}</span></span>
+                    <span className={f.shap_value > 0 ? "data-pos tabular-nums" : "data-neg tabular-nums"}>
                       {f.shap_value > 0 ? "+" : ""}{fmt(f.shap_value, 4)}
                     </span>
                   </div>
-                  <div className="h-1 rounded-full bg-white/5 mt-0.5">
-                    <div className={`h-full rounded-full ${f.shap_value > 0 ? "bg-red-400/70" : "bg-sky-400/70"}`}
+                  <div className="h-1 rounded-full bg-track-100 mt-0.5">
+                    <div className={`h-full rounded-full ${f.shap_value > 0 ? "bar-pos" : "bar-neg"}`}
                          style={{ width: `${(Math.abs(f.shap_value) / maxAbs) * 100}%` }} />
                   </div>
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-white/40">
+            <p className="text-xs text-paper-400">
               Base value {fmt(lap.shap_base_value, 4)}. SHAP top 3: <code>{row.shap_top3}</code> · LIME top 3:{" "}
               <code>{row.lime_top3}</code>
             </p>
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-xs uppercase tracking-wide text-white/40">Counterfactual — tyre age</h4>
+            <h4 className="text-xs uppercase tracking-wide text-paper-400">Counterfactual — tyre age</h4>
             {cf.available === false ? (
-              <p className="text-sm text-white/50">Unavailable: {cf.reason}</p>
+              <p className="text-sm text-paper-500">Unavailable: {cf.reason}</p>
             ) : isPit ? (
-              <p className="text-sm text-white/70">
+              <p className="text-sm text-paper-700">
                 Tyre age now {fmt(cf.original_value, 1)} laps.{" "}
                 {cf.reachable
-                  ? <>The model&rsquo;s decision flips at <strong className="text-white">{fmt(cf.crossing_value, 1)} laps</strong> ({cf.delta_required > 0 ? "+" : ""}{fmt(cf.delta_required, 1)}).</>
+                  ? <>The model&rsquo;s decision flips at <strong className="text-paper-900">{fmt(cf.crossing_value, 1)} laps</strong> ({cf.delta_required > 0 ? "+" : ""}{fmt(cf.delta_required, 1)}).</>
                   : <>No tyre age in the training range ({cf.searched_range?.join("–")} laps) flips the decision.</>}
               </p>
             ) : (
-              <ul className="text-sm text-white/70 space-y-1">
+              <ul className="text-sm text-paper-700 space-y-1">
                 {(cf.regression_effects ?? []).map((e: any) => (
                   <li key={e.tyre_age_change_laps}>
                     {e.tyre_age_change_laps > 0 ? "+" : ""}{e.tyre_age_change_laps} laps of tyre age →{" "}
@@ -148,17 +148,17 @@ export default function LapInspector() {
               </ul>
             )}
             {cf.derived_features_recomputed && (
-              <p className="text-xs text-white/40">
+              <p className="text-xs text-paper-400">
                 Recomputed with tyre age: <code>{cf.derived_features_recomputed.join(", ")}</code>. Compound, set
                 freshness and track temperature held fixed. This shows model sensitivity, not a strategy instruction.
               </p>
             )}
-            <h4 className="text-xs uppercase tracking-wide text-white/40 pt-2">Race state</h4>
-            <dl className="grid grid-cols-2 gap-x-3 text-xs text-white/50 max-h-40 overflow-y-auto">
+            <h4 className="text-xs uppercase tracking-wide text-paper-400 pt-2">Race state</h4>
+            <dl className="grid grid-cols-2 gap-x-3 text-xs text-paper-500 max-h-40 overflow-y-auto">
               {Object.entries(lap.race_state).map(([k, v]) => (
                 <div key={k} className="contents">
                   <dt className="truncate">{k}</dt>
-                  <dd className="text-right text-white/70 tabular-nums">{fmt(v, 3)}</dd>
+                  <dd className="text-right text-paper-700 tabular-nums">{fmt(v, 3)}</dd>
                 </div>
               ))}
             </dl>

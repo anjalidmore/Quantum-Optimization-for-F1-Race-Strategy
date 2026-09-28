@@ -21,21 +21,21 @@ export function SearchCard({ data }: { data: SearchSummary | Unavailable }) {
   const p = data.problem;
   return (
     <section>
-      <h2 className="text-lg font-semibold text-white mb-1">Task 3 — State-space search</h2>
-      <p className="text-sm text-white/50 mb-3">
+      <h2 className="text-lg font-semibold text-paper-900 mb-1">Task 3 — State-space search</h2>
+      <p className="text-sm text-paper-500 mb-3">
         Pit strategy as a search problem: each state is a lap, a compound and a tyre age; each action is run or
         pit. Five algorithms solve the same instance, so the cost of an uninformed search is visible next to an
         informed one.
       </p>
 
-      <p className="text-xs text-white/40 mb-3">
+      <p className="text-xs text-paper-400 mb-3">
         Instance: {p.total_laps} laps, starting on {p.start_compound}, pit loss {p.pit_loss_seconds} s, track{" "}
         {p.track_temperature_c} °C, at most {p.max_stops} stops, compounds {p.allowed_compounds.join(" / ")}.
       </p>
 
       <div className="card overflow-x-auto">
         <table className="w-full text-sm min-w-[40rem]">
-          <thead className="text-white/50">
+          <thead className="text-paper-500">
             <tr>
               <th className="text-left font-normal py-1">Algorithm</th>
               {COLUMNS.map(([, label]) => (
@@ -44,7 +44,7 @@ export function SearchCard({ data }: { data: SearchSummary | Unavailable }) {
               <th className="text-center font-normal">Optimal</th>
             </tr>
           </thead>
-          <tbody className="text-white/80">
+          <tbody className="text-paper-700">
             {data.algorithms.map((a) => (
               <tr key={a.algorithm} className={`border-t border-track-300 ${a.is_optimal ? "is-marked" : ""}`}>
                 <td className="py-1.5">{a.algorithm}</td>
@@ -58,7 +58,7 @@ export function SearchCard({ data }: { data: SearchSummary | Unavailable }) {
             ))}
           </tbody>
         </table>
-        <p className="text-xs text-white/50 mt-2">
+        <p className="text-xs text-paper-500 mt-2">
           Optimal: {(data.summary.optimal_algorithms ?? []).join(" and ")} — both reach{" "}
           {fmt(data.final_cost_seconds, 2)} s, which is the correctness check for the A\* heuristic. Fewest nodes
           expanded: {data.summary.fewest_nodes_expanded}.
@@ -67,12 +67,12 @@ export function SearchCard({ data }: { data: SearchSummary | Unavailable }) {
 
       <div className="grid gap-4 md:grid-cols-2 mt-4">
         <div className="card">
-          <h3 className="font-semibold text-white mb-2 text-sm">Optimal plan — {data.n_plan_steps} steps</h3>
+          <h3 className="font-semibold text-paper-900 mb-2 text-sm">Optimal plan — {data.n_plan_steps} steps</h3>
           {data.pit_stops.length === 0 ? (
-            <p className="text-sm text-white/50">The optimal plan makes no stop on this instance.</p>
+            <p className="text-sm text-paper-500">The optimal plan makes no stop on this instance.</p>
           ) : (
             <table className="w-full text-sm">
-              <thead className="text-white/50">
+              <thead className="text-paper-500">
                 <tr>
                   <th className="text-left font-normal py-1">Lap</th>
                   <th className="text-left font-normal">Action</th>
@@ -80,9 +80,9 @@ export function SearchCard({ data }: { data: SearchSummary | Unavailable }) {
                   <th className="text-right font-normal">Cost so far (s)</th>
                 </tr>
               </thead>
-              <tbody className="text-white/80">
+              <tbody className="text-paper-700">
                 {data.pit_stops.map((s) => (
-                  <tr key={`${s.lap}-${s.type}`} className="border-t border-white/5">
+                  <tr key={`${s.lap}-${s.type}`} className="border-t border-track-300">
                     <td className="py-1">{s.lap}</td>
                     <td>{s.type}</td>
                     <td>{s.compound ?? "—"}</td>
@@ -92,7 +92,7 @@ export function SearchCard({ data }: { data: SearchSummary | Unavailable }) {
               </tbody>
             </table>
           )}
-          <p className="text-xs text-white/40 mt-3">
+          <p className="text-xs text-paper-400 mt-3">
             Only the stops are listed; the remaining steps are plain running laps.
           </p>
         </div>
@@ -102,7 +102,7 @@ export function SearchCard({ data }: { data: SearchSummary | Unavailable }) {
             alt="A* optimal strategy path"
             className="w-full rounded"
           />
-          <p className="text-xs text-white/50 mt-2">The A\* plan over the race.</p>
+          <p className="text-xs text-paper-500 mt-2">The A\* plan over the race.</p>
         </div>
       </div>
     </section>

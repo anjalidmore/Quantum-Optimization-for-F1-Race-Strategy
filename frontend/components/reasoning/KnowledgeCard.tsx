@@ -8,8 +8,8 @@ export function KnowledgeCard({ data }: { data: KnowledgeSummary | Unavailable }
 
   return (
     <section>
-      <h2 className="text-lg font-semibold text-white mb-1">Task 1 — Knowledge representation</h2>
-      <p className="text-sm text-white/50 mb-3">
+      <h2 className="text-lg font-semibold text-paper-900 mb-1">Task 1 — Knowledge representation</h2>
+      <p className="text-sm text-paper-500 mb-3">
         An F1 domain model: entities with typed attributes, named relationships between them, an OWL ontology
         and a populated knowledge graph.
       </p>
@@ -35,18 +35,18 @@ export function KnowledgeCard({ data }: { data: KnowledgeSummary | Unavailable }
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="card">
-          <h3 className="font-semibold text-white mb-2 text-sm">Entities by category</h3>
+          <h3 className="font-semibold text-paper-900 mb-2 text-sm">Entities by category</h3>
           <table className="w-full text-sm">
-            <tbody className="text-white/80">
+            <tbody className="text-paper-700">
               {Object.entries(data.entities_by_category).map(([category, n]) => (
-                <tr key={category} className="border-t border-white/5">
+                <tr key={category} className="border-t border-track-300">
                   <td className="py-1">{category}</td>
                   <td className="text-right tabular-nums">{n}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="text-xs text-white/40 mt-3">
+          <p className="text-xs text-paper-400 mt-3">
             Serialised as{" "}
             {Object.entries(data.files)
               .filter(([, present]) => present)
@@ -61,7 +61,7 @@ export function KnowledgeCard({ data }: { data: KnowledgeSummary | Unavailable }
             alt="Ontology schema graph"
             className="w-full rounded"
           />
-          <p className="text-xs text-white/50 mt-2">The schema: entity types and the relationships between them.</p>
+          <p className="text-xs text-paper-500 mt-2">The schema: entity types and the relationships between them.</p>
         </div>
       </div>
     </section>

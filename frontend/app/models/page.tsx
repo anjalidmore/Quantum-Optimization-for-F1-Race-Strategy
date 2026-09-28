@@ -31,11 +31,11 @@ export default async function ModelsPage() {
 
   if (error || !comparison || !manifest || !registry) {
     return (
-      <div className="card border-red-500/30 bg-red-500/5">
+      <div className="card border-accent">
         <div className="badge badge-warning">No trained model available</div>
-        <p className="text-sm text-white/70 mt-2">{error ?? "Run the training pipeline to generate results."}</p>
-        <p className="text-sm text-white/50 mt-1">
-          <code className="text-white/80">python scripts/build_all.py --force</code>
+        <p className="text-sm text-paper-700 mt-2">{error ?? "Run the training pipeline to generate results."}</p>
+        <p className="text-sm text-paper-500 mt-1">
+          <code className="text-paper-700">python scripts/build_all.py --force</code>
         </p>
       </div>
     );
@@ -59,17 +59,17 @@ export default async function ModelsPage() {
     <div className="space-y-10">
       <section>
         <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl font-bold text-white">Models</h1>
+          <h1 className="text-2xl font-bold text-paper-900">Models</h1>
           <DatasetBadge source={manifest.dataset_source} />
           <span className="badge">Tasks 6 &amp; 7</span>
         </div>
-        <p className="text-white/60 mt-1 max-w-3xl">
+        <p className="text-paper-500 mt-1 max-w-3xl">
           Lap-time regression and pit-decision classification, trained twice: with classical models (Task 6) and
           with Keras neural networks (Task 7). Both use the same Task 5 feature contract, the same
           expanding-window folds and the same untouched chronological holdout, so any difference is the model
           rather than the harness.
         </p>
-        <p className="text-xs text-white/40 mt-2 max-w-3xl">
+        <p className="text-xs text-paper-400 mt-2 max-w-3xl">
           {isReal ? (
             <>
               This is a single real Grand Prix session — a genuine result, not a placeholder, but it reflects one
@@ -91,26 +91,26 @@ export default async function ModelsPage() {
           </div>
           <div className="card">
             <div className="stat-label">Best regression</div>
-            <div className="text-lg font-semibold text-white">{manifest.best_regression_model ?? "—"}</div>
+            <div className="text-lg font-semibold text-paper-900">{manifest.best_regression_model ?? "—"}</div>
           </div>
           <div className="card">
             <div className="stat-label">Best classification</div>
-            <div className="text-lg font-semibold text-white">{manifest.best_classification_model ?? "—"}</div>
+            <div className="text-lg font-semibold text-paper-900">{manifest.best_classification_model ?? "—"}</div>
           </div>
           <div className="card">
             <div className="stat-label">Last trained</div>
-            <div className="text-sm font-medium text-white">
+            <div className="text-sm font-medium text-paper-900">
               {new Date(manifest.generated_at).toLocaleString()}
             </div>
           </div>
           <div className="card">
             <div className="stat-label">Data source</div>
-            <div className="text-lg font-semibold text-white">{isReal ? "Real FastF1" : "Synthetic"}</div>
+            <div className="text-lg font-semibold text-paper-900">{isReal ? "Real FastF1" : "Synthetic"}</div>
           </div>
         </div>
       </section>
 
-      <h2 className="text-sm uppercase tracking-wider text-white/40 border-b border-white/10 pb-2">
+      <h2 className="text-sm uppercase tracking-wider text-paper-400 border-b border-track-300 pb-2">
         Task 6 — classical models
       </h2>
 
@@ -132,7 +132,7 @@ export default async function ModelsPage() {
         }}
       />
 
-      <h2 className="text-sm uppercase tracking-wider text-white/40 border-b border-white/10 pb-2">
+      <h2 className="text-sm uppercase tracking-wider text-paper-400 border-b border-track-300 pb-2">
         Task 7 — deep learning
       </h2>
 
@@ -148,14 +148,14 @@ export default async function ModelsPage() {
           <DeepEvaluation comparison={dlComparison} artifacts={dlArtifacts} metrics={dlMetrics} />
         </>
       ) : (
-        <div className="card text-sm text-white/50">
-          No deep model available yet. Run <code className="text-white/80">python scripts/build_all.py</code>.
+        <div className="card text-sm text-paper-500">
+          No deep model available yet. Run <code className="text-paper-700">python scripts/build_all.py</code>.
         </div>
       )}
 
       {qml && (
         <>
-          <h2 className="text-sm uppercase tracking-wider text-white/40 border-b border-white/10 pb-2">
+          <h2 className="text-sm uppercase tracking-wider text-paper-400 border-b border-track-300 pb-2">
             Quantum — simulated circuits on the same split
           </h2>
           <QuantumSection summary={qml} />

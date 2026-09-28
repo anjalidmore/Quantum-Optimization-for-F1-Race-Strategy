@@ -20,8 +20,8 @@ export function DeepEvaluation({
   return (
     <>
       <section>
-        <h2 className="text-lg font-semibold text-white mb-1">Evaluation — train / validation / test</h2>
-        <p className="text-sm text-white/50 mb-3">
+        <h2 className="text-lg font-semibold text-paper-900 mb-1">Evaluation — train / validation / test</h2>
+        <p className="text-sm text-paper-500 mb-3">
           Test = the chronological holdout (the last laps of the race), used once, after hyperparameters,
           threshold and early-stopping epoch were fixed on earlier laps.
         </p>
@@ -40,9 +40,9 @@ export function DeepEvaluation({
             ];
             return (
               <div key={target} className="card overflow-x-auto space-y-3">
-                <h3 className="font-semibold text-white">{TARGET_LABEL[target]}</h3>
+                <h3 className="font-semibold text-paper-900">{TARGET_LABEL[target]}</h3>
                 <table className="w-full text-sm">
-                  <thead className="text-white/50">
+                  <thead className="text-paper-500">
                     <tr>
                       <th className="text-left font-normal py-1">Split</th>
                       {!reg && <th className="text-right font-normal">pit laps</th>}
@@ -53,9 +53,9 @@ export function DeepEvaluation({
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="text-white/80">
+                  <tbody className="text-paper-700">
                     {splits.map(([name, s]) => (
-                      <tr key={name} className={`border-t border-white/5 ${name === "Test" ? "bg-white/5" : ""}`}>
+                      <tr key={name} className={`border-t border-track-300 ${name === "Test" ? "bg-track-100" : ""}`}>
                         <td className="py-1.5">{name}</td>
                         {!reg && (
                           <td className="text-right tabular-nums">
@@ -72,15 +72,15 @@ export function DeepEvaluation({
                   </tbody>
                 </table>
                 {!reg && e.threshold && (
-                  <p className="text-xs text-white/50">
-                    Decision threshold <strong className="text-white/80">{fmt(e.threshold.threshold, 4)}</strong>,
+                  <p className="text-xs text-paper-500">
+                    Decision threshold <strong className="text-paper-700">{fmt(e.threshold.threshold, 4)}</strong>,
                     tuned on {e.threshold.n_samples} out-of-fold predictions ({e.threshold.n_positive} pit laps):
                     F1 {fmt(e.threshold["at_default_0.5"]?.f1, 4)} at 0.5, {fmt(e.threshold.at_threshold?.f1, 4)}{" "}
                     at the tuned value.
                   </p>
                 )}
                 {!reg && e.test_metrics.n_positive < 5 && (
-                  <p className="text-xs text-amber-400/70">
+                  <p className="text-xs text-paper-500">
                     The test laps contain{" "}
                     <strong>
                       {e.test_metrics.n_positive} pit event(s) in {e.test_metrics.n} laps
@@ -109,8 +109,8 @@ export function DeepEvaluation({
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-white mb-1">Deep network vs Task 6 classical models</h2>
-        <p className="text-sm text-white/50 mb-3">{comparison.note}</p>
+        <h2 className="text-lg font-semibold text-paper-900 mb-1">Deep network vs Task 6 classical models</h2>
+        <p className="text-sm text-paper-500 mb-3">{comparison.note}</p>
         <div className="grid gap-4">
           {Object.entries(comparison.targets).map(([target, t]) => {
             const keys =
@@ -119,9 +119,9 @@ export function DeepEvaluation({
                 : ["pr_auc", "roc_auc", "precision", "recall", "f1", "accuracy"];
             return (
               <div key={target} className="card overflow-x-auto">
-                <h3 className="font-semibold text-white mb-3">{TARGET_LABEL[target] ?? target}</h3>
+                <h3 className="font-semibold text-paper-900 mb-3">{TARGET_LABEL[target] ?? target}</h3>
                 <table className="w-full text-sm min-w-[36rem]">
-                  <thead className="text-white/50">
+                  <thead className="text-paper-500">
                     <tr>
                       <th className="text-left font-normal py-1">Model</th>
                       {keys.map((k) => (
@@ -131,11 +131,11 @@ export function DeepEvaluation({
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="text-white/80">
+                  <tbody className="text-paper-700">
                     {t.comparison.map((row) => (
                       <tr
                         key={row.model}
-                        className={`border-t border-white/5 ${row.family === "deep" ? "bg-white/5" : ""}`}
+                        className={`border-t border-track-300 ${row.family === "deep" ? "bg-track-100" : ""}`}
                       >
                         <td className="py-1.5">
                           {row.model}
@@ -145,7 +145,7 @@ export function DeepEvaluation({
                         {keys.map((k) => (
                           <td key={k} className="text-right tabular-nums">
                             {row.metrics?.[k] === null || row.metrics?.[k] === undefined ? (
-                              <span className="text-white/30" title="mathematically undefined on this split">
+                              <span className="text-paper-400" title="mathematically undefined on this split">
                                 undefined
                               </span>
                             ) : (
@@ -157,7 +157,7 @@ export function DeepEvaluation({
                     ))}
                   </tbody>
                 </table>
-                <p className="text-sm text-white/70 mt-3">{t.verdict.replace(/\*\*/g, "")}</p>
+                <p className="text-sm text-paper-700 mt-3">{t.verdict.replace(/\*\*/g, "")}</p>
                 {figure(target, "model_comparison.png") && (
                   <div className="mt-4">
                     <ArtifactImage
@@ -174,8 +174,8 @@ export function DeepEvaluation({
       </section>
 
       <section className="card">
-        <h2 className="font-semibold text-white mb-2">Saved models</h2>
-        <p className="text-sm text-white/60">
+        <h2 className="font-semibold text-paper-900 mb-2">Saved models</h2>
+        <p className="text-sm text-paper-500">
           Saved as HDF5 (<code>{artifacts.model_format}</code>) with their fitted scalers. Each file is reloaded
           after saving and must reproduce the trained network&rsquo;s predictions exactly. Weights are kept in the
           private <code>models/</code> tree and are not served over HTTP. Full reports:{" "}
@@ -184,17 +184,17 @@ export function DeepEvaluation({
             .map((r, i) => (
               <span key={r}>
                 {i > 0 && ", "}
-                <a className="text-sky-400 hover:underline" href={artifactUrl(r)} target="_blank" rel="noreferrer">
+                <a className="text-paper-900 underline decoration-edge underline-offset-[3px] hover:decoration-paper-900" href={artifactUrl(r)} target="_blank" rel="noreferrer">
                   {r.split("/").pop()}
                 </a>
               </span>
             ))}
           .
         </p>
-        <ul className="text-sm text-white/50 mt-2 space-y-1">
+        <ul className="text-sm text-paper-500 mt-2 space-y-1">
           {artifacts.models.map((path) => (
             <li key={path}>
-              <code className="text-white/70">{path}</code>
+              <code className="text-paper-700">{path}</code>
             </li>
           ))}
         </ul>

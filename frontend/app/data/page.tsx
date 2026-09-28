@@ -34,9 +34,9 @@ export default async function DataPage() {
 
   if (error || !evidence) {
     return (
-      <div className="card border-red-500/30 bg-red-500/5">
+      <div className="card border-accent">
         <div className="badge badge-warning">Backend unreachable</div>
-        <p className="text-sm text-white/70 mt-2">{error}</p>
+        <p className="text-sm text-paper-700 mt-2">{error}</p>
       </div>
     );
   }
@@ -48,26 +48,26 @@ export default async function DataPage() {
     <div className="space-y-10">
       <section>
         <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl font-bold text-white">Data &amp; Evidence</h1>
+          <h1 className="text-2xl font-bold text-paper-900">Data &amp; Evidence</h1>
           {manifest && <DatasetBadge source={manifest.dataset_source} />}
         </div>
-        <p className="text-white/60 mt-1 max-w-2xl">{task4.purpose}</p>
+        <p className="text-paper-500 mt-1 max-w-2xl">{task4.purpose}</p>
       </section>
 
       {!hasArtifacts && (
-        <div className="card text-white/50 text-sm">
-          Artifact not generated yet. Run <code className="text-white/80">python scripts/build_all.py</code>.
+        <div className="card text-paper-500 text-sm">
+          Artifact not generated yet. Run <code className="text-paper-700">python scripts/build_all.py</code>.
         </div>
       )}
 
       {task4.figures.length > 0 && (
         <section>
-          <h2 className="text-sm uppercase tracking-wider text-white/50 mb-3">Generated Figures</h2>
+          <h2 className="text-sm uppercase tracking-wider text-paper-500 mb-3">Generated Figures</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {task4.figures.map((f) => (
               <div key={f} className="card">
                 <ArtifactImage src={artifactUrl(f)} alt={prettify(basename(f))} className="w-full rounded" />
-                <div className="text-sm text-white/60 mt-2">{prettify(basename(f))}</div>
+                <div className="text-sm text-paper-500 mt-2">{prettify(basename(f))}</div>
               </div>
             ))}
           </div>
@@ -76,7 +76,7 @@ export default async function DataPage() {
 
       {task4.reports.length > 0 && (
         <section>
-          <h2 className="text-sm uppercase tracking-wider text-white/50 mb-3">Generated Reports</h2>
+          <h2 className="text-sm uppercase tracking-wider text-paper-500 mb-3">Generated Reports</h2>
           <div className="card">
             <ul className="space-y-2">
               {task4.reports.map((r) => (
@@ -85,7 +85,7 @@ export default async function DataPage() {
                     href={artifactUrl(r)}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-sky-400 hover:underline text-sm"
+                    className="text-paper-900 underline decoration-edge underline-offset-[3px] hover:decoration-paper-900 text-sm"
                   >
                     {prettify(basename(r))}
                   </a>
@@ -97,25 +97,25 @@ export default async function DataPage() {
       )}
 
       <section>
-        <h2 className="text-lg font-semibold text-white">Project evidence</h2>
-        <p className="text-white/60 mt-1 mb-4 max-w-2xl text-sm">
+        <h2 className="text-lg font-semibold text-paper-900">Project evidence</h2>
+        <p className="text-paper-500 mt-1 mb-4 max-w-2xl text-sm">
           Every task in the laboratory workflow, mapped to what has actually been built here —{" "}
           {evidence.completed_count} of {evidence.total_count} complete. Nothing below is a placeholder:
-          artifacts are read live from <code className="text-white/80">artifacts/</code>.
+          artifacts are read live from <code className="text-paper-700">artifacts/</code>.
         </p>
         <div className="space-y-4">
           {evidence.tasks.map((task) => (
             <details key={task.id} className="card" open={task.status !== "upcoming"}>
               <summary className="cursor-pointer flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-white/40 uppercase tracking-wider mr-2">
+                  <span className="text-[10px] text-paper-400 uppercase tracking-wider mr-2">
                     Task {task.number}
                   </span>
-                  <span className="font-semibold text-white">{task.label}</span>
+                  <span className="font-semibold text-paper-900">{task.label}</span>
                 </div>
                 <span className={`badge ${STATUS_CLASS[task.status]}`}>{STATUS_LABEL[task.status]}</span>
               </summary>
-              <p className="text-sm text-white/60 mt-3 mb-4">{task.purpose}</p>
+              <p className="text-sm text-paper-500 mt-3 mb-4">{task.purpose}</p>
               <TaskArtifactList task={task} />
             </details>
           ))}
