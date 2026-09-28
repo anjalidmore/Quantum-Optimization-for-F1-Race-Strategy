@@ -17,15 +17,18 @@ export default function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
+  // Idle links are paper-700, not paper-500: over the translucent surface with
+  // page content behind it, paper-500 measures 4.1:1 and fails AA.
   const linkClass = (href: string) =>
     `rounded-sm px-3 py-2 transition-colors duration-[120ms] ${
-      pathname === href ? "bg-track-200 text-paper-900" : "text-paper-500 hover:text-paper-900"
+      pathname === href ? "bg-track-200 text-paper-900" : "text-paper-700 hover:text-paper-900"
     }`;
 
   return (
-    /* No backdrop-blur: the audit found it was the app's only glass surface and
-       it was doing nothing. The nav is opaque. */
-    <header className="sticky top-0 z-20 border-b border-track-300 bg-track-000">
+    /* The one glass surface in the app (DESIGN.md, Constraints): translucent
+       over the page ground with a modest blur, so content reads as passing
+       underneath rather than vanishing at a hard edge. */
+    <header className="nav-glass sticky top-0 z-20">
       <div className="mx-auto flex h-[52px] max-w-[1320px] items-center gap-7 px-5 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5 whitespace-nowrap">
           <span aria-hidden className="block h-[17px] w-[3px] bg-accent" />
@@ -70,7 +73,10 @@ export default function Nav() {
         <nav
           id="mobile-nav"
           aria-label="Main"
-          className="border-t border-track-300 bg-track-000 px-5 pb-3 lg:hidden"
+          /* Solid, not glass: a full-height menu has nothing meaningfully
+             passing beneath it, and the blur only ghosted the page behind
+             the labels. The sticky bar above keeps the glass. */
+          className="border-t border-track-300 bg-track-050 px-5 pb-3 lg:hidden"
         >
           {LINKS.map((link) => (
             <Link
@@ -79,7 +85,7 @@ export default function Nav() {
               onClick={() => setOpen(false)}
               aria-current={pathname === link.href ? "page" : undefined}
               className={`block border-b border-track-300 py-3 text-[15px] ${
-                pathname === link.href ? "text-paper-900" : "text-paper-500"
+                pathname === link.href ? "text-paper-900" : "text-paper-700"
               }`}
             >
               {link.label}

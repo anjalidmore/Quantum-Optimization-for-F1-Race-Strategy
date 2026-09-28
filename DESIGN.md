@@ -86,7 +86,7 @@ and the big figures, because narrow industrial type is the vernacular of timing 
 a large number sit in a narrow column. A technical humanist face (IBM Plex Sans) does everything
 else, with tabular figures throughout.
 
-Confirmed rejections: no glassmorphism beyond one justified surface, no gradients anywhere, no
+Confirmed rejections: no glassmorphism beyond the one justified surface (the nav), no gradients anywhere, no
 purple or blue as interface colour, no Inter/Roboto/Arial/Space Grotesk, no driver photos, team
 logos or liveries, no live/streaming indicators, and no circuit map — the data for one does not
 exist (see Constraints).
@@ -246,8 +246,8 @@ consequential figure with its provenance. Right: dense per-task rows, not ten ca
 per-driver error table as a leaderboard. The workflow chip strip is removed — it carries no data.
 
 **Strategy Simulator — grouped form left, result right.** The result column is the focal element and
-is the *only* place in the app permitted a glass surface (`backdrop-filter: blur(8px)` over
-`--track-050`), because content genuinely scrolls beneath it.
+sticks as the form beside it changes. It is a solid panel: nothing scrolls beneath it, so glass
+there would be decoration.
 
 **Models / Explainability / Reasoning / Data — table-first.** Title, one sentence, then tables.
 Section headings in `title` weight. Charts stay as images from `artifacts/`, framed on `--track-100`
@@ -264,6 +264,30 @@ Bahrain — the session actually analysed — is not among them. One coordinate 
 and an invented outline would be decoration pretending to be data.
 
 **No sparklines** on the Overview or Models pages: there is no per-lap series behind those figures.
+
+**One glass surface, and it is the nav.** `--nav-surface` is the page ground at 78% with
+`backdrop-filter: blur(10px) saturate(1.4)` and a `--edge` hairline beneath. It earns the treatment
+because content genuinely passes under a sticky header, and the blur says so. Nothing else in the
+app may use `backdrop-filter`; a panel that does not have content moving beneath it gets a solid
+surface step instead.
+
+The opacity is bounded from below by contrast, not by taste. Nav text must clear AA against the
+lightest thing that can scroll behind it, which is `--paper-900` body text: at 78% that composites
+to `#414242`, where `--paper-700` measures **6.8:1** and `--paper-500` only **4.1:1**. So the nav's
+idle links are `--paper-700`. Dropping the surface to 70% would put even `--paper-700` at 5.6:1 and
+the active/idle distinction under strain; raising it past 85% stops reading as glass at all.
+`@supports` falls back to a solid `--track-050` where `backdrop-filter` is unavailable, because
+unreadable text over moving content is worse than no effect.
+
+Two things in the nav measure below 3.0 against a pure-white backdrop (a matplotlib PNG scrolling
+under it, which composites the surface to `#434547`), and both are deliberate:
+
+- The 3px accent bar beside the wordmark reaches 2.59:1. It is ornament, not a control or a
+  graphical object needed to understand anything; the wordmark beside it measures 8.5:1 and carries
+  the meaning on its own.
+- The `--edge` hairline reaches 1.68:1 there. The nav's boundary is carried by whichever of the two
+  has contrast to spare: over dark content the hairline does it at 3.3:1, and over light content the
+  surface's own luminance step is unmissable. There is no backdrop where both are weak at once.
 
 **Justified detector exception.** `avoid-ai-design` flags SD2 — *near-black ground plus one
 vermilion accent* — as a second-order default. It is kept, with reason: red on black is the

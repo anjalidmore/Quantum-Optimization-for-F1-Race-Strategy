@@ -32,6 +32,14 @@
   --edge: #5e6773; /* 3.3:1 on track-050 */
   --focus: #f4f1ea; /* 16.9:1 */
 
+  /* The one glass surface in the app, and the only place blur is allowed.
+     78% of the page ground: content stays legible sliding underneath, and
+     nav text still clears AA over the lightest thing that can pass behind it
+     (paper-900 text composites to #414242, where paper-700 measures 6.8:1).
+     This is why the nav's idle links are paper-700 and not paper-500 -
+     paper-500 would measure 4.1:1 there and fail. */
+  --nav-surface: rgba(14, 16, 19, 0.78);
+
   /* Tyre compounds carry data meaning only: never chrome, never decoration,
      and never the sole carrier of meaning (the chip also shows its letter). */
   --compound-soft: #e8382b;
@@ -194,6 +202,31 @@ a {
 /* ==========================================================================
    Components
    ========================================================================== */
+
+/* The sanctioned glass surface: the nav, and nothing else. `saturate` keeps
+   the tyre chips from going grey as they blur underneath. The fallback is a
+   solid ground, because a browser without backdrop-filter would otherwise
+   show unreadable text over moving content.
+
+   The K3 suppressions below are the detector's own carve-out, not a dodge:
+   its guidance for the rule is to "keep blur only where layering is real,
+   like a nav over scrolling content", which is exactly this and nowhere
+   else. SD2 on --accent stays reported, because there the tool and this
+   design system genuinely disagree. */
+.nav-glass {
+  background-color: var(--track-050);
+  border-bottom: 1px solid var(--edge);
+}
+/* avoid-ai-design-ignore: K3 */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .nav-glass {
+    background-color: var(--nav-surface);
+    /* avoid-ai-design-ignore: K3 */
+    -webkit-backdrop-filter: blur(10px) saturate(1.4);
+    /* avoid-ai-design-ignore: K3 */
+    backdrop-filter: blur(10px) saturate(1.4);
+  }
+}
 
 /* A panel. Elevation is a surface step plus a hairline, never a shadow. */
 .card {
