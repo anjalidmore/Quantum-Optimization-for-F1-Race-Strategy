@@ -43,8 +43,15 @@ Two predictions run through everything: **lap time** (regression) and **does thi
 You need Python 3.12+ and Node 20+.
 
 ```bash
-./run.sh                    # sets up, builds what's missing, starts both servers, opens the browser
+./run.sh                    # builds what's missing, starts both servers, opens the dashboard
 ```
+
+It builds every stage that has no artifacts yet (Tasks 1-8 and the quantum
+models), starts the API, warms it so the first page you open shows real
+numbers instead of a cold error, starts the dashboard and opens it. Useful
+flags: `--force-retrain` to rebuild everything, `--skip-qml` to leave out the
+quantum stage, `--force-ports` to take :8000 and :3000 without asking. Set
+`BACKEND_PORT` / `FRONTEND_PORT` to move it out of the way instead.
 
 Or by hand:
 
