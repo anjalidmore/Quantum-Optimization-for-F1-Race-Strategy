@@ -35,6 +35,15 @@ export function StrategyResult({
   );
 
   const next = result.optimal_search_strategy.next_action;
+  // The verdict comes from the Task 2 rule base, and only falls back to the
+  // classifier when no rule fired. Saying which one spoke matters more than the
+  // word itself, because the Task 3 planner answers a different question below.
+  const fromRules = result.triggered_expert_rules.length > 0;
+  const ACTION: Record<string, string> = {
+    PIT_NOW: "Pit now",
+    STAY_OUT: "Stay out",
+  };
+  const action = result.recommended_action;
   const contextNotes = [
     regContextOnly.driver && "driver (lap time)",
     regContextOnly.team && "team (lap time)",
@@ -63,17 +72,21 @@ export function StrategyResult({
       )}
 
       <div className="card card-focal">
-        <p className="stat-label">Recommended action</p>
-        <p className="t-display-md mt-1">{result.recommended_action ?? "—"}</p>
-        <p className="t-micro mt-2">
-          Search planner: {result.optimal_search_strategy.algorithm} — next move{" "}
+        <p className="stat-label">
+          Recommended action, {fromRules ? "Task 2 expert rules" : "Task 6 pit classifier"}
+        </p>
+        <p className="t-display-md mt-1">{action ? (ACTION[action] ?? action) : "—"}</p>
+        <p className="t-micro mt-2.5 max-w-[42ch]">
+          The Task 3 {result.optimal_search_strategy.algorithm} planner answers a different question — the cheapest
+          remaining race, not this lap — and its first move is{" "}
           {next?.type === "PIT" ? (
             <>
-              pit for <TyreBadge compound={next.compound} />
+              to pit for <TyreBadge compound={next.compound} />
             </>
           ) : (
-            "stay out"
+            "to stay out"
           )}
+          . Where the two disagree, they are disagreeing about the horizon.
         </p>
 
         <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-track-300 pt-5">

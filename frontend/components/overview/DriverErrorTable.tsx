@@ -40,14 +40,13 @@ export function DriverErrorTable({ strat }: { strat: XaiStratification }) {
         artifacts/xai/fairness_assessment.csv — samples this small are descriptive, not rates
       </p>
 
-      <div className="overflow-x-auto">
-        <table className="t-table min-w-[420px]">
+      <table className="t-table">
           <thead>
             <tr>
               <th scope="col">Driver</th>
               <th scope="col" className="num">Laps</th>
               <th scope="col" className="num">MAE s</th>
-              <th scope="col" className="num">Bias s</th>
+              <th scope="col" className="num hidden sm:table-cell">Bias s</th>
               <th scope="col" className="hidden w-[140px] sm:table-cell">
                 <span className="sr-only">Relative error</span>
               </th>
@@ -65,7 +64,10 @@ export function DriverErrorTable({ strat }: { strat: XaiStratification }) {
                   </td>
                   <td className="num">{r.n_laps}</td>
                   <td className="num">{fmt(r.mae, 3)}</td>
-                  <td className="num">{r.mean_error_bias > 0 ? "+" : "−"}{fmt(Math.abs(r.mean_error_bias), 3)}</td>
+                  <td className="num hidden sm:table-cell">
+                    {r.mean_error_bias > 0 ? "+" : "−"}
+                    {fmt(Math.abs(r.mean_error_bias), 3)}
+                  </td>
                   <td className="hidden sm:table-cell">
                     <span
                       aria-hidden
@@ -77,8 +79,7 @@ export function DriverErrorTable({ strat }: { strat: XaiStratification }) {
               );
             })}
           </tbody>
-        </table>
-      </div>
+      </table>
       <p className="t-body mt-4 border-l-2 border-track-300 pl-3.5 text-[13px] text-paper-500">
         The two worst rows are the drivers whose laps include a pit stop, whose recorded time sits at Task 4&rsquo;s
         outlier cap. The spread is about pit laps, not drivers.

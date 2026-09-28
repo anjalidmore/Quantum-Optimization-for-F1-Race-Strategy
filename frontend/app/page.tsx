@@ -56,7 +56,7 @@ export default async function OverviewPage() {
   return (
     <div>
       {/* ---- focal band: dominant readout left, ledger right ---------------- */}
-      <div className="grid gap-x-14 gap-y-10 border-b border-track-300 pb-10 pt-14 lg:grid-cols-[1.55fr_1fr]">
+      <div className="grid gap-x-14 gap-y-10 border-b border-track-300 pb-10 pt-14 lg:grid-cols-[1.55fr_1fr] [&>*]:min-w-0">
         <div>
           {manifest && <DatasetBadge source={manifest.dataset_source} />}
 
@@ -134,7 +134,7 @@ export default async function OverviewPage() {
       </div>
 
       {/* ---- supporting evidence ------------------------------------------- */}
-      <div className="grid gap-x-14 gap-y-12 pt-10 lg:grid-cols-[1.55fr_1fr]">
+      <div className="grid gap-x-14 gap-y-12 pt-10 lg:grid-cols-[1.55fr_1fr] [&>*]:min-w-0">
         {strat ? (
           <DriverErrorTable strat={strat} />
         ) : (
@@ -147,7 +147,7 @@ export default async function OverviewPage() {
           </section>
         )}
 
-        <section aria-labelledby="what-h">
+        <section aria-labelledby="what-h" className="lg:sticky lg:top-[76px] lg:self-start">
           <h2 id="what-h" className="t-title">
             What this is
           </h2>
