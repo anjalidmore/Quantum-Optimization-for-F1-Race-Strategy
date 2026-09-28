@@ -21,9 +21,10 @@
   --paper-400: #8b8780; /*  5.0:1 */
 
   /* One accent. Bright enough to pass AA as text, not only as a fill.
-     avoid-ai-design-ignore: SD2 — red on near-black is Formula One's own
-     livery language here, not a decorative escape from purple. See DESIGN.md
-     § Constraints. */
+     The detector reports this as SD2 and we let it: red on near-black is
+     Formula One's own livery language here, not a decorative escape from
+     purple. It is the one exception we keep, justified in DESIGN.md under
+     Constraints. Suppressing it would hide the trade-off rather than own it. */
   --accent: #ff2d16; /* 5.1:1 on track-050 */
   --accent-ink: #0a0b0d; /* 5.3:1 on accent */
 
@@ -31,7 +32,7 @@
   --edge: #5e6773; /* 3.3:1 on track-050 */
   --focus: #f4f1ea; /* 16.9:1 */
 
-  /* Tyre compounds. DATA MEANING ONLY — never chrome, never decoration,
+  /* Tyre compounds carry data meaning only: never chrome, never decoration,
      and never the sole carrier of meaning (the chip also shows its letter). */
   --compound-soft: #e8382b;
   --compound-medium: #f2d13c;
