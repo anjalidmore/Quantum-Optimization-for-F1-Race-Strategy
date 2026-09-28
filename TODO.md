@@ -30,7 +30,7 @@ also closed by work done since: CI now exists (`.github/workflows/ci.yml`) and s
 
 ## Model Quality
 
-### ~~[Priority: High] Pit-decision classifier is unusable at its operating point~~ — ✅ CLOSED (Phase 2)
+### ~~[Priority: High] Pit-decision classifier is unusable at its operating point~~ — CLOSED (Phase 2)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -51,7 +51,7 @@ prediction.
    `app/intelligence/ml/selection.py` — ROC-AUC is the wrong headline at this prevalence.
 4. Surface precision/recall/F1 alongside ROC-AUC on `frontend/app/machine-learning/page.tsx`.
 
-### ~~[Priority: High] Selected regression model has negative test R²~~ — ✅ CLOSED (Phase 2)
+### ~~[Priority: High] Selected regression model has negative test R²~~ — CLOSED (Phase 2)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -70,9 +70,9 @@ held-out data as the platform's lap-time predictor is not.
 3. Record the CV-versus-test gap explicitly in `artifacts/reports/model_selection_report.md` as a
    selection warning.
 
-### 🟡 [Priority: Medium] Evaluation rests on a single race and a ~180-row holdout — PARTIALLY CLOSED (Phase 2)
+### [Priority: Medium] Evaluation rests on a single race and a ~180-row holdout — PARTIALLY CLOSED (Phase 2)
 
-**🔴 OPEN.** A `race_level_holdout()` helper existed briefly in Phase 2 but was removed in the 2026-09-27 simplification: a single committed session gave it nothing to split, so it could only raise. Re-add it together with the multi-session fetch, which is the actual blocker.
+**OPEN.** A `race_level_holdout()` helper existed briefly in Phase 2 but was removed in the 2026-09-27 simplification: a single committed session gave it nothing to split, so it could only raise. Re-add it together with the multi-session fetch, which is the actual blocker.
 
 
 **Why:** All Task 6 conclusions come from one session (2023 Bahrain GP, 995 usable rows after warm-up).
@@ -89,7 +89,7 @@ entries above.
 
 ## Security
 
-### ~~[Priority: High] API allows every origin, method and header, with no authentication~~ — ✅ CLOSED (Phase 1)
+### ~~[Priority: High] API allows every origin, method and header, with no authentication~~ — CLOSED (Phase 1)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -127,7 +127,7 @@ on every PR. See [`todo-complete.md`](todo-complete.md#-deferred--decision-requi
    usual migration work, so the risk is moderate — but it needs a build-and-click pass over all 8 routes.
 2. Once done, remove `continue-on-error: true` from the npm audit step in `.github/workflows/ci.yml`.
 
-### ~~[Priority: Medium] The whole artifacts tree is served unauthenticated as static files~~ — ✅ CLOSED (Phase 1)
+### ~~[Priority: Medium] The whole artifacts tree is served unauthenticated as static files~~ — CLOSED (Phase 1)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -142,7 +142,7 @@ can download the trained models. Combined with the CORS wildcard, this is exfilt
 2. Explicitly exclude `artifacts/models/` and `artifacts/metadata/` from static serving.
 3. Add a test in `tests/test_api.py` asserting `GET /artifacts/models/laptime/decision_tree.joblib` 404s.
 
-### ~~[Priority: Medium] `run.sh` kills arbitrary processes on ports 8000 and 3000~~ — ✅ CLOSED (Phase 1)
+### ~~[Priority: Medium] `run.sh` kills arbitrary processes on ports 8000 and 3000~~ — CLOSED (Phase 1)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -157,7 +157,7 @@ loses it, silently, with unsaved state.
 2. Alternatively read `BACKEND_PORT`/`FRONTEND_PORT` from the environment so a contributor can move off
    the conflict instead of killing it.
 
-### ~~[Priority: Low] `msgpack` 1.1.2 has a known advisory~~ — ✅ CLOSED (Phase 1)
+### ~~[Priority: Low] `msgpack` 1.1.2 has a known advisory~~ — CLOSED (Phase 1)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -170,7 +170,7 @@ is small — but it is the only flagged Python dependency and the fix is trivial
 1. Add `msgpack>=1.2.1` to `requirements.txt`.
 2. Re-run `pip-audit` to confirm a clean report.
 
-### ~~[Priority: Low] No secret-scanning or dependency-audit automation~~ — ✅ CLOSED (Phase 1)
+### ~~[Priority: Low] No secret-scanning or dependency-audit automation~~ — CLOSED (Phase 1)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -187,7 +187,7 @@ next commit from introducing one, and `pip-audit`/`npm audit` are run only when 
 
 ## Testing
 
-### ~~[Priority: High] A non-hermetic test run silently deleted Task 7's registry rows~~ — ✅ CLOSED (Phase 1)
+### ~~[Priority: High] A non-hermetic test run silently deleted Task 7's registry rows~~ — CLOSED (Phase 1)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -203,7 +203,7 @@ The underlying cause — tests that mutate committed state — is not.
 2. Add a test asserting the registry still contains both families after a Task 6 retrain, so a future
    whole-file writer cannot reintroduce this silently.
 
-### ~~[Priority: High] The test suite is not hermetic — it rewrites committed artifacts~~ — ✅ CLOSED (Phase 1)
+### ~~[Priority: High] The test suite is not hermetic — it rewrites committed artifacts~~ — CLOSED (Phase 1)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -255,7 +255,7 @@ response shape would surface only as a blank page at runtime.
 2. Add a Playwright smoke test that boots the API, loads all 5 routes and asserts no error boundary
    renders.
 
-### ~~[Priority: Medium] Nothing tests the "no fabricated results" contract~~ — ✅ CLOSED (Phase 1)
+### ~~[Priority: Medium] Nothing tests the "no fabricated results" contract~~ — CLOSED (Phase 1)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -270,7 +270,7 @@ future hard-coded fallback would pass CI.
    artifact, point `app/core/paths.py` at it, and assert `/api/ml/metrics` returns the sentinel.
 2. Assert the reverse too — that deleting the artifact produces an explicit error rather than a default.
 
-### ~~[Priority: Low] Test suite emits 133 warnings, including 69 pandas `SettingWithCopyWarning`~~ — ✅ CLOSED (Phase 1)
+### ~~[Priority: Low] Test suite emits 133 warnings, including 69 pandas `SettingWithCopyWarning`~~ — CLOSED (Phase 1)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -320,7 +320,7 @@ project whose core claim is reproducibility, the environment must be pinned.
 3. Record the resolved versions in `artifacts/metadata/model_registry.json` (it already stores
    `software_versions` — extend it to the full set).
 
-### ~~[Priority: Medium] scikit-learn deprecation will break Task 6 at version 1.11~~ — ✅ CLOSED (Phase 2)
+### ~~[Priority: Medium] scikit-learn deprecation will break Task 6 at version 1.11~~ — CLOSED (Phase 2)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -357,7 +357,7 @@ exactly this way, so the prior probability of staleness is not low.
    `phase1_taskN/` layout or `src/f1kr`-style package names.
 2. Cross-link them from `docs/PROJECT_REPORT.md` so they are visited when it is updated.
 
-### ~~[Priority: Medium] Two OpenMP runtimes coexist in one process~~ — ✅ CLOSED (Phase 2)
+### ~~[Priority: Medium] Two OpenMP runtimes coexist in one process~~ — CLOSED (Phase 2)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -438,7 +438,7 @@ anyone browsing the dashboard.
    everything required.
 3. Add each to `LINKS` in `frontend/components/Nav.tsx`.
 
-### ~~[Priority: High] The Task 7 pit classifier is degenerate at its operating point~~ — ✅ CLOSED (Phase 2)
+### ~~[Priority: High] The Task 7 pit classifier is degenerate at its operating point~~ — CLOSED (Phase 2)
 
 **See [`todo-complete.md`](todo-complete.md) for what changed, the before/after numbers, and how it was verified.**
 
@@ -470,9 +470,9 @@ reason other than that they have not been connected.
    feature row and attach `shap_factors`, `trust_score` and `narrative`.
 3. Show them in `frontend/components/strategy/` next to the triggered rules.
 
-### 🟡 [Priority: Medium] Deep learning is only ever compared on one race — PARTIALLY CLOSED (Phase 2)
+### [Priority: Medium] Deep learning is only ever compared on one race — PARTIALLY CLOSED (Phase 2)
 
-**🔴 OPEN.** A `race_level_holdout()` helper existed briefly in Phase 2 but was removed in the 2026-09-27 simplification: a single committed session gave it nothing to split, so it could only raise. Re-add it together with the multi-session fetch, which is the actual blocker.
+**OPEN.** A `race_level_holdout()` helper existed briefly in Phase 2 but was removed in the 2026-09-27 simplification: a single committed session gave it nothing to split, so it could only raise. Re-add it together with the multi-session fetch, which is the actual blocker.
 
 
 **Why:** Task 7's headline result — the network beating every classical model on lap time (MAE 0.5154 vs

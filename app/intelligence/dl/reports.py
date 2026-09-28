@@ -50,7 +50,7 @@ def hyperparameter_report(results: dict, out_path: Path) -> Path:
         for tr in r["trials"]:
             p = tr["params"]
             s = tr["cv_summary"].get(m, {})
-            sel = "✅" if {**p, "hidden_units": list(p["hidden_units"])} == best else ""
+            sel = "selected" if {**p, "hidden_units": list(p["hidden_units"])} == best else ""
             extra = p.get("loss", "") if r["task"] == "regression" else ("balanced" if p.get("class_weighted") else "none")
             L.append(f"| {tr['experiment']} | {tr['varied']} | {list(p['hidden_units'])} | {p['learning_rate']} | "
                      f"{p['batch_size']} | {p['dropout']} | {p['optimizer']} | {p['l2']} | {extra} | "
@@ -100,7 +100,7 @@ def evaluation_report(results: dict, out_path: Path) -> Path:
             L += ["", f"Test confusion matrix (rows actual, columns predicted; 0 = stay out, 1 = pit): "
                       f"`{cm}`."]
             if r["test_metrics"]["n_positive"] < 5:
-                L += ["", f"> ⚠ The chronological test laps contain **{r['test_metrics']['n_positive']} pit event(s)**. "
+                L += ["", f"> **Caution.** The chronological test laps contain **{r['test_metrics']['n_positive']} pit event(s)**. "
                           "Precision, recall, F1 and PR-AUC on so few positives are dominated by chance; the "
                           "cross-validated figures in `hyperparameter_report.csv` rest on many more pit laps and "
                           "are the better guide to this model's ranking ability."]

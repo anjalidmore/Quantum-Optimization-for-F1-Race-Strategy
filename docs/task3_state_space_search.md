@@ -69,9 +69,9 @@ For a 24-lap dry race starting on softs (38 °C, one to two stops allowed):
 |-----------|----------|---------|----------|----------|------|
 | BFS | 2270.7 | | 1455 | 135 | 74 ms |
 | DFS | 2299.9 | | 24 | 5 | 0.9 ms |
-| UCS | **2262.4** | ★ | 1589 | 135 | 76 ms |
+| UCS | **2262.4** | optimal | 1589 | 135 | 76 ms |
 | Greedy | 2270.7 | | 26 | 47 | 2 ms |
-| A\* | **2262.4** | ★ | 1005 | 134 | 48 ms |
+| A\* | **2262.4** | optimal | 1005 | 134 | 48 ms |
 
 The textbook story emerges cleanly: **UCS and A\* find the identical optimal
 cost**; **A\* expands ~37% fewer nodes than UCS** thanks to the heuristic; **DFS

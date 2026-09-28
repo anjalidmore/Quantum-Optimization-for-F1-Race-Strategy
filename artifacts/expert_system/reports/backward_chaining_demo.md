@@ -3,7 +3,7 @@
 Goal: prove `pit_decision == 'PIT_NOW'` for the safety-car scenario.
 
 ```
-✓ pit_decision == 'PIT_NOW'  [rule R-SC-001]
-  ✓ track_status == 'SC'  [given]
-  ✓ tyre_wear >= 40  [given]
+[proven] pit_decision == 'PIT_NOW'  [rule R-SC-001]
+  [proven] track_status == 'SC'  [given]
+  [proven] tyre_wear >= 40  [given]
 ```

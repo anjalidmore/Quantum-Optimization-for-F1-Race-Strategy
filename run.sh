@@ -53,8 +53,10 @@ USAGE
   esac
 done
 
+# Status is carried by a coloured word, not by a glyph: a tick and a bang say
+# nothing when the terminal has no colour, and nothing at all to a screen reader.
 info()  { printf "\033[1;34m==>\033[0m %s\n" "$1"; }
-ok()    { printf "\033[1;32m✓\033[0m %s\n" "$1"; }
+ok()    { printf "\033[1;32mOK\033[0m    %s\n" "$1"; }
 
 # ---------------------------------------------------------------------------
 # 1. Python environment
@@ -82,7 +84,7 @@ ok "Python environment ready ($(python --version))"
 # shows what it found and asks; --force-ports restores the old behaviour, and
 # BACKEND_PORT/FRONTEND_PORT let you avoid the collision entirely.
 # ---------------------------------------------------------------------------
-warn() { printf "\033[1;33m!\033[0m %s\n" "$1"; }
+warn() { printf "\033[1;33mNOTE\033[0m  %s\n" "$1"; }
 
 # A port can have more than one listener - a stale dev server and Docker's
 # port proxy, say - so this walks them one at a time. It used to hold them

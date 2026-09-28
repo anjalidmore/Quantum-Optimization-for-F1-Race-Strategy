@@ -61,8 +61,8 @@ def comparison_report_md(problem: RaceProblem, rows: List[ComparisonRow],
     for r in rows:
         gap = "0.0%" if r.is_optimal else (f"+{r.cost_gap_pct:.1f}%" if r.found else "—")
         parts.append(
-            f"| **{r.algorithm}** | {'✅' if r.found else '❌'} | {_fmt(r.solution_cost)} | "
-            f"{gap} | {'★' if r.is_optimal else ''} | {r.nodes_expanded} | "
+            f"| **{r.algorithm}** | {'yes' if r.found else 'no'} | {_fmt(r.solution_cost)} | "
+            f"{gap} | {'optimal' if r.is_optimal else '—'} | {r.nodes_expanded} | "
             f"{r.nodes_generated} | {r.max_frontier_size} | {r.elapsed_ms:.2f} | "
             f"{r.peak_memory_kb:.1f} | {r.solution_depth} | {r.n_pit_stops} |"
         )

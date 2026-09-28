@@ -97,7 +97,7 @@ Ontology built: 73 classes, 29 object props, 90 data props
 Schema graph:  {'nodes': 61, 'edges': 29, ...}
 Instance graph:{'nodes': 17, 'edges': 20, 'weakly_connected': 1}
 ...
-Summary: 8/8 checks passed — ✅ ALL CHECKS PASSED
+Summary: 8/8 checks passed — ALL CHECKS PASSED
 All Task-1 deliverables generated successfully in .../outputs
 ```
 

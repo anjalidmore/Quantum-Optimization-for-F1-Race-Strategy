@@ -36,7 +36,7 @@ def _regression_table(comparison: list[dict]) -> str:
         lines.append(
             f"| {row['model']} | {_fmt(row['cv_mae'])} | {_fmt(row['cv_rmse'])} | {_fmt(row['cv_r2'])} | "
             f"{_fmt(row['test_mae'])} | {_fmt(row['test_rmse'])} | {_fmt(row['test_r2'])} | "
-            f"{'✅' if row.get('selected') else ''} |"
+            f"{'selected' if row.get('selected') else ''} |"
         )
     return "\n".join(lines)
 
@@ -55,7 +55,7 @@ def _classification_table(comparison: list[dict]) -> str:
         lines.append(
             f"| {row['model']} | {_fmt(row['cv_roc_auc'])} | {_fmt(row['cv_pr_auc'])} | {_fmt(row['cv_f1'])} | "
             f"{test_auc_str} | {_fmt(row['test_pr_auc']) if row['test_pr_auc'] is not None else 'undefined*'} | "
-            f"{_fmt(row['test_f1'])} | {'✅' if row.get('selected') else ''} |"
+            f"{_fmt(row['test_f1'])} | {'selected' if row.get('selected') else ''} |"
         )
     return "\n".join(lines)
 
@@ -132,7 +132,7 @@ def write_classification_report(dataset, clf: dict, path: Path) -> Path:
         )
     else:
         banner = (
-            "## ⚠️ Dataset: Synthetic Demonstration\n\n"
+            "## Dataset: synthetic demonstration data\n\n"
             f"{contract.synthetic_caveat}"
         )
 
@@ -207,7 +207,7 @@ def _selection_warning(comparison: list[dict]) -> str:
     leaving the reader to notice that row 2 was selected over row 1."""
     for row in comparison:
         if row.get("selected") and row.get("selection_warning"):
-            return f"\n> ⚠ **Selection warning.** {row['selection_warning']}\n"
+            return f"\n> **Selection warning.** {row['selection_warning']}\n"
     return ""
 
 
