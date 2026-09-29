@@ -1,6 +1,9 @@
 import { artifactUrl, DlArtifacts, DlComparison } from "@/lib/api";
-import { ArtifactImage } from "@/components/ArtifactImage";
+import { Chart } from "@/components/charts/Chart";
 import { fmt, TARGET_LABEL } from "@/lib/format";
+
+/* Chart names follow the artifact layout: dl_<laptime|pit_decision>_<figure>. */
+const DIR: Record<string, string> = { target_laptime: "laptime", target_pit_next_lap: "pit_decision" };
 
 /** Task 7 results: train/validation/test per target, the comparison against Task 6, and the saved files. */
 export function DeepEvaluation({
@@ -12,9 +15,6 @@ export function DeepEvaluation({
   artifacts: DlArtifacts;
   metrics: Record<string, any> | null;
 }) {
-  const dir: Record<string, string> = { target_laptime: "laptime", target_pit_next_lap: "pit_decision" };
-  const figure = (target: string, name: string) =>
-    artifacts.figures.find((f) => f.endsWith(`${dir[target]}/${name}`));
   const m = (target: string) => metrics?.models?.[target] ?? {};
 
   return (
@@ -25,7 +25,7 @@ export function DeepEvaluation({
           Test = the chronological holdout (the last laps of the race), used once, after hyperparameters,
           threshold and early-stopping epoch were fixed on earlier laps.
         </p>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 [&>*]:min-w-0">
           {Object.keys(TARGET_LABEL).map((target) => {
             const e = m(target);
             if (!e.test_metrics) return null;
@@ -39,33 +39,34 @@ export function DeepEvaluation({
               ["Test", e.test_metrics],
             ];
             return (
-              <div key={target} className="card overflow-x-auto space-y-3">
-                <h3 className="font-semibold text-paper-900">{TARGET_LABEL[target]}</h3>
-                <table className="w-full text-sm">
-                  <thead className="text-paper-500">
+              <div key={target} className="card space-y-3">
+                <h3 className="t-title text-[15px]">{TARGET_LABEL[target]}</h3>
+                {/* Up to six metric columns will not fit a phone, so the table
+                    is transposed below `sm`: metrics down, splits across. That
+                    is three columns, which does fit, and nothing scrolls. */}
+                <table className="t-table">
+                  <thead>
                     <tr>
-                      <th className="text-left font-normal py-1">Split</th>
-                      {!reg && <th className="text-right font-normal">pit laps</th>}
-                      {keys.map((k) => (
-                        <th key={k} className="text-right font-normal">
-                          {k.toUpperCase()}
-                        </th>
+                      <th scope="col">Metric</th>
+                      {splits.map(([name]) => (
+                        <th key={name} scope="col" className="num">{name}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="text-paper-700">
-                    {splits.map(([name, s]) => (
-                      <tr key={name} className={`border-t border-track-300 ${name === "Test" ? "bg-track-100" : ""}`}>
-                        <td className="py-1.5">{name}</td>
-                        {!reg && (
-                          <td className="text-right tabular-nums">
-                            {s?.n_positive}/{s?.n}
-                          </td>
-                        )}
-                        {keys.map((k) => (
-                          <td key={k} className="text-right tabular-nums">
-                            {fmt(s?.[k], 4)}
-                          </td>
+                  <tbody>
+                    {!reg && (
+                      <tr>
+                        <th scope="row" className="text-left font-normal">pit laps</th>
+                        {splits.map(([name, s]) => (
+                          <td key={name} className="num">{s?.n_positive}/{s?.n}</td>
+                        ))}
+                      </tr>
+                    )}
+                    {keys.map((k) => (
+                      <tr key={k}>
+                        <th scope="row" className="text-left font-normal">{k.toUpperCase()}</th>
+                        {splits.map(([name, s]) => (
+                          <td key={name} className="num">{fmt(s?.[k], 4)}</td>
                         ))}
                       </tr>
                     ))}
@@ -90,17 +91,10 @@ export function DeepEvaluation({
                     better guide.
                   </p>
                 )}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {(reg ? ["prediction_vs_actual.png"] : ["confusion_matrix.png", "roc_curve.png"]).map((n) =>
-                    figure(target, n) ? (
-                      <ArtifactImage
-                        key={n}
-                        src={artifactUrl(figure(target, n)!)}
-                        alt={`${target} ${n}`}
-                        className="w-full rounded"
-                      />
-                    ) : null,
-                  )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {(reg ? ["prediction_vs_actual"] : ["confusion_matrix", "roc_curve"]).map((n) => (
+                    <Chart key={n} name={`dl_${DIR[target]}_${n}`} height={230} />
+                  ))}
                 </div>
               </div>
             );
@@ -118,36 +112,34 @@ export function DeepEvaluation({
                 ? ["mae", "rmse", "r2", "mape"]
                 : ["pr_auc", "roc_auc", "precision", "recall", "f1", "accuracy"];
             return (
-              <div key={target} className="card overflow-x-auto">
-                <h3 className="font-semibold text-paper-900 mb-3">{TARGET_LABEL[target] ?? target}</h3>
-                <table className="w-full text-sm min-w-[36rem]">
-                  <thead className="text-paper-500">
+              <div key={target} className="card min-w-0">
+                <h3 className="t-title mb-3 text-[15px]">{TARGET_LABEL[target] ?? target}</h3>
+                {/* Six metric columns plus a model name do not fit 390px. Rather
+                    than force a sideways drag, the low-value columns drop away
+                    below `sm` and the ranking metric stays. */}
+                <table className="t-table">
+                  <thead>
                     <tr>
-                      <th className="text-left font-normal py-1">Model</th>
-                      {keys.map((k) => (
-                        <th key={k} className="text-right font-normal">
+                      <th scope="col">Model</th>
+                      {keys.map((k, i) => (
+                        <th key={k} scope="col" className={`num ${i > 1 ? "hidden sm:table-cell" : ""}`}>
                           {k.toUpperCase()}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="text-paper-700">
+                  <tbody>
                     {t.comparison.map((row) => (
-                      <tr
-                        key={row.model}
-                        className={`border-t border-track-300 ${row.family === "deep" ? "bg-track-100" : ""}`}
-                      >
-                        <td className="py-1.5">
+                      <tr key={row.model} className={row.family === "deep" ? "is-marked" : ""}>
+                        <td>
                           {row.model}
-                          {row.family === "deep" && <span className="badge ml-2">deep</span>}
-                          {row.model === t.task6_best_model && <span className="badge ml-2">Task 6 best</span>}
+                          {row.family === "deep" && <span className="marker ml-2">deep</span>}
+                          {row.model === t.task6_best_model && <span className="marker ml-2">Task 6 best</span>}
                         </td>
-                        {keys.map((k) => (
-                          <td key={k} className="text-right tabular-nums">
+                        {keys.map((k, i) => (
+                          <td key={k} className={`num ${i > 1 ? "hidden sm:table-cell" : ""}`}>
                             {row.metrics?.[k] === null || row.metrics?.[k] === undefined ? (
-                              <span className="text-paper-400" title="mathematically undefined on this split">
-                                undefined
-                              </span>
+                              <span className="text-paper-400">undefined</span>
                             ) : (
                               fmt(row.metrics[k], 4)
                             )}
@@ -158,15 +150,9 @@ export function DeepEvaluation({
                   </tbody>
                 </table>
                 <p className="text-sm text-paper-700 mt-3">{t.verdict.replace(/\*\*/g, "")}</p>
-                {figure(target, "model_comparison.png") && (
-                  <div className="mt-4">
-                    <ArtifactImage
-                      src={artifactUrl(figure(target, "model_comparison.png")!)}
-                      alt={`${target} model comparison`}
-                      className="w-full rounded"
-                    />
-                  </div>
-                )}
+                <div className="mt-4">
+                  <Chart name={`dl_${DIR[target]}_model_comparison`} height={260} />
+                </div>
               </div>
             );
           })}

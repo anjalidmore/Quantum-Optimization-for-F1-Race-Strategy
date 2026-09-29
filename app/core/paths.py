@@ -49,6 +49,11 @@ SEARCH_ARTIFACTS_DIR = ARTIFACTS_DIR / "search"
 DATA_ENGINEERING_ARTIFACTS_DIR = ARTIFACTS_DIR / "data_engineering"
 FEATURE_ENGINEERING_ARTIFACTS_DIR = ARTIFACTS_DIR / "feature_engineering"
 
+# The numbers behind every figure, written beside the PNG by the same call.
+# The PNGs stay the report deliverable; the dashboard reads these instead, so
+# its charts can be themed and inspected rather than being a picture.
+CHART_DATA_DIR = ARTIFACTS_DIR / "chart_data"
+
 # Short folder name per target, shared by Task 6's models/ layout.
 TARGET_DIRNAME = {"target_laptime": "laptime", "target_pit_next_lap": "pit_decision"}
 
@@ -209,5 +214,6 @@ def ensure_dirs() -> None:
         SEARCH_ARTIFACTS_DIR,
         DATA_ENGINEERING_ARTIFACTS_DIR,
         FEATURE_ENGINEERING_ARTIFACTS_DIR,
+        CHART_DATA_DIR,
     ):
         path.mkdir(parents=True, exist_ok=True)

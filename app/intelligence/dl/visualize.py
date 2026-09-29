@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from app.intelligence.charts import Axis, Chart, Series, write as write_chart
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -79,6 +81,15 @@ def plot_model_comparison(rows: list[dict], metric: str, title: str, out_path: P
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=130)
     plt.close(fig)
+    write_chart(f"dl_{out_path.parent.name}_{out_path.stem}",
+                Chart(kind="bar-horizontal", title=title,
+                      caption=f"{metric}: {'lower' if lower_is_better else 'higher'} is better. "
+                              "The deep models are marked.",
+                      x=Axis(metric), y=Axis("Model", kind="category"),
+                      series=[Series(metric, names, values)],
+                      extra={"lower_is_better": bool(lower_is_better),
+                             "highlight": [n for n in names if n.startswith("dnn")]}),
+                figure=out_path)
     return out_path
 
 
@@ -110,6 +121,16 @@ def plot_curve(history: dict, key: str, ylabel: str, title: str, out_path: Path,
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=140)
     plt.close(fig)
+    # Same lists the axes were just drawn from.
+    series = [Series(f"training {key}", list(epochs), history[key])]
+    if f"val_{key}" in history:
+        series.append(Series(f"validation {key}", list(epochs), history[f"val_{key}"]))
+    write_chart(out_path.stem if out_path.parent.name in ("", ".") else f"dl_{out_path.parent.name}_{out_path.stem}",
+                Chart(kind="line", title=title,
+                      caption="The dashed epoch is the one early stopping restored - the saved model.",
+                      x=Axis("Epoch"), y=Axis(ylabel), series=series,
+                      extra={"marker_x": best_epoch, "log_y": "log scale" in ylabel}),
+                figure=out_path)
     return out_path
 
 
@@ -131,6 +152,14 @@ def plot_confusion(cm, threshold: float, title: str, out_path: Path) -> Path:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=140)
     plt.close(fig)
+    write_chart(f"dl_{out_path.parent.name}_{out_path.stem}",
+                Chart(kind="confusion", title=title,
+                      caption=f"Held-out test laps at threshold {threshold:.3f}.",
+                      x=Axis("Predicted", kind="category"), y=Axis("Actual", kind="category"),
+                      series=[], extra={"labels": labels,
+                                        "matrix": [[int(cm[i, j]) for j in range(2)] for i in range(2)],
+                                        "threshold": float(threshold)}),
+                figure=out_path)
     return out_path
 
 
@@ -153,6 +182,13 @@ def plot_roc(y_true, y_proba, title: str, out_path: Path) -> Path | None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=140)
     plt.close(fig)
+    write_chart(f"dl_{out_path.parent.name}_{out_path.stem}",
+                Chart(kind="line", title=title,
+                      caption="Held-out test laps. The diagonal is chance.",
+                      x=Axis("False positive rate"), y=Axis("True positive rate"),
+                      series=[Series(f"DNN (AUC = {roc_auc_score(y_true, y_proba):.3f})", fpr, tpr)],
+                      extra={"identity_line": [0, 1]}),
+                figure=out_path)
     return out_path
 
 
@@ -170,4 +206,10 @@ def plot_pred_vs_actual(y_true, y_pred, title: str, out_path: Path) -> Path:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=140)
     plt.close(fig)
+    write_chart(f"dl_{out_path.parent.name}_{out_path.stem}",
+                Chart(kind="scatter", title=title,
+                      caption="Held-out chronological test laps. The diagonal is a perfect prediction.",
+                      x=Axis("Actual lap time", unit="s"), y=Axis("Predicted lap time", unit="s"),
+                      series=[Series("DNN", y_true, y_pred)], extra={"identity_line": [lo, hi]}),
+                figure=out_path)
     return out_path

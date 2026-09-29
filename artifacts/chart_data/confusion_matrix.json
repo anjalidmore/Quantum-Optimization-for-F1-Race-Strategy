@@ -1,0 +1,35 @@
+{
+  "name": "confusion_matrix",
+  "kind": "confusion",
+  "title": "Confusion matrix, random_forest",
+  "caption": "Held-out test laps at the tuned threshold.",
+  "axes": {
+    "x": {
+      "label": "Predicted",
+      "unit": null,
+      "kind": "category"
+    },
+    "y": {
+      "label": "Actual",
+      "unit": null,
+      "kind": "category"
+    }
+  },
+  "series": [],
+  "source": "confusion_matrix.png",
+  "data_source": "real_fastf1",
+  "labels": [
+    "No pit",
+    "Pit"
+  ],
+  "matrix": [
+    [
+      157,
+      22
+    ],
+    [
+      0,
+      1
+    ]
+  ]
+}

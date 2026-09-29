@@ -50,6 +50,17 @@
   --data-pos: #ff2d16; /* 4.8:1 on track-100 */
   --data-neg: #6fb6f2; /* 8.2:1 on track-100 */
 
+  /* Chart series. Every one clears 3.0 against the card, so a line or bar is
+     an identifiable graphical object and not just a pretty colour. They are
+     ordered by how often a first series matters, not by hue. */
+  --chart-1: #ff2d16; /*  4.8:1 */
+  --chart-2: #6fb6f2; /*  8.2:1 */
+  --chart-3: #4ec98a; /*  8.5:1 */
+  --chart-4: #f2d13c; /* 11.8:1 */
+  --chart-5: #c58af9; /*  7.1:1 */
+  --chart-6: #a9a59b; /*  7.2:1 */
+  --grid: #2a2f36;
+
   /* Tyre compounds carry data meaning only: never chrome, never decoration,
      and never the sole carrier of meaning (the chip also shows its letter). */
   --compound-soft: #e8382b;
@@ -107,6 +118,13 @@
     --compound-wet: #1059b8;    /* chip 5.7:1, ink 6.7:1 */
     --compound-ink: #ffffff;
 
+    --chart-1: #c41202; /* 5.2:1 */
+    --chart-2: #0d4f9e; /* 6.8:1 */
+    --chart-3: #1a7f37; /* 4.3:1 */
+    --chart-4: #8a6a00; /* 4.3:1 */
+    --chart-5: #6b3fa0; /* 6.3:1 */
+    --chart-6: #5c626b; /* 5.2:1 */
+    --grid: #d2cdc2;
     --data-pos: #c41202; /* 5.2:1 on track-100 */
     --data-neg: #0d4f9e; /* 6.8:1 on track-100 */
     --nav-surface: rgba(247, 245, 240, 0.78);
@@ -136,6 +154,13 @@
   --compound-ink: #ffffff;
   --data-pos: #c41202; /* 5.2:1 on track-100 */
   --data-neg: #0d4f9e; /* 6.8:1 on track-100 */
+  --chart-1: #c41202; /* 5.2:1 */
+  --chart-2: #0d4f9e; /* 6.8:1 */
+  --chart-3: #1a7f37; /* 4.3:1 */
+  --chart-4: #8a6a00; /* 4.3:1 */
+  --chart-5: #6b3fa0; /* 6.3:1 */
+  --chart-6: #5c626b; /* 5.2:1 */
+  --grid: #d2cdc2;
   --nav-surface: rgba(247, 245, 240, 0.78);
 }
 
@@ -273,6 +298,19 @@ a {
   font-weight: 600;
   letter-spacing: 0.03em;
   color: var(--paper-900);
+}
+
+/* Identifiers and paths have no spaces to break at, so at phone width a single
+   long feature name would push the whole page sideways. They wrap instead.
+   `<pre>` is exempt: the QML circuit is the one thing allowed to scroll, and
+   wrapping its wires would destroy it. */
+code,
+.t-code {
+  overflow-wrap: anywhere;
+}
+pre code,
+pre.t-code {
+  overflow-wrap: normal;
 }
 .unit {
   color: var(--paper-400);

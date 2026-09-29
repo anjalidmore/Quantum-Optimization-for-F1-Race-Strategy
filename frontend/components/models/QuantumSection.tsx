@@ -1,5 +1,5 @@
 import { artifactUrl, QmlSummary, QmlTarget } from "@/lib/api";
-import { ArtifactImage } from "@/components/ArtifactImage";
+import { Chart } from "@/components/charts/Chart";
 import { fmt, TARGET_LABEL } from "@/lib/format";
 
 /**
@@ -31,22 +31,17 @@ export function QuantumSection({ summary }: { summary: QmlSummary }) {
         <QuantumTargetTable key={target} target={target} t={t} />
       ))}
 
-      <section className="grid gap-4 md:grid-cols-2">
-        {[
-          ["circuit", "The variational circuit, drawn by PennyLane from the training code"],
-          ["loss_curves", "Training loss per epoch (final fit)"],
-          ["metric_comparison", "Every model on the same test laps"],
-          ["training_time", "Training cost — simulated circuits vs equivalent classical models"],
-          ["roc_pr", "ROC and precision-recall, pit decision"],
-          ["predicted_vs_actual", "Predicted vs actual lap time"],
-        ].map(([key, caption]) =>
-          summary.figures[key] ? (
-            <div key={key} className="card">
-              <ArtifactImage src={artifactUrl(summary.figures[key])} alt={caption} className="w-full rounded" />
-              <p className="text-xs text-paper-500 mt-2">{caption}</p>
-            </div>
-          ) : null,
-        )}
+      {/* The circuit is wide by nature, so it gets a full-width row of its own
+          and is the only element permitted to scroll sideways - inside its own
+          box, never the page. */}
+      <Chart name="qml_circuit" height={300} />
+
+      <section className="grid gap-5 md:grid-cols-2">
+        {["qml_training_loss", "qml_metrics_target_laptime", "qml_metrics_target_pit_next_lap",
+          "qml_training_time", "qml_roc_vs_classical", "qml_pr_vs_classical",
+          "qml_predicted_vs_actual"].map((name) => (
+          <Chart key={name} name={name} />
+        ))}
       </section>
 
       <section className="card">
@@ -96,42 +91,42 @@ function QuantumTargetTable({ target, t }: { target: string; t: QmlTarget }) {
         {isClf && t.n_test_positive !== undefined && ` (${t.n_test_positive} pit event)`} ·{" "}
         {t.encoding.fitted_on}
       </p>
-      <div className="card overflow-x-auto">
-        <table className="w-full text-sm min-w-[42rem]">
-          <thead className="text-paper-500">
+      <div className="card min-w-0">
+        {/* The CV column is the one that carries information here, so it is the
+            column that survives at phone width. Family, parameter count and the
+            test columns drop away rather than forcing the page sideways. */}
+        <table className="t-table">
+          <thead>
             <tr>
-              <th className="text-left font-normal py-1">Model</th>
-              <th className="text-left font-normal">Family</th>
-              <th className="text-right font-normal">Params</th>
-              <th className="text-right font-normal">Train (s)</th>
-              <th className="text-right font-normal">CV {metric} (mean ± sd)</th>
+              <th scope="col">Model</th>
+              <th scope="col" className="hidden md:table-cell">Family</th>
+              <th scope="col" className="num hidden md:table-cell">Params</th>
+              <th scope="col" className="num hidden sm:table-cell">Train (s)</th>
+              <th scope="col" className="num">CV {metric} (mean ± sd)</th>
               {testKeys.map((k) => (
-                <th key={k} className="text-right font-normal">
+                <th key={k} scope="col" className="num hidden lg:table-cell">
                   test {k.toUpperCase().replace("_", "-")}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="text-paper-700">
+          <tbody>
             {rows.map((m) => (
-              <tr
-                key={m.model}
-                className={`border-t border-track-300 ${m.family === "quantum" ? "is-marked" : ""}`}
-              >
-                <td className="py-1.5">
+              <tr key={m.model} className={m.family === "quantum" ? "is-marked" : ""}>
+                <td>
                   {m.model}
-                  {m.family === "quantum" && <span className="badge ml-2">quantum</span>}
+                  {m.family === "quantum" && <span className="marker ml-2">quantum</span>}
                 </td>
-                <td className="text-paper-500">{m.family}</td>
-                <td className="text-right tabular-nums">{m.n_parameters || "—"}</td>
-                <td className="text-right tabular-nums">
+                <td className="hidden text-paper-500 md:table-cell">{m.family}</td>
+                <td className="num hidden md:table-cell">{m.n_parameters || "—"}</td>
+                <td className="num hidden sm:table-cell">
                   {m.train_seconds === null ? "—" : m.train_seconds.toFixed(2)}
                 </td>
-                <td className="text-right tabular-nums">
+                <td className="num">
                   {m.cv_mean === null ? "undefined" : `${fmt(m.cv_mean, 4)} ± ${fmt(m.cv_std, 4)}`}
                 </td>
                 {testKeys.map((k) => (
-                  <td key={k} className="text-right tabular-nums">
+                  <td key={k} className="num hidden lg:table-cell">
                     {fmt(m.test_metrics?.[k], 4)}
                   </td>
                 ))}

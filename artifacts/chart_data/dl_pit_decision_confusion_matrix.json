@@ -1,0 +1,36 @@
+{
+  "name": "dl_pit_decision_confusion_matrix",
+  "kind": "confusion",
+  "title": "Task 7 DNN \u2014 test laps",
+  "caption": "Held-out test laps at threshold 0.152.",
+  "axes": {
+    "x": {
+      "label": "Predicted",
+      "unit": null,
+      "kind": "category"
+    },
+    "y": {
+      "label": "Actual",
+      "unit": null,
+      "kind": "category"
+    }
+  },
+  "series": [],
+  "source": "artifacts/deep_learning/pit_decision/confusion_matrix.png",
+  "data_source": "real_fastf1",
+  "labels": [
+    "stay out (0)",
+    "pit next lap (1)"
+  ],
+  "matrix": [
+    [
+      179,
+      0
+    ],
+    [
+      1,
+      0
+    ]
+  ],
+  "threshold": 0.1524421656773426
+}

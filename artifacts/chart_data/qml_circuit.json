@@ -1,0 +1,24 @@
+{
+  "name": "qml_circuit",
+  "kind": "circuit",
+  "title": "Variational circuit, 4 qubits, 1 layer(s)",
+  "caption": "AngleEmbedding, then StronglyEntanglingLayers, expanded to the gates the device actually runs. Drawn by PennyLane from the circuit that trains.",
+  "axes": {
+    "x": {
+      "label": "",
+      "unit": null,
+      "kind": "category"
+    },
+    "y": {
+      "label": "",
+      "unit": null,
+      "kind": "category"
+    }
+  },
+  "series": [],
+  "source": "artifacts/figures/qml_circuit.png",
+  "data_source": "real_fastf1",
+  "text": "0: \u2500\u2500RX(0.20)\u2500\u2500Rot(0.00,0.00,0.00)\u2500\u256d\u25cf\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256dX\u2500\u2524  <Z>\n1: \u2500\u2500RX(1.11)\u2500\u2500Rot(0.00,0.00,0.00)\u2500\u2570X\u2500\u256d\u25cf\u2500\u2500\u2500\u2500\u2502\u2500\u2500\u2524     \n2: \u2500\u2500RX(2.03)\u2500\u2500Rot(0.00,0.00,0.00)\u2500\u2500\u2500\u2500\u2570X\u2500\u256d\u25cf\u2500\u2502\u2500\u2500\u2524     \n3: \u2500\u2500RX(2.94)\u2500\u2500Rot(0.00,0.00,0.00)\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2570X\u2500\u2570\u25cf\u2500\u2524     ",
+  "n_qubits": 4,
+  "n_layers": 1
+}

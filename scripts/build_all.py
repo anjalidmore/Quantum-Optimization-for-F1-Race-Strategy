@@ -37,6 +37,7 @@ from app.core.paths import (
     ML_MODEL_REGISTRY_JSON,
     QML_METRICS_JSON,
     SEARCH_ARTIFACTS_DIR,
+    CHART_DATA_DIR,
     TASK5_FEATURE_METADATA_JSON,
     TASK5_FEATURES_CSV,
     XAI_RESULTS_JSON,
@@ -159,9 +160,23 @@ def build_features(force: bool) -> None:
              len(selected["target_pit_next_lap"]))
 
 
+def _chart_data_missing(prefix: str = "") -> bool:
+    """True when a stage has no chart JSON on disk.
+
+    The website draws its figures from artifacts/chart_data/. Those files are
+    written by the plotting functions, so a checkout with trained models but no
+    chart data (anything built before the charts existed) would skip the stage
+    and leave every chart on the page empty. Missing chart data is therefore a
+    reason to rebuild, exactly like a missing figure.
+    """
+    return not any(CHART_DATA_DIR.glob(f"{prefix}*.json"))
+
+
 @_stage("Machine learning (Task 6)")
 def build_ml(force: bool) -> dict | None:
-    if not force and ML_MODEL_REGISTRY_JSON.exists():
+    if not force and ML_MODEL_REGISTRY_JSON.exists() and _chart_data_missing():
+        log.info("Models exist but their chart data does not - regenerating so the dashboard has figures.")
+    elif not force and ML_MODEL_REGISTRY_JSON.exists():
         log.info("Already built (%s exists). Use --force to regenerate.", ML_MODEL_REGISTRY_JSON.name)
         return None
     from app.intelligence.ml.pipeline import train_all
@@ -173,7 +188,9 @@ def build_ml(force: bool) -> dict | None:
 def build_dl(force: bool) -> dict | None:
     from app.intelligence.dl import pipeline as dl_pipeline
 
-    if not force and dl_pipeline.artifacts_exist():
+    if not force and dl_pipeline.artifacts_exist() and _chart_data_missing("dl_"):
+        log.info("Task 7 artifacts exist but their chart data does not - regenerating.")
+    elif not force and dl_pipeline.artifacts_exist():
         log.info("Already built (%s exists). Use --force to regenerate.", DL_METRICS_JSON.name)
         # Anything that rewrote the shared registry wholesale may have dropped
         # Task 7's rows. They are reconstructable from the committed artifacts,
@@ -205,7 +222,9 @@ def build_qml(force: bool) -> dict | None:
     """
     from app.intelligence.qml import pipeline as qml_pipeline
 
-    if not force and qml_pipeline.artifacts_exist():
+    if not force and qml_pipeline.artifacts_exist() and _chart_data_missing("qml_"):
+        log.info("Quantum artifacts exist but their chart data does not - regenerating.")
+    elif not force and qml_pipeline.artifacts_exist():
         log.info("Already built (%s exists). Use --force to regenerate.", QML_METRICS_JSON.name)
         return None
     return qml_pipeline.run_all()

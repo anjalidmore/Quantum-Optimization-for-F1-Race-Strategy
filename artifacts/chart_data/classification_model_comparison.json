@@ -1,0 +1,72 @@
+{
+  "name": "classification_model_comparison",
+  "kind": "bar",
+  "title": "Pit-decision classification, model comparison",
+  "caption": "Cross-validated ROC-AUC and F1 for every model with a defined AUC.",
+  "axes": {
+    "x": {
+      "label": "Model",
+      "unit": null,
+      "kind": "category"
+    },
+    "y": {
+      "label": "Score",
+      "unit": null,
+      "kind": "number"
+    }
+  },
+  "series": [
+    {
+      "name": "CV ROC-AUC",
+      "points": [
+        {
+          "x": "random_forest",
+          "y": 0.8482151290298057
+        },
+        {
+          "x": "svm",
+          "y": 0.7842834861724788
+        },
+        {
+          "x": "xgboost",
+          "y": 0.8124607160793418
+        },
+        {
+          "x": "logistic_regression",
+          "y": 0.8298007240249157
+        },
+        {
+          "x": "decision_tree",
+          "y": 0.6711077530068512
+        }
+      ]
+    },
+    {
+      "name": "CV F1",
+      "points": [
+        {
+          "x": "random_forest",
+          "y": 0.19670329670329673
+        },
+        {
+          "x": "svm",
+          "y": 0.14285714285714285
+        },
+        {
+          "x": "xgboost",
+          "y": 0.2307422969187675
+        },
+        {
+          "x": "logistic_regression",
+          "y": 0.28873124592302674
+        },
+        {
+          "x": "decision_tree",
+          "y": 0.18704275351134436
+        }
+      ]
+    }
+  ],
+  "source": "classification_model_comparison.png",
+  "data_source": "real_fastf1"
+}

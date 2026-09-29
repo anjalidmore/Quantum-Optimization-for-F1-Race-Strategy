@@ -1,0 +1,59 @@
+{
+  "name": "classification_feature_importance",
+  "kind": "bar-horizontal",
+  "title": "Feature importance, random_forest",
+  "caption": "Top 8 features by the model's own importance measure.",
+  "axes": {
+    "x": {
+      "label": "Importance",
+      "unit": null,
+      "kind": "number"
+    },
+    "y": {
+      "label": "Feature",
+      "unit": null,
+      "kind": "category"
+    }
+  },
+  "series": [
+    {
+      "name": "Importance",
+      "points": [
+        {
+          "x": "compound_soft",
+          "y": 0.009583364805217051
+        },
+        {
+          "x": "field_pace_trend",
+          "y": 0.05998186166009888
+        },
+        {
+          "x": "field_median_lag1",
+          "y": 0.08336178352292344
+        },
+        {
+          "x": "tyrelife_x_soft",
+          "y": 0.09412795120603092
+        },
+        {
+          "x": "gap_roll3_mean",
+          "y": 0.11784233575911364
+        },
+        {
+          "x": "tracktemp_dev_x_tyrelife",
+          "y": 0.12744287182368308
+        },
+        {
+          "x": "form_vs_baseline",
+          "y": 0.16864878758585677
+        },
+        {
+          "x": "tyre_life",
+          "y": 0.3390110436370761
+        }
+      ]
+    }
+  ],
+  "source": "classification_feature_importance.png",
+  "data_source": "real_fastf1"
+}

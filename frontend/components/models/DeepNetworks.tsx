@@ -1,6 +1,9 @@
 import { artifactUrl, DlArtifacts, DlComparison, DlHistory, DlModel } from "@/lib/api";
-import { ArtifactImage } from "@/components/ArtifactImage";
+import { Chart } from "@/components/charts/Chart";
 import { fmt, TARGET_LABEL } from "@/lib/format";
+
+/* Chart names follow the artifact layout: dl_<laptime|pit_decision>_<figure>. */
+const DIR: Record<string, string> = { target_laptime: "laptime", target_pit_next_lap: "pit_decision" };
 
 /** Task 7: the headline verdict per target, each network's shape, and its training curves. */
 export function DeepNetworks({
@@ -16,10 +19,7 @@ export function DeepNetworks({
   artifacts: DlArtifacts;
   metrics: Record<string, any> | null;
 }) {
-  const dir: Record<string, string> = { target_laptime: "laptime", target_pit_next_lap: "pit_decision" };
   // Figures live at deep_learning/<laptime|pit_decision>/<name>.png
-  const figure = (target: string, name: string) =>
-    artifacts.figures.find((f) => f.endsWith(`${dir[target]}/${name}`));
 
   return (
     <>
@@ -109,25 +109,13 @@ export function DeepNetworks({
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           {Object.entries(history).map(([target, h]) => {
-            const extra = target === "target_laptime" ? "mae_curve.png" : "accuracy_curve.png";
+            const extra = target === "target_laptime" ? "mae_curve" : "accuracy_curve";
             const o = metrics?.models?.[target]?.overfitting ?? {};
             return (
               <div key={target} className="card space-y-3">
                 <h3 className="font-semibold text-paper-900">{TARGET_LABEL[target] ?? target}</h3>
-                {figure(target, "loss_curve.png") && (
-                  <ArtifactImage
-                    src={artifactUrl(figure(target, "loss_curve.png")!)}
-                    alt={`${target} loss curve`}
-                    className="w-full rounded"
-                  />
-                )}
-                {figure(target, extra) && (
-                  <ArtifactImage
-                    src={artifactUrl(figure(target, extra)!)}
-                    alt={`${target} ${extra}`}
-                    className="w-full rounded"
-                  />
-                )}
+                <Chart name={`dl_${DIR[target]}_loss_curve`} height={220} />
+                <Chart name={`dl_${DIR[target]}_${extra}`} height={220} />
                 <p className="text-sm text-paper-500">
                   Ran {h.epochs_run} of a maximum {h.max_epochs} epochs; early stopping (patience{" "}
                   {h.early_stopping_patience}) restored epoch {h.best_epoch}.{" "}
