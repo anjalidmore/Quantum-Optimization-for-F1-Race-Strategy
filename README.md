@@ -13,7 +13,7 @@ We take a real Grand Prix session, clean it, engineer features from it, and then
 
 ## What we built
 
-The lab specification is ten tasks. Nine are implemented and the tenth is partly written; they are one application rather than ten folders. What is still missing is listed in [`docs/DELIVERABLES_CHECKLIST.md`](docs/DELIVERABLES_CHECKLIST.md):
+The lab specification is ten tasks, plus a quantum-ML extension. All ten are implemented; they are one application rather than ten folders. The full traceability matrix, with every deliverable opened and checked against its content, is in [`docs/DELIVERABLES_CHECKLIST.md`](docs/DELIVERABLES_CHECKLIST.md):
 
 | Task | What it does | Where it lives |
 |---|---|---|
@@ -25,8 +25,8 @@ The lab specification is ten tasks. Nine are implemented and the tenth is partly
 | 6 · Machine learning | 10 classical models, time-aware validation, tuned decision thresholds | `app/intelligence/ml/` |
 | 7 · Deep learning | Two Keras networks on the same folds and the same holdout | `app/intelligence/dl/` |
 | 8 · Explainable AI | SHAP, LIME, counterfactuals, a trust score, per-group performance | `app/intelligence/xai/` |
-| 9 · System integration | A dashboard page per task, a race-strategy report generator, deployment docs | `frontend/`, `app/services/strategy_report.py` |
-| 10 · Evaluation & documentation | Partial: testing report and deployment guide written; six documents still missing | `docs/` |
+| 9 · System integration | A dashboard page per task, an 8-stage strategy pipeline (ML + DL + rules + search + XAI combined into one recommendation), a downloadable report, Docker deployment | `frontend/`, `app/services/strategy_service.py`, `app/services/strategy_report.py` |
+| 10 · Evaluation & documentation | `scripts/evaluate_system.py`'s testing, performance, domain-validation, explainability-validation, responsible-AI and deployment-readiness results, plus the User Manual, SRS, SDD and Deployment Guide | `artifacts/evaluation/`, `docs/` |
 | Extension · Quantum ML | Three PennyLane models simulated on the same split, with fair classical baselines | `app/intelligence/qml/` |
 
 Two predictions run through everything: **lap time** (regression) and **does this driver pit at the end of this lap?** (classification).
@@ -52,6 +52,12 @@ numbers instead of a cold error, starts the dashboard and opens it. Useful
 flags: `--force-retrain` to rebuild everything, `--skip-qml` to leave out the
 quantum stage, `--force-ports` to take :8000 and :3000 without asking. Set
 `BACKEND_PORT` / `FRONTEND_PORT` to move it out of the way instead.
+
+Or containerized — `docker compose up` after a `docker compose build` (see
+[`docs/deployment_guide.md`](docs/deployment_guide.md) §9), which builds a
+code-only backend and frontend image and bind-mounts `data/`/`artifacts/`
+from the host, so `./run.sh`'s (or `scripts/build_all.py`'s) output is what
+the containers actually serve.
 
 Or by hand:
 
@@ -338,10 +344,14 @@ The suite writes to a temporary directory, so running it never modifies the comm
 | [`docs/QML_README.md`](docs/QML_README.md) | Quantum ML from zero: qubits, our circuit, how it trains, our results, viva prep |
 | [`docs/DELIVERABLES_CHECKLIST.md`](docs/DELIVERABLES_CHECKLIST.md) | Every lab deliverable, its file path, and whether it is complete |
 | [`docs/TESTING_REPORT.md`](docs/TESTING_REPORT.md) | The last clean build and test run, with the actual output |
-| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Install, build, run, serve, retrain, troubleshoot |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) / [`docs/deployment_guide.md`](docs/deployment_guide.md) | Install, build, run, serve, retrain, troubleshoot, Docker |
+| [`docs/user_manual.md`](docs/user_manual.md) | How to use the dashboard, as a race engineer, not a developer |
+| [`docs/srs.md`](docs/srs.md) | Software Requirements Specification — every functional/non-functional requirement, traced to code |
+| [`docs/sdd.md`](docs/sdd.md) | Software Design Document — architecture, component design, the strategy pipeline's stage sequence |
 | [`docs/task1_knowledge_representation.md`](docs/task1_knowledge_representation.md) … [`task4_data_engineering.md`](docs/task4_data_engineering.md) | One note per early task |
 | [`docs/notebooks/task5_feature_engineering.ipynb`](docs/notebooks/task5_feature_engineering.ipynb) | Task 5 walkthrough over the functions in `app/intelligence/features/build.py` |
-| `artifacts/**/*.md` | The generated reports — every table in them was computed, not written |
+| `artifacts/**/*.md`, `artifacts/evaluation/*.json` | The generated reports and Task 10 evaluation results — every table in them was computed, not written |
+| [`artifacts/reports/Task9_Task10_Report.docx`](artifacts/reports/Task9_Task10_Report.docx) | The Task 9/10 report: architecture, dashboard screenshots, testing, performance, domain validation, responsible AI |
 
 ## License
 

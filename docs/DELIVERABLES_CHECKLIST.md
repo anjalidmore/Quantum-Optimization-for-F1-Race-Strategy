@@ -4,8 +4,11 @@ Traceability matrix against the lab task sheet ("Computational Intelligence Labo
 Summary"), mapped from the reference Clinical Decision Support System to this project's domain,
 **F1 race strategy**.
 
-**Audit date:** 2026-09-27. Every row marked **built** was opened and its contents read during the audit;
-nothing is marked complete on the strength of a filename. Paths are relative to the repository root.
+**Audit date:** 2026-09-27, updated 2026-10-01 for the Task 9/10 work (DL pipeline stage,
+recommendation engine, Docker deployment, `scripts/evaluate_system.py`, and the six previously-missing
+Task 10 documents). Every row marked **built** was opened and its contents read during the audit or
+the update; nothing is marked complete on the strength of a filename. Paths are relative to the
+repository root.
 
 | Status | Meaning |
 |---|---|
@@ -13,7 +16,7 @@ nothing is marked complete on the strength of a filename. Paths are relative to 
 | **partial** | exists but is partial, or satisfies the requirement in a different form (see Notes) |
 | **missing** | nothing on disk |
 
-**Totals: 48 built, 0 partial, 6 missing** across 54 named deliverables.
+**Totals: 55 built, 0 partial, 0 missing** across 55 named deliverables.
 
 ---
 
@@ -139,10 +142,11 @@ compound), race-strategy explanation (plain-English narratives) — `app/intelli
 | Deliverable | File path | Status | Notes |
 |---|---|---|---|
 | Streamlit Application *(agreed equivalent)* | `frontend/` (Next.js 15 + FastAPI) | built | Next.js was chosen over Streamlit so the models sit behind a real HTTP API that the tests and `scripts/demo_predict.py` also call; the choice and its reason are stated in `README.md` |
-| Integrated Source Code | `app/` (89 modules) | built | one package per task under `app/intelligence/`, wired together by `app/services/strategy_service.py` |
-| Dashboard | `frontend/app/page.tsx`, `frontend/app/strategy/page.tsx`, `frontend/app/reasoning/page.tsx`, `frontend/app/models/page.tsx`, `frontend/app/explainability/page.tsx`, `frontend/app/data/page.tsx` | built | six pages covering every task: Data & EDA, Knowledge, Expert System, Search (Reasoning page), ML, DL, QML (Models page), XAI, Strategy. Missing artifacts render "Not generated yet" with the command to run |
-| Race-Strategy Report Generator | `app/services/strategy_report.py`, `POST /api/strategy/report` | built | one race state in, a downloadable Markdown briefing out: prediction, extrapolation warnings, rules fired, search plan, SHAP factors, trust components, provenance. Button on the Race Strategy page |
-| Deployment Documentation | `docs/DEPLOYMENT.md` | built | install, build, run, serve behind a proxy, retrain on another race, health checks, troubleshooting, backups |
+| Integrated Source Code | `app/` (90+ modules) | built | one package per task under `app/intelligence/`, wired together by `app/services/strategy_service.py` — now including a Task 7 DL stage and a recommendation engine that combines rules + ML + DL + the A* plan |
+| Dashboard | `frontend/app/page.tsx`, `frontend/app/strategy/page.tsx`, `frontend/app/reasoning/page.tsx`, `frontend/app/models/page.tsx`, `frontend/app/explainability/page.tsx`, `frontend/app/data/page.tsx` | built | six pages covering every task: Data & EDA, Knowledge, Expert System, Search (Reasoning page), ML, DL, QML (Models page), XAI, Strategy. Missing artifacts render "Not generated yet" with the command to run. Overview now also carries a model-level pipeline-health panel (`GET /api/health`'s `models` breakdown), separate from the task-level ledger |
+| Race-Strategy Report Generator | `app/services/strategy_report.py`, `POST /api/strategy/report?format=markdown\|html` | built | one race state in, a downloadable briefing out (Markdown or HTML — the HTML path converts the Markdown rather than re-deriving it): prediction, ML vs. DL with an explicit disagreement note, extrapolation warnings, rules fired, search plan, SHAP factors, trust components, provenance. Button on the Race Strategy page |
+| Deployment Documentation | `docs/DEPLOYMENT.md`, `docs/deployment_guide.md` | built | install, build, run, serve behind a proxy, retrain on another race, health checks, troubleshooting, backups, Docker |
+| Containerized deployment | `Dockerfile`, `frontend/Dockerfile`, `docker-compose.yml` | built | code-only images, `artifacts/`/`data/` bind-mounted; verified in this audit — both images build, the backend container reaches "healthy" and serves the full per-model `/api/health` breakdown from inside the container network |
 
 **Steps involved:** input validation (`RaceStateRequest` + option validation against the dataset),
 feature construction, expert-system execution, ML prediction, DL prediction, XAI explanation,
@@ -152,29 +156,14 @@ recommendation engine, report generation, UI integration.
 
 | Deliverable | File path | Status | Notes |
 |---|---|---|---|
-| Evaluation Report | — | missing | not written. See the gap note below |
-| Responsible AI Report | — | missing | not written |
-| User Manual | — | missing | not written |
-| SRS | — | missing | not written |
-| SDD | — | missing | not written |
-| Testing Report | `docs/TESTING_REPORT.md` | built | **added in this audit** — the clean-build stage timings, 284 passing tests with per-file counts, the reproducibility comparison, live endpoint checks, and what the tests do not cover |
-| Final Project Report | — | missing | not written |
-| Deployment Guide | `docs/DEPLOYMENT.md` | built | complete |
-
-**Gap note.** Task 10 is six documents short. Nothing is broken and nothing is fabricated — the
-work simply has not been done. The material for all seven already exists and is measured:
-
-| Document | Where its content already exists |
-|---|---|
-| Evaluation Report | `artifacts/metrics/*.json`, `artifacts/deep_learning/evaluation_report.md`, `artifacts/reports/classical_vs_quantum_report.md` |
-| Responsible AI Report | the single-race limitation (throughout), `artifacts/xai/fairness_assessment.csv`, the trust score's documented failure to predict error, the "no betting" statement in the strategy report |
-| User Manual | `docs/DEPLOYMENT.md` §4, the six dashboard pages, `run.sh --help` |
-| SRS / SDD | `docs/architecture.md`, `app/api/schemas.py`, the API routers, this checklist |
-| Final Project Report | `README.md`, `docs/task7_task8.md`, `docs/QML_README.md` |
-
-**Proposed fix:** write the six documents in `docs/`, each from the artifacts listed above, with the
-testing report quoting an actual `pytest` run rather than a summary. Estimated one focused session;
-no code changes needed.
+| Evaluation Report | `artifacts/evaluation/*.json`, §10.2 of the Task 9/10 report | built | `scripts/evaluate_system.py` — functional testing, performance, domain validation, explainability validation, responsible AI, deployment readiness, all generated, none hand-typed |
+| Responsible AI Report | `artifacts/evaluation/responsible_ai.json` | built | robustness (perturbation flip rate), fairness (per-driver/team/compound), transparency, human oversight |
+| User Manual | `docs/user_manual.md` | built | |
+| SRS | `docs/srs.md` | built | |
+| SDD | `docs/sdd.md` | built | |
+| Testing Report | `docs/TESTING_REPORT.md` | built | original 2026-09-27 clean-build report plus a 2026-10-01 addendum covering the Task 9/10 work, pointing at `artifacts/evaluation/test_results.json` as the live source of truth going forward |
+| Final Project Report | `artifacts/reports/Task9_Task10_Report.docx`, `README.md`, `docs/task7_task8.md`, `docs/QML_README.md` | built | |
+| Deployment Guide | `docs/DEPLOYMENT.md`, `docs/deployment_guide.md` | built | |
 
 ---
 

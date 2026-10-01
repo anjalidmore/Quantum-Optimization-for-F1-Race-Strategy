@@ -357,15 +357,20 @@ Tasks 1–3 do not sit in the data pipeline. They are built by
 
 ```text
 app/services/strategy_service.py
-    ├── ML          → predicted lap time, pit probability
-    ├── Expert Sys  → triggered_expert_rules  (e.g. R-TYRE-002, R-RISK-002)
-    └── Search      → expected_cost_seconds, recommended_action
+    ├── ML          → predicted lap time, pit probability               (Task 6)
+    ├── DL          → predicted lap time, pit probability, tuned threshold (Task 7, shares xai.live's model cache)
+    ├── Expert Sys  → triggered_expert_rules  (e.g. R-TYRE-002, R-RISK-002) (Task 2)
+    ├── Search      → expected_cost_seconds, A* plan                    (Task 3)
+    └── Recommendation engine (_combine_recommendation)
+           → "PIT NOW" / "STAY OUT" / "PIT IN N LAPS", confidence, and an
+             explicit disagreement flag when ML and DL's pit calls differ
 ```
 
-A single `POST /api/strategy/predict` returns all three. That is the one place
-where the symbolic and statistical halves of the project actually meet, and it
-is real — verified in this audit returning `recommended_action: "PIT_NOW"` with
-two triggered rule ids and a search cost.
+A single `POST /api/strategy/predict` returns all of this — eight named stages
+in one response (`validation`, `feature_construction`, `prediction`,
+`dl_prediction`, `xai_explanation`, `optimal_search_strategy`/`search_plan`,
+`triggered_expert_rules`, `recommendation`). This is the one place where the
+symbolic, classical-ML and deep-learning halves of the project actually meet.
 
 
 ### Which stages are real, and which are not
@@ -383,7 +388,9 @@ two triggered rule ids and a search cost.
 | Task 8 Explainable AI | **Real** | SHAP + LIME + consistent tyre-age counterfactuals + trust + driver/team/compound stratification, on the Task 7 DNN |
 | API | **Real** | all endpoints verified live; values traced to artifacts |
 | Frontend | **Real** | every page builds and reads its values from the API |
-| Tasks 9–10, Quantum | **Not started** | listed as planned in the README status table |
+| Task 9 System integration | **Real** | 8-stage pipeline verified live; Docker images build and the backend container is independently healthy |
+| Task 10 Evaluation | **Real** | `scripts/evaluate_system.py` run end to end; every number in `artifacts/evaluation/*.json` came from a real pytest run, a real 934-lap backtest, or live API calls — none hand-typed |
+| Quantum (Extension) | **Real** | 3 PennyLane models on the noiseless simulator, documented as simulated-only |
 
 
 ### Rebuilding the feature contract

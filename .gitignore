@@ -1,3 +1,6 @@
+# Claude Code harness state (subagent worktrees, session scratch) — never project source
+.claude/
+
 # Python
 __pycache__/
 *.pyc
