@@ -157,12 +157,17 @@ class ArtifactPaths:
     def dl_comparison_json(self) -> Path:
         return self.deep_learning / "model_comparison.json"
 
+    @property
+    def evaluation(self) -> Path:
+        """Task 10's system-evaluation outputs (scripts/evaluate_system.py)."""
+        return self.root / "evaluation"
+
     def ensure(self) -> "ArtifactPaths":
         """Create every directory this object names."""
         for path in (
             self.models_laptime, self.models_pit, self.models_dl,
             self.metrics, self.figures, self.reports, self.metadata,
-            self.deep_learning, self.xai, self.models_qml,
+            self.deep_learning, self.xai, self.models_qml, self.evaluation,
             *(self.dl_target(t) for t in TARGET_DIRNAME),
             *(self.dl_model_dir(t) for t in TARGET_DIRNAME),
         ):
@@ -201,6 +206,8 @@ XAI_RESULTS_JSON = _DEFAULT.xai_results_json
 
 QML_MODELS_DIR = _DEFAULT.models_qml
 QML_METRICS_JSON = _DEFAULT.metrics / "qml_metrics.json"
+
+EVALUATION_DIR = _DEFAULT.evaluation
 
 
 def ensure_dirs() -> None:

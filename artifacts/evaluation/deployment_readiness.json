@@ -1,0 +1,70 @@
+{
+  "generated_at": "2026-10-01T10:00:48.382519+00:00",
+  "dockerfiles_present": {
+    "backend": true,
+    "frontend": true,
+    "compose": true
+  },
+  "health_check_passes": true,
+  "health_check_body": {
+    "status": "ok",
+    "models_trained": true,
+    "model_count": 12,
+    "xgboost_available": true,
+    "xgboost_status": null,
+    "models": {
+      "ml": {
+        "target_laptime": {
+          "trained": true,
+          "selected_model": "svr"
+        },
+        "target_pit_next_lap": {
+          "trained": true,
+          "selected_model": "random_forest"
+        }
+      },
+      "dl": {
+        "target_laptime": {
+          "trained": true
+        },
+        "target_pit_next_lap": {
+          "trained": true
+        }
+      },
+      "xai_available": true
+    }
+  },
+  "tests_pass": true,
+  "hard_coded_metric_scan": {
+    "n_matches": 4,
+    "matches": [
+      {
+        "file": "frontend/components/charts/Plot.tsx",
+        "line": 137,
+        "text": "fillOpacity={0.55} isAnimationActive={false} />"
+      },
+      {
+        "file": "frontend/components/charts/Plot.tsx",
+        "line": 159,
+        "text": "<Bar key={s.name} dataKey={s.name} fill={seriesColor(s, i)} fillOpacity={0.75} />"
+      },
+      {
+        "file": "frontend/components/overview/DriverErrorTable.tsx",
+        "line": 29,
+        "text": "const worst = Math.max(...rows.map((r) => r.mae), 0.0001);"
+      },
+      {
+        "file": "frontend/components/strategy/RaceStateForm.tsx",
+        "line": 30,
+        "text": "const late = Math.max(1, Math.round(laps * 0.85));"
+      }
+    ],
+    "note": "Regex scan for bare decimal/percent literals in .tsx files, excluding lines using the fmt() formatter (which always wraps a fetched value) or Tailwind className strings. Each match needs a human read \u2014 a CSS opacity or a layout ratio also matches the pattern \u2014 see 'matches' for the actual lines."
+  },
+  "readme_states_995_rows": true,
+  "readme_mentions_task9_and_task10": true,
+  "summary": {
+    "items_checked": 5,
+    "items_passed": 5
+  }
+}

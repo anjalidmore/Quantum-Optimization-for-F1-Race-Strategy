@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-10-01T10:00:48.382519+00:00",
+  "sections": [
+    "test_results.json",
+    "performance.json",
+    "domain_validation.json",
+    "explainability_validation.json",
+    "responsible_ai.json",
+    "deployment_readiness.json",
+    "future_enhancements.json"
+  ],
+  "python_version": "3.14.6",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O"
+}

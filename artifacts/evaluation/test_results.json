@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-10-01T10:00:48.382519+00:00",
+  "available": true,
+  "command": "/Users/anjalimore/Desktop/projects/CIL/.venv/bin/python3 -m pytest -q -p no:warnings --cov=app --cov-report=json:/Users/anjalimore/Desktop/projects/CIL/artifacts/evaluation/coverage.json --junitxml=/Users/anjalimore/Desktop/projects/CIL/artifacts/evaluation/junit.xml",
+  "elapsed_seconds": 64.3,
+  "exit_code": 0,
+  "passed": 301,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "total": 301,
+  "coverage_percent": 64.53463358669153,
+  "key_scenarios_present_in_suite": {
+    "end_to_end_predict_returns_all_stages": true,
+    "input_validation_rejects_bad_inputs": true,
+    "dl_uses_tuned_threshold_not_0_5": true,
+    "report_endpoint_returns_non_empty_file": true,
+    "not_available_when_ml_model_missing": true,
+    "not_available_when_dl_model_missing": true
+  },
+  "note": "Counts are parsed from this run's own --junitxml output, not hand-typed. 'key_scenarios_present_in_suite' confirms each named scenario actually exists as a collected test (see tests/test_api.py), not just that the suite as a whole passed."
+}
