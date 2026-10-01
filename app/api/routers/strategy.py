@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 
 from app.api.routers.data import _options
 from app.api.schemas import RaceStateRequest
@@ -64,13 +66,15 @@ def predict_strategy(race_state: RaceStateRequest):
     )
 
 
-@router.post("/report", response_class=PlainTextResponse)
-def strategy_report_markdown(race_state: RaceStateRequest):
-    """The Task 9 race-strategy report: one race state in, a Markdown briefing out.
+@router.post("/report")
+def strategy_report_download(race_state: RaceStateRequest, format: Literal["markdown", "html"] = "markdown"):
+    """The Task 9 race-strategy report: one race state in, a briefing out.
 
     Returned as a file download (``Content-Disposition: attachment``) so the
     dashboard's button saves it directly. Explanations are always included here
-    — a report without them would hide why the call was made.
+    — a report without them would hide why the call was made. ``format=html``
+    renders the identical content (see ``strategy_report.render_html``) for a
+    caller that wants to open it in a browser or print it to PDF.
     """
     _validate_against_known_options(race_state)
     _validate_model_choice("target_laptime", race_state.laptime_model)
@@ -82,6 +86,13 @@ def strategy_report_markdown(race_state: RaceStateRequest):
         pit_model=race_state.pit_model,
         explain=True,
     )
+    if format == "html":
+        content = strategy_report.render_html(analysis)
+        filename = strategy_report.filename_for(analysis["race_state"], extension="html")
+        return HTMLResponse(
+            content=content,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     markdown = strategy_report.render_markdown(analysis)
     filename = strategy_report.filename_for(analysis["race_state"])
     return PlainTextResponse(
