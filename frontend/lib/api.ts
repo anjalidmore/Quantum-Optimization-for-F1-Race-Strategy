@@ -43,6 +43,11 @@ export type HealthResponse = {
   model_count: number;
   xgboost_available: boolean;
   xgboost_status: string | null;
+  models?: {
+    ml: Record<string, { trained: boolean; selected_model: string | null }>;
+    dl: Record<string, { trained: boolean }>;
+    xai_available: boolean;
+  };
 };
 
 export type RegistryModel = {
@@ -123,6 +128,8 @@ export type TaskEvidence = {
   reports: string[];
   figures: string[];
   other_artifacts: string[];
+  documents_complete?: number;
+  documents_total?: number;
 };
 
 export type TaskEvidenceResponse = {
@@ -145,10 +152,19 @@ export type RaceState = {
   current_position: number;
   laptime_model?: string | null;
   pit_model?: string | null;
+  explain?: boolean;
 };
 
 export type StrategyResponse = {
   race_state: RaceState;
+  validation?: {
+    passed: boolean;
+    current_lap: number;
+    total_laps: number;
+    laps_remaining: number;
+    tyre_compound: string;
+    note: string;
+  };
   prediction: {
     predicted_lap_time_seconds: number | null;
     laptime_model: string | null;
@@ -159,6 +175,22 @@ export type StrategyResponse = {
     out_of_range: Record<string, { feature: string; value: number; training_min: number; training_max: number }[]>;
     context_only: Record<string, Record<string, boolean>>;
     errors: string[];
+  };
+  dl_prediction?: {
+    predicted_lap_time_seconds: number | null;
+    probability_pit: number | null;
+    predicted_class: number | null;
+    threshold: number | null;
+    errors: string[];
+  };
+  recommendation?: {
+    action: string;
+    confidence: "high" | "moderate" | "low" | "none" | string;
+    source: string;
+    disagreement: boolean;
+    ml_pit_probability: number | null;
+    dl_pit_probability: number | null;
+    reason: string;
   };
   recommended_action: string | null;
   expected_cost_seconds: number | null;
@@ -172,6 +204,7 @@ export type StrategyResponse = {
   };
   triggered_expert_rules: { rule_id: string; name: string; matched_conditions: string[]; asserted: Record<string, unknown> }[];
   evidence: Record<string, unknown>;
+  xai_explanation?: Record<string, any>;
   data_source: string;
 };
 
@@ -461,9 +494,13 @@ export const api = {
   expertSystem: () => getJson<ExpertSystemSummary | Unavailable>("/api/reasoning/expert-system"),
   searchComparison: () => getJson<SearchSummary | Unavailable>("/api/reasoning/search"),
 
-  // Task 9 — the race-strategy report generator. Returns markdown, not JSON.
-  strategyReport: async (raceState: RaceState): Promise<{ filename: string; markdown: string }> => {
-    const res = await fetch(`${API_BASE}/api/strategy/report`, {
+  // Task 9 — the race-strategy report generator. Returns the rendered text
+  // (Markdown or HTML, per `format`), not JSON.
+  strategyReport: async (
+    raceState: RaceState,
+    format: "markdown" | "html" = "markdown",
+  ): Promise<{ filename: string; content: string; mimeType: string }> => {
+    const res = await fetch(`${API_BASE}/api/strategy/report?format=${format}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(raceState),
@@ -472,6 +509,11 @@ export const api = {
     if (!res.ok) throw new ApiError(res.status, `Report generation failed (${res.status})`);
     const disposition = res.headers.get("content-disposition") ?? "";
     const match = disposition.match(/filename="?([^"]+)"?/);
-    return { filename: match?.[1] ?? "strategy_report.md", markdown: await res.text() };
+    const fallback = format === "html" ? "strategy_report.html" : "strategy_report.md";
+    return {
+      filename: match?.[1] ?? fallback,
+      content: await res.text(),
+      mimeType: format === "html" ? "text/html" : "text/markdown",
+    };
   },
 };

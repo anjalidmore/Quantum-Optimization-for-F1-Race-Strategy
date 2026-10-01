@@ -196,17 +196,127 @@ def test_strategy_predict_rejects_unavailable_model(client):
     assert r.status_code == 422
 
 
+def test_strategy_predict_rejects_negative_current_lap(client):
+    race_state = {
+        "driver": "ALO", "team": "ASTON MARTIN", "current_lap": -3, "total_laps": 55,
+        "tyre_compound": "MEDIUM", "tyre_age": 5, "track_temperature": 40.0,
+    }
+    r = client.post("/api/strategy/predict", json=race_state)
+    assert r.status_code == 422
+
+
+def test_strategy_predict_rejects_negative_tyre_age(client):
+    race_state = {
+        "driver": "ALO", "team": "ASTON MARTIN", "current_lap": 10, "total_laps": 55,
+        "tyre_compound": "MEDIUM", "tyre_age": -1, "track_temperature": 40.0,
+    }
+    r = client.post("/api/strategy/predict", json=race_state)
+    assert r.status_code == 422
+
+
+def test_strategy_predict_rejects_unknown_tyre_compound(client):
+    race_state = {
+        "driver": "ALO", "team": "ASTON MARTIN", "current_lap": 10, "total_laps": 55,
+        "tyre_compound": "SLICK_ULTRA", "tyre_age": 5, "track_temperature": 40.0,
+    }
+    r = client.post("/api/strategy/predict", json=race_state)
+    assert r.status_code == 422
+    assert "Unknown tyre compound" in str(r.json()["detail"])
+
+
+def test_strategy_predict_returns_every_pipeline_stage(client):
+    """Task 9's pipeline runs eight stages on one call; every one of them
+    must be a key in the response, so the frontend can render a card per
+    stage without guessing at an optional field."""
+    race_state = {
+        "driver": "ALO", "team": "ASTON MARTIN", "current_lap": 20, "total_laps": 55,
+        "tyre_compound": "MEDIUM", "tyre_age": 10, "track_temperature": 40.0, "explain": True,
+    }
+    r = client.post("/api/strategy/predict", json=race_state)
+    assert r.status_code == 200
+    body = r.json()
+    for key in (
+        "validation", "feature_construction", "prediction", "dl_prediction",
+        "xai_explanation", "optimal_search_strategy", "triggered_expert_rules", "recommendation",
+    ):
+        assert key in body, key
+    assert body["validation"]["passed"] is True
+    assert body["recommendation"]["action"] in ("PIT NOW", "STAY OUT") or "PIT IN" in body["recommendation"]["action"]
+    assert body["recommendation"]["confidence"] in ("high", "moderate", "low", "none")
+
+
+def test_strategy_predict_dl_stage_uses_the_tuned_threshold(client):
+    import json
+
+    from app.core.paths import DL_METRICS_JSON
+
+    metrics = json.loads(DL_METRICS_JSON.read_text())
+    tuned = metrics["models"]["target_pit_next_lap"]["threshold"]["threshold"]
+    assert tuned != 0.5  # the whole point: it must not have silently fallen back
+
+    race_state = {
+        "driver": "ALO", "team": "ASTON MARTIN", "current_lap": 20, "total_laps": 55,
+        "tyre_compound": "MEDIUM", "tyre_age": 10, "track_temperature": 40.0,
+    }
+    body = client.post("/api/strategy/predict", json=race_state).json()
+    assert body["dl_prediction"]["threshold"] == pytest.approx(tuned)
+    expected_class = int(body["dl_prediction"]["probability_pit"] >= tuned)
+    assert body["dl_prediction"]["predicted_class"] == expected_class
+
+
+def test_strategy_ml_stage_reports_not_available_when_model_artifact_missing(tmp_path, monkeypatch):
+    """A missing .joblib must surface as a structured error, not a silent
+    fabricated prediction or an unhandled 500."""
+    import app.services.model_cache as mc
+
+    monkeypatch.setattr(mc, "ML_MODELS_LAPTIME_DIR", tmp_path)
+    fresh_cache = mc.ModelCache()
+    with pytest.raises(mc.ModelUnavailableError, match="no artifact"):
+        fresh_cache.get_pipeline("target_laptime", "svr")
+
+
+def test_strategy_dl_stage_reports_not_available_when_model_missing(tmp_path, monkeypatch):
+    """The DL stage's own 'not available' path, exercised the same way the
+    live strategy pipeline reaches it — through xai.live's shared cache."""
+    import app.intelligence.xai.live as live_mod
+    import app.intelligence.xai.loading as loading_mod
+
+    monkeypatch.setattr(loading_mod, "DL_MODELS_DIR", tmp_path / "no-such-dir")
+    saved_cache = dict(live_mod._CACHE)
+    live_mod._CACHE.clear()
+    try:
+        result = live_mod.predict_point("target_laptime", {})
+        assert result["available"] is False
+        assert "build_all.py" in result["reason"]
+    finally:
+        live_mod._CACHE.clear()
+        live_mod._CACHE.update(saved_cache)
+
+
 def test_task_evidence_endpoint_reports_honest_status(client):
     r = client.get("/api/tasks/evidence")
     assert r.status_code == 200
     body = r.json()
     assert len(body["tasks"]) == 10
     statuses = {t["id"]: t["status"] for t in body["tasks"]}
-    # Tasks 1-8 have real generated artifacts in this repo; 9-10 do not exist yet.
+    # Tasks 1-8 have real generated artifacts in this repo.
     for tid in ("task1", "task2", "task3", "task4", "task5", "task6", "task7", "task8"):
         assert statuses[tid] == "completed"
+    # Tasks 9-10 are scanned from real files on disk (docs/, Dockerfiles,
+    # artifacts/evaluation, artifacts/reports) rather than a fixed status, so
+    # their status here tracks whatever this checkout's state actually is —
+    # never "completed" from nothing, and never silently pinned to "upcoming"
+    # once real deliverables exist.
     for tid in ("task9", "task10"):
-        assert statuses[tid] == "upcoming"
+        assert statuses[tid] in ("completed", "in_progress", "upcoming")
+    task10 = next(t for t in body["tasks"] if t["id"] == "task10")
+    assert task10["documents_total"] == 6
+    assert 0 <= task10["documents_complete"] <= 6
+    assert statuses["task10"] == (
+        "completed" if task10["documents_complete"] == 6
+        else "in_progress" if task10["documents_complete"] > 0
+        else "upcoming"
+    )
     # Every listed artifact path must actually exist on disk (never a fabricated filename).
     import os
 

@@ -2,6 +2,7 @@ import { api, ApiError } from "@/lib/api";
 import { DatasetBadge } from "@/components/DatasetBadge";
 import { TyreBadge } from "@/components/TyreBadge";
 import { TaskLedger } from "@/components/overview/TaskLedger";
+import { PipelineHealth } from "@/components/overview/PipelineHealth";
 import { DriverErrorTable } from "@/components/overview/DriverErrorTable";
 import { fmt } from "@/lib/format";
 
@@ -130,7 +131,10 @@ export default async function OverviewPage() {
           </dl>
         </div>
 
-        <TaskLedger evidence={evidence} />
+        <div className="space-y-10">
+          <TaskLedger evidence={evidence} />
+          {health && <PipelineHealth health={health} />}
+        </div>
       </div>
 
       {/* ---- supporting evidence ------------------------------------------- */}

@@ -172,22 +172,66 @@ def _task8() -> dict:
             **_scan_tree(XAI_DIR)}
 
 
-_UPCOMING = [
-    {
+def _task9() -> dict:
+    """Task 9 has no artifacts/ folder of its own — its deliverables are the
+    dashboard (frontend/), the strategy report generator (app/services/), and
+    deployment docs/config. Scanned for real rather than hard-coded so this
+    doesn't silently go stale (as it did while this function only returned a
+    fixed 'upcoming')."""
+    deliverables = {
+        "deployment_guide": REPO_ROOT / "docs" / "DEPLOYMENT.md",
+        "dockerfile_backend": REPO_ROOT / "Dockerfile",
+        "dockerfile_frontend": REPO_ROOT / "frontend" / "Dockerfile",
+        "docker_compose": REPO_ROOT / "docker-compose.yml",
+        "environment_record": REPO_ROOT / "artifacts" / "deployment" / "environment.txt",
+    }
+    present = [k for k, v in deliverables.items() if v.exists()]
+    other = [_rel(v) for v in deliverables.values() if v.exists()]
+    strategy_report_module = (REPO_ROOT / "app" / "services" / "strategy_report.py").exists()
+    return {
         "id": "task9", "number": 9, "label": "System Integration & Deployment",
-        "purpose": "A unified strategy engine combining every computational-intelligence capability.",
-        "status": "upcoming", "reports": [], "figures": [], "other_artifacts": [],
-    },
-    {
+        "purpose": "A unified strategy engine combining every computational-intelligence capability, "
+                   "served through a dashboard and a deployable API.",
+        "status": "completed" if strategy_report_module and len(present) == len(deliverables) else
+                  ("in_progress" if strategy_report_module or present else "upcoming"),
+        "reports": [], "figures": [], "other_artifacts": other,
+    }
+
+
+def _task10() -> dict:
+    """Task 10's remaining deliverables (per docs/DELIVERABLES_CHECKLIST.md)
+    are documents under docs/ and artifacts/evaluation/ + artifacts/reports/ —
+    scanned for real, same reasoning as _task9."""
+    docs = {
+        "testing_report": REPO_ROOT / "docs" / "TESTING_REPORT.md",
+        "deployment_guide": REPO_ROOT / "docs" / "deployment_guide.md",
+        "user_manual": REPO_ROOT / "docs" / "user_manual.md",
+        "srs": REPO_ROOT / "docs" / "srs.md",
+        "sdd": REPO_ROOT / "docs" / "sdd.md",
+        "final_report": REPO_ROOT / "artifacts" / "reports" / "Task9_Task10_Report.docx",
+    }
+    present = [k for k, v in docs.items() if v.exists()]
+    other = [_rel(v) for v in docs.values() if v.exists()]
+    eval_dir = REPO_ROOT / "artifacts" / "evaluation"
+    if eval_dir.is_dir():
+        other += [_rel(p) for p in sorted(eval_dir.glob("*.json"))]
+    if len(present) == len(docs):
+        status = "completed"
+    elif present:
+        status = "in_progress"
+    else:
+        status = "upcoming"
+    return {
         "id": "task10", "number": 10, "label": "Evaluation & Responsible AI",
-        "purpose": "System-wide evaluation: performance, usability, explainability, robustness, documentation.",
-        "status": "upcoming", "reports": [], "figures": [], "other_artifacts": [],
-    },
-]
+        "purpose": "System-wide evaluation: performance, domain validation, explainability validation, "
+                   "responsible-AI assessment and documentation.",
+        "status": status, "reports": [], "figures": [], "other_artifacts": other,
+        "documents_complete": len(present), "documents_total": len(docs),
+    }
 
 
 @router.get("/evidence")
 def get_task_evidence():
-    tasks = [_task1(), _task2(), _task3(), _task4(), _task5(), _task6(), _task7(), _task8(), *_UPCOMING]
+    tasks = [_task1(), _task2(), _task3(), _task4(), _task5(), _task6(), _task7(), _task8(), _task9(), _task10()]
     completed = sum(1 for t in tasks if t["status"] == "completed")
     return {"tasks": tasks, "completed_count": completed, "total_count": len(tasks)}

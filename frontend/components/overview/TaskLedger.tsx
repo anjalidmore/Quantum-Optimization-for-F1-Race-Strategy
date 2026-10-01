@@ -17,7 +17,11 @@ const COUNT: Record<string, (t: TaskEvidenceResponse["tasks"][number]) => string
   task7: () => "2 networks",
   task8: () => "360 trust rows",
   task9: () => "6 pages",
-  task10: () => "6 documents left",
+  // Documents remaining is read from the API's live scan of docs/ and
+  // artifacts/, not typed here — it used to say "6 documents left"
+  // unconditionally, which would have gone stale the moment any got written.
+  task10: (t) =>
+    t.documents_total !== undefined ? `${t.documents_complete}/${t.documents_total} documents` : "documents",
 };
 
 export function TaskLedger({ evidence }: { evidence: TaskEvidenceResponse }) {
@@ -29,6 +33,7 @@ export function TaskLedger({ evidence }: { evidence: TaskEvidenceResponse }) {
       <div className="border-t border-track-300">
         {evidence.tasks.map((task) => {
           const built = task.status === "completed";
+          const inProgress = task.status === "in_progress";
           return (
             <div
               key={task.id}
@@ -41,10 +46,12 @@ export function TaskLedger({ evidence }: { evidence: TaskEvidenceResponse }) {
               <span className="flex items-center gap-2 text-[11px] text-paper-500">
                 <span
                   aria-hidden
-                  className={`block h-[7px] w-[7px] ${built ? "bg-paper-900" : "border border-edge"}`}
+                  className={`block h-[7px] w-[7px] ${
+                    built ? "bg-paper-900" : inProgress ? "border border-paper-900 bg-track-100" : "border border-edge"
+                  }`}
                 />
                 <span className="tabular-nums">{COUNT[task.id]?.(task) ?? (built ? "built" : "not built")}</span>
-                <span className="sr-only">{built ? "built" : "not built"}</span>
+                <span className="sr-only">{built ? "built" : inProgress ? "in progress" : "not built"}</span>
               </span>
             </div>
           );

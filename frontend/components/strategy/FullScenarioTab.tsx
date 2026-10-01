@@ -62,16 +62,22 @@ export function FullScenarioTab({ options, registry }: { options: DataOptions; r
       ...form,
       laptime_model: modelMode === "select" ? laptimeModel : null,
       pit_model: modelMode === "select" ? pitModel : null,
+      // Every card in the result — including the XAI one — comes from one
+      // call, so the simulator always asks for the Task 8 explanation too.
+      explain: true,
     };
   }
 
-  /** Task 9: ask the backend for a full Markdown briefing on this race state. */
+  const [reportFormat, setReportFormat] = useState<"markdown" | "html">("markdown");
+
+  /** Task 9: ask the backend for a full report on this race state, as
+   * Markdown or as a self-contained HTML page — same content either way. */
   async function downloadReport() {
     setReporting(true);
     setError(null);
     try {
-      const { filename, markdown } = await api.strategyReport(payload());
-      const url = URL.createObjectURL(new Blob([markdown], { type: "text/markdown" }));
+      const { filename, content, mimeType } = await api.strategyReport(payload(), reportFormat);
+      const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -128,9 +134,19 @@ export function FullScenarioTab({ options, registry }: { options: DataOptions; r
           <button type="button" onClick={downloadReport} disabled={reporting} className="btn-secondary">
             {reporting ? "Generating report…" : "Download strategy report"}
           </button>
+          <label className="t-micro flex items-center gap-1.5">
+            <span className="sr-only">Report format</span>
+            <select
+              value={reportFormat}
+              onChange={(e) => setReportFormat(e.target.value as "markdown" | "html")}
+              className="input !w-auto !py-1 text-[12px]"
+            >
+              <option value="markdown">Markdown</option>
+              <option value="html">HTML</option>
+            </select>
+          </label>
           <p className="t-micro max-w-[30ch]">
-            The report is one Markdown file: prediction, triggered rules, search plan, SHAP explanation and trust
-            score.
+            One file: prediction, ML vs. DL, triggered rules, search plan, SHAP explanation and trust score.
           </p>
         </div>
 
