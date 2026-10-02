@@ -1,5 +1,6 @@
 import { api, ApiError } from "@/lib/api";
 import { DatasetBadge } from "@/components/DatasetBadge";
+import { PageHero } from "@/components/PageHero";
 import { ClassicalRegression } from "@/components/models/ClassicalRegression";
 import { ClassicalClassification } from "@/components/models/ClassicalClassification";
 import { DeepNetworks } from "@/components/models/DeepNetworks";
@@ -56,19 +57,18 @@ export default async function ModelsPage() {
   const clfBest = mlMetrics?.classification?.models?.[mlMetrics?.classification?.best_model];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 pb-10">
+      <PageHero
+        photo="/images/photo-driver-portrait.jpg"
+        focus="50% 20%"
+        eyebrow="Tasks 6 & 7"
+        title="Models"
+        blurb="Lap-time regression and pit-decision classification, trained twice: with classical models (Task 6) and with Keras neural networks (Task 7). Both use the same Task 5 feature contract, the same expanding-window folds and the same untouched chronological holdout, so any difference is the model rather than the harness."
+      />
       <section>
         <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl font-bold text-paper-900">Models</h1>
           <DatasetBadge source={manifest.dataset_source} />
-          <span className="badge">Tasks 6 &amp; 7</span>
         </div>
-        <p className="text-paper-500 mt-1 max-w-3xl">
-          Lap-time regression and pit-decision classification, trained twice: with classical models (Task 6) and
-          with Keras neural networks (Task 7). Both use the same Task 5 feature contract, the same
-          expanding-window folds and the same untouched chronological holdout, so any difference is the model
-          rather than the harness.
-        </p>
         <p className="text-xs text-paper-400 mt-2 max-w-3xl">
           {isReal ? (
             <>

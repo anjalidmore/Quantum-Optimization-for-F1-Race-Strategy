@@ -1,6 +1,7 @@
 import { api, ApiError, artifactUrl } from "@/lib/api";
 import { DatasetBadge } from "@/components/DatasetBadge";
 import { ArtifactImage } from "@/components/ArtifactImage";
+import { PageHero } from "@/components/PageHero";
 import { TaskArtifactList } from "@/components/TaskEvidence";
 import { basename, prettify } from "@/lib/format";
 
@@ -45,14 +46,19 @@ export default async function DataPage() {
   const hasArtifacts = task4.figures.length + task4.reports.length > 0;
 
   return (
-    <div className="space-y-10">
-      <section>
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl font-bold text-paper-900">Data &amp; Evidence</h1>
-          {manifest && <DatasetBadge source={manifest.dataset_source} />}
-        </div>
-        <p className="text-paper-500 mt-1 max-w-2xl">{task4.purpose}</p>
-      </section>
+    <div className="space-y-10 pb-10">
+      <PageHero
+        photo="/images/photo-pitlane.jpg"
+        focus="80% 60%"
+        eyebrow="Task 4"
+        title="Data & Evidence"
+        blurb={task4.purpose}
+      />
+      {manifest && (
+        <section>
+          <DatasetBadge source={manifest.dataset_source} />
+        </section>
+      )}
 
       {!hasArtifacts && (
         <div className="card text-paper-500 text-sm">

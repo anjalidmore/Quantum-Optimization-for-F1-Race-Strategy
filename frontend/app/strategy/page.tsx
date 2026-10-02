@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api, ApiError, DataOptions, Registry } from "@/lib/api";
 import { FullScenarioTab } from "@/components/strategy/FullScenarioTab";
 import { TopFeaturesTab } from "@/components/strategy/TopFeaturesTab";
+import { PageHero } from "@/components/PageHero";
 
 export default function StrategyPage() {
   const [tab, setTab] = useState<"full" | "top">("full");
@@ -24,13 +25,13 @@ export default function StrategyPage() {
 
   return (
     <div>
-      <div className="pt-14">
-        <h1 className="t-page-title">Race strategy</h1>
-        <p className="t-body mt-4 max-w-measure">
-          Describe a race situation. The trained Task 6 models predict lap time and pit probability, the Task 2
-          rules fire over the same state, and the Task 3 search plans the rest of the race.
-        </p>
-      </div>
+      <PageHero
+        photo="/images/photo-pitlane.jpg"
+        focus="55% 65%"
+        eyebrow="Tasks 2, 3, 6, 7 & 8 — live"
+        title="Race strategy"
+        blurb="Describe a race situation. The trained Task 6 and Task 7 models predict lap time and pit probability, the Task 2 rules fire over the same state, and the Task 3 search plans the rest of the race — combined into one recommendation."
+      />
 
       {loading && (
         <div className="mt-10" aria-busy="true" aria-live="polite">

@@ -72,10 +72,32 @@
   --r-sm: 2px;
   --r-md: 4px;
   --r-lg: 6px;
+  /* Added for the photography-led surfaces (hero, floating stat cards,
+     sticker frames) introduced in this redesign — see DESIGN.md "Luxe
+     Paddock". Data tables, inputs and chips keep the sharp 2-6px scale;
+     these are reserved for panels that sit over or beside a photograph. */
+  --r-xl: 14px;
+  --r-xxl: 22px;
 
   --t-fast: 120ms;
   --t-base: 180ms;
+  --t-slow: 420ms;
   --ease: cubic-bezier(0.2, 0, 0.3, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Depth, reserved for the photo-led surfaces only. The data layer (tables,
+     stat tiles, nav) keeps the original hairline-only elevation system
+     unchanged — this is additive, not a replacement of that rule. */
+  --shadow-sticker: 0 24px 60px -16px rgba(0, 0, 0, 0.65), 0 8px 20px -8px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 20px 44px -20px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 120px rgba(255, 45, 22, 0.18);
+
+  /* The signature gradient: the accent burning up out of near-black, the
+     livery language turned into light. Used once per view, at hero scale. */
+  --gradient-ember: radial-gradient(120% 140% at 15% 0%, rgba(255, 92, 40, 0.5) 0%, rgba(255, 45, 22, 0.22) 28%, rgba(8, 9, 11, 0) 62%);
+  --gradient-veil: linear-gradient(180deg, rgba(8, 9, 11, 0.32) 0%, rgba(8, 9, 11, 0.62) 60%, rgba(8, 9, 11, 0.96) 100%);
+  --glass-surface: rgba(21, 24, 28, 0.62);
+  --glass-edge: rgba(244, 241, 234, 0.1);
 }
 
 /* ==========================================================================
@@ -128,6 +150,13 @@
     --data-pos: #c41202; /* 5.2:1 on track-100 */
     --data-neg: #0d4f9e; /* 6.8:1 on track-100 */
     --nav-surface: rgba(247, 245, 240, 0.78);
+    --gradient-ember: radial-gradient(120% 140% at 15% 0%, rgba(196, 18, 2, 0.16) 0%, rgba(196, 18, 2, 0.08) 28%, rgba(247, 245, 240, 0) 62%);
+    --gradient-veil: linear-gradient(180deg, rgba(21, 24, 28, 0.4) 0%, rgba(21, 24, 28, 0.66) 60%, rgba(21, 24, 28, 0.96) 100%);
+    --glass-surface: rgba(239, 236, 229, 0.72);
+    --glass-edge: rgba(21, 24, 28, 0.08);
+    --shadow-sticker: 0 24px 60px -18px rgba(21, 24, 28, 0.35), 0 8px 20px -10px rgba(21, 24, 28, 0.25);
+    --shadow-card: 0 20px 44px -22px rgba(21, 24, 28, 0.3);
+    --shadow-glow: 0 0 120px rgba(196, 18, 2, 0.1);
   }
 }
 
@@ -162,6 +191,13 @@
   --chart-6: #5c626b; /* 5.2:1 */
   --grid: #d2cdc2;
   --nav-surface: rgba(247, 245, 240, 0.78);
+  --gradient-ember: radial-gradient(120% 140% at 15% 0%, rgba(196, 18, 2, 0.16) 0%, rgba(196, 18, 2, 0.08) 28%, rgba(247, 245, 240, 0) 62%);
+  --gradient-veil: linear-gradient(180deg, rgba(21, 24, 28, 0.4) 0%, rgba(21, 24, 28, 0.66) 60%, rgba(21, 24, 28, 0.96) 100%);
+  --glass-surface: rgba(239, 236, 229, 0.72);
+  --glass-edge: rgba(21, 24, 28, 0.08);
+  --shadow-sticker: 0 24px 60px -18px rgba(21, 24, 28, 0.35), 0 8px 20px -10px rgba(21, 24, 28, 0.25);
+  --shadow-card: 0 20px 44px -22px rgba(21, 24, 28, 0.3);
+  --shadow-glow: 0 0 120px rgba(196, 18, 2, 0.1);
 }
 
 /* ==========================================================================
@@ -529,4 +565,174 @@ table tbody tr.is-marked td:first-child {
   background-color: var(--track-100);
   border: 1px solid var(--track-300);
   border-radius: var(--r-md);
+}
+
+/* ==========================================================================
+   Luxe Paddock — the photography-led surfaces added in this redesign.
+   Reserved for a page's hero/opening stage and the cards that float over a
+   photograph; the dense data layer above (tables, stat tiles, inputs, chips)
+   is untouched and keeps the original hairline-elevation discipline.
+   ========================================================================== */
+
+/* The hero stage: a real photograph, the ember gradient burning from one
+   corner, a bottom veil so overlaid text always clears AA regardless of
+   what the photo is doing underneath it.
+
+   The photo sets the brightness context, not the OS/site theme: a near-black
+   race photo under a dark veil needs light text whether the rest of the page
+   is in light or dark mode, so `.hero-stage__content` fixes its own palette
+   instead of inheriting --paper-*, which flips per theme and would put
+   near-black text over a near-black photo in light mode. */
+.hero-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-xxl);
+  background-color: var(--track-000);
+  isolation: isolate;
+  color-scheme: dark;
+}
+.hero-stage__content {
+  --hero-ink: #f8f6f1;
+  --hero-ink-dim: #c7c3ba;
+  --hero-ink-micro: #9b968d;
+}
+.hero-stage__content .stat-label {
+  color: var(--hero-ink-dim) !important;
+}
+.hero-stage__content .t-display-hero,
+.hero-stage__content .t-page-title,
+.hero-stage__content .readout__value {
+  color: var(--hero-ink) !important;
+}
+.hero-stage__content .t-body {
+  color: var(--hero-ink-dim) !important;
+}
+.hero-stage__content .t-body .tabular-nums {
+  color: var(--hero-ink) !important;
+}
+.hero-stage__content .readout__label {
+  color: var(--hero-ink-micro) !important;
+}
+.hero-stage__content .t-micro {
+  color: var(--hero-ink-micro) !important;
+}
+.hero-stage__content .badge {
+  color: var(--hero-ink-dim) !important;
+  border-color: rgba(248, 246, 241, 0.28) !important;
+  background-color: rgba(8, 9, 11, 0.4);
+}
+.hero-stage__content .badge .text-paper-900 {
+  color: var(--hero-ink) !important;
+}
+.hero-stage__content .badge .text-paper-400 {
+  color: var(--hero-ink-micro) !important;
+}
+/* The glass readouts sit over the same dark photo in both themes, so they
+   keep one fixed dark-glass tint rather than following --glass-surface,
+   which is a pale card in light mode. */
+.hero-stage__content .glass-card {
+  background-color: rgba(10, 11, 13, 0.46) !important;
+  border-color: rgba(248, 246, 241, 0.14) !important;
+}
+.hero-stage__content .text-paper-700,
+.hero-stage__content .text-paper-500,
+.hero-stage__content .text-paper-400 {
+  color: var(--hero-ink-dim) !important;
+}
+.hero-stage__content .text-paper-900 {
+  color: var(--hero-ink) !important;
+}
+.hero-stage__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--hero-focus, 50% 50%);
+}
+.hero-stage__ember {
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-ember);
+  mix-blend-mode: var(--ember-blend, normal);
+}
+.hero-stage__veil {
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-veil);
+}
+.hero-stage__content {
+  position: relative;
+  z-index: 1;
+}
+
+/* A sticker: a real cutout asset (never a geometric mask) with a soft,
+   offset shadow so it reads as sitting above the surface, plus a faint
+   ground-contact shadow baked under it for weight. */
+.sticker {
+  filter: drop-shadow(var(--shadow-sticker));
+}
+
+/* A glass card: the Luxe Paddock's second permitted blur context, beyond
+   the nav — a stat readout floating over a real photograph, exactly the
+   "layering over moving/visual content" case the original nav-only rule
+   was already written for, extended here from the nav to the hero stage.
+   Falls back to a solid elevated surface where backdrop-filter is
+   unavailable, same reasoning as .nav-glass. */
+.glass-card {
+  background-color: var(--glass-surface);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card);
+}
+/* avoid-ai-design-ignore: K3 — same justified exception as .nav-glass: real
+   photographic content sits beneath this card, so the blur is a specific
+   legibility effect, not decoration. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .glass-card {
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    backdrop-filter: blur(16px) saturate(1.3);
+  }
+}
+
+/* A photo card: a framed, full photograph (not a cutout) used where the
+   background context is part of the story — the garage, the pit lane, the
+   circuit from above. Soft shadow, generous radius, a thin warm hairline. */
+.photo-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--glass-edge);
+}
+.photo-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The countdown/readout chip pattern from the reference brief: a glass tile
+   with a big tabular figure and a dimmed label, used for the few numbers a
+   hero stage surfaces (laps, cost, confidence) before the dense tables
+   below take over. */
+.readout {
+  text-align: center;
+  min-width: 56px;
+}
+.readout__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--paper-900);
+  font-variant-numeric: tabular-nums;
+}
+.readout__label {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--paper-500);
 }
