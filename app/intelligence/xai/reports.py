@@ -214,46 +214,75 @@ def counterfactual_report(results: dict, out_path: Path) -> Path:
 
 
 def trust_report(results: dict, weights: dict, out_path: Path) -> Path:
+    # The formula, the weights and the band wording are read from trust.py, not
+    # restated here: an earlier hand-written copy of the formula (three
+    # components, 0.40/0.30/0.30, confidence measured from 0.5) survived several
+    # changes to trust.py and contradicted the weights printed beneath it.
+    from app.intelligence.xai import trust
+
+    terms = [f"{w:.2f} * {k}" for k, w in weights.items()]
+    formula = ["trust = ( " + terms[0]] + [f"        + {t}" for t in terms[1:]]
+    formula[-1] += " )"
+    formula.append("        / (sum of the weights of the components that apply)")
+    lap = {k: w for k, w in weights.items() if k != "confidence"}
+    lap_formula = (" + ".join(f"{w:.2f}·{k}" for k, w in lap.items())) + f") / {sum(lap.values()):.2f}"
+    bands = [(">= 0.75", trust.interpret(0.75)), ("0.50 - 0.75", trust.interpret(0.5)),
+             ("0.25 - 0.50", trust.interpret(0.25)), ("< 0.25", trust.interpret(0.0))]
     lines = [
         "# Task 8 - Trust Score Report", "", f"_Generated {_stamp()}._", "",
+        "A project-defined score, not a validated or standardised measure: the weights are a",
+        "judgement, and it has not been checked against a race engineer's own assessment.", "",
         "## The formula", "",
-        "```",
-        "trust = 0.40 * confidence",
-        "      + 0.30 * model_agreement",
-        "      + 0.30 * explanation_stability",
-        "```", "",
-        "| Component | Definition | Why it is in the score |",
-        "|---|---|---|",
-        "| `confidence` | Classification: `2 * abs(p - 0.5)`. Regression: `1 - min(1, gap / target_std)`. | A prediction sitting on the decision boundary is unusable however well explained. |",
-        "| `model_agreement` | `1 - abs(p_dnn - p_classical)` | Two model families trained on identical folds agreeing is real evidence. One disagreeing means at least one is wrong and you cannot tell which. |",
-        "| `explanation_stability` | Jaccard overlap of SHAP's and LIME's top-3 features | If two established explanation methods disagree about *why*, the explanation you would show the engineer is not trustworthy even if the prediction is right. |",
+        "```", *formula, "```", "",
+        "| Component | Weight | Definition | Why it is in the score |",
+        "|---|---:|---|---|",
+        f"| `confidence` | {weights['confidence']:.2f} | Classification only: distance from the model's **tuned** "
+        "decision threshold *t* (never 0.5), scaled to 0 at *t* and 1 at certainty — `(p - t) / (1 - t)` "
+        "above *t*, `(t - p) / t` below it. Not defined for lap time, which has no decision boundary. | "
+        "A prediction sitting on the decision point is unusable however well explained. |",
+        f"| `model_agreement` | {weights['model_agreement']:.2f} | Classification: `1 - abs(p_dnn - p_classical)`. "
+        "Regression: `1 - min(1, abs(dnn - classical) / target_std)`. | Two model families trained on identical "
+        "folds agreeing is real evidence; disagreement means at least one is wrong. |",
+        f"| `explanation_stability` | {weights['explanation_stability']:.2f} | Jaccard overlap of SHAP's and "
+        "LIME's top-3 features. | If two explanation methods disagree about *why*, the explanation shown to "
+        "the engineer is not trustworthy even if the prediction is right. |",
+        f"| `input_validity` | {weights['input_validity']:.2f} | Share of the row's inputs inside the training "
+        "data's 1st–99th percentile. | Below 1 means the model is being asked about race states it did not "
+        "learn from. |",
         "",
-        f"**Weights:** {weights}. These are a judgement, not a derivation - confidence carries",
-        "the largest share because boundary predictions are useless regardless of explanation",
-        "quality, while agreement and stability are weighted equally (a wrong-but-explained",
-        "and a right-but-unexplainable prediction are both unsafe to act on). They are exposed",
-        "as `f1xai.trust.WEIGHTS` so they can be challenged and changed.",
+        "**A component that does not apply is left out and the other weights are renormalised** — never "
+        "scored as zero. For lap time `confidence` never applies, so its score is",
+        f"`({lap_formula}`. The live API skips LIME, so "
+        "`explanation_stability` is left out there too.",
+        "",
+        f"**Weights:** `{weights}` — `app.intelligence.xai.trust.WEIGHTS`, exposed so they can be "
+        "challenged and changed.",
         "",
         "## What the bands mean to a race engineer", "",
-        "| Score | Band | Action |", "|---|---|---|",
-        "| >= 0.75 | **HIGH** | Both families agree, prediction far from the boundary, SHAP and LIME tell the same story. Safe to act on. |",
-        "| 0.50 - 0.75 | **MODERATE** | One input among several. Read the SHAP factors before acting. |",
-        "| 0.25 - 0.50 | **LOW** | A prompt to look at the evidence, not a recommendation. |",
-        "| < 0.25 | **DO NOT ACT** | Carries no more information than a coin flip. |",
+        "| Score | Band | Meaning |", "|---|---|---|",
+        *[f"| {rng} | **{b['label']}** | {b['meaning']} |" for rng, b in bands],
         "",
         "## Worked examples", "",
     ]
     for target, r in results.items():
-        lines += [f"### {target}", "",
-                  "| Case | Test row | Confidence | Agreement | Stability | **Trust** | Band |",
-                  "|---|---:|---:|---:|---:|---:|---|"]
+        examples = list(r["examples"].values())
+        threshold = next((ex["trust"]["inputs"].get("decision_threshold") for ex in examples
+                          if ex["trust"]["inputs"].get("decision_threshold") is not None), None)
+        lines += [f"### {target}", ""]
+        if threshold is not None:
+            lines += [f"Confidence is measured from this model's tuned decision threshold, **{threshold:.4f}**.", ""]
+        else:
+            lines += ["Regression: `confidence` does not apply, so every score below is renormalised "
+                      "over the other three components.", ""]
+        lines += ["| Case | Test row | Confidence | Agreement | Stability | Input validity | **Trust** | Band |",
+                  "|---|---:|---:|---:|---:|---:|---:|---|"]
         for label, ex in r["examples"].items():
             t = ex["trust"]
             c = t["components"]
             lines.append(
                 f"| {label.replace('_', ' ')} | {ex['row_index']} | {_c(c.get('confidence'))} | "
                 f"{_c(c.get('model_agreement'))} | {_c(c.get('explanation_stability'))} | "
-                f"**{t['trust_score']:.3f}** | {t['band']['label']} |"
+                f"{_c(c.get('input_validity'))} | **{t['trust_score']:.3f}** | {t['band']['label']} |"
             )
         summary = r["trust_summary"]
         lines += ["", f"**Across all {summary['n']} explained rows:** mean {_f(summary['mean'],3)}, "

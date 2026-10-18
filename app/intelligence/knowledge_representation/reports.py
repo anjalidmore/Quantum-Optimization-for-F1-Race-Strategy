@@ -134,10 +134,10 @@ def ontology_documentation_md(stats: Dict[str, int]) -> str:
 def validation_report_md(results: List[CheckResult]) -> str:
     passed = sum(1 for r in results if r.passed)
     total = len(results)
-    status = "✅ ALL CHECKS PASSED" if passed == total else "❌ FAILURES PRESENT"
+    status = "ALL CHECKS PASSED" if passed == total else "FAILURES PRESENT"
     rows = ["| Check | Result | Detail |", "|-------|--------|--------|"]
     for r in results:
-        rows.append(f"| `{r.name}` | {'✅ pass' if r.passed else '❌ fail'} | {r.detail} |")
+        rows.append(f"| `{r.name}` | {'pass' if r.passed else 'FAIL'} | {r.detail} |")
     return (
         f"# Knowledge Representation Validation Report\n\n"
         f"_Generated {_timestamp()}._\n\n"

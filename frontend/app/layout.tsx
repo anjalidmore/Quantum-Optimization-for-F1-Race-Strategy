@@ -1,18 +1,48 @@
 import type { Metadata } from "next";
+import { IBM_Plex_Sans, Titillium_Web } from "next/font/google";
 import Nav from "@/components/Nav";
 import "./globals.css";
 
+/* Two families, self-hosted at build by next/font — no runtime CDN request.
+   Titillium Web carries headlines, nav and hero figures (Formula 1's own
+   long-standing web face); IBM Plex Sans carries everything else and has
+   real tabular figures, which tables and stat columns need to align. */
+const display = Titillium_Web({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "900"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const text = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-text",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "F1 Race Strategy Intelligence",
-  description: "Quantum Optimization for Formula 1 Race Strategy — unified computational intelligence platform.",
+  description: "Race-engineering analytics for the 2023 Bahrain Grand Prix — computational intelligence over one real session.",
 };
+
+/* Applied before the first paint, which is the whole point: a stored choice
+   read in useEffect lands after the browser has already painted the other
+   theme, and the flash is exactly what that looks like. No stored choice
+   leaves data-theme unset, so the media query in globals.css follows the OS.
+   Wrapped in try/catch because a browser with site data blocked throws on
+   the localStorage read, and a theme script must never break the page. */
+const NO_FLASH = `try{var t=localStorage.getItem("pitwall-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t)}}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${display.variable} ${text.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
+      </head>
       <body>
         <Nav />
-        <main className="max-w-7xl mx-auto px-6 py-8">{children}</main>
+        <main className="mx-auto max-w-[1320px] px-5 pb-20 sm:px-8">{children}</main>
       </body>
     </html>
   );

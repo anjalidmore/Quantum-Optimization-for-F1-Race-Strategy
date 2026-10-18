@@ -1,0 +1,50 @@
+{
+  "generated_at": "2026-10-01T10:00:48.382519+00:00",
+  "available": true,
+  "shap_top_feature_stability": {
+    "target_laptime": {
+      "n_bootstrap": 200,
+      "n_rows": 180,
+      "most_frequent_top_feature": "field_median_lag1",
+      "share_of_resamples_with_this_top_feature": 0.92,
+      "runner_up": [
+        "tracktemp_dev_x_tyrelife",
+        16
+      ]
+    },
+    "target_pit_next_lap": {
+      "n_bootstrap": 200,
+      "n_rows": 180,
+      "most_frequent_top_feature": "tracktemp_dev_x_tyrelife",
+      "share_of_resamples_with_this_top_feature": 1.0,
+      "runner_up": null
+    }
+  },
+  "faithfulness_check": {
+    "target_laptime": {
+      "n_rows": 20,
+      "top_feature": "track_status",
+      "mean_abs_delta_ablating_top_feature": 0.197,
+      "mean_abs_delta_ablating_random_feature": 0.17711,
+      "top_feature_moves_prediction_more": true,
+      "note": "Top feature per row is the one furthest (in training-std units) from the training mean on that row, a practical proxy for 'a feature SHAP would call important here'; ablation sets it to the training mean, matching the committed counterfactual methodology (artifacts/xai/counterfactual_analysis.csv)."
+    },
+    "target_pit_next_lap": {
+      "n_rows": 20,
+      "top_feature": "tracktemp_dev_x_tyrelife",
+      "mean_abs_delta_ablating_top_feature": 0.08988,
+      "mean_abs_delta_ablating_random_feature": 0.02504,
+      "top_feature_moves_prediction_more": true,
+      "note": "Top feature per row is the one furthest (in training-std units) from the training mean on that row, a practical proxy for 'a feature SHAP would call important here'; ablation sets it to the training mean, matching the committed counterfactual methodology (artifacts/xai/counterfactual_analysis.csv)."
+    }
+  },
+  "traceability_check": {
+    "recommendation_has_reason_text": true,
+    "recommendation_cites_confidence": true,
+    "recommendation_reports_source": true,
+    "triggered_rules_listed": true,
+    "ml_evidence_present": true,
+    "dl_evidence_present": true,
+    "passed": true
+  }
+}

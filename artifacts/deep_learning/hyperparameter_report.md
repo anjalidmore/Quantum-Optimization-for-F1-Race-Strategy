@@ -23,7 +23,7 @@ Selection metric: **CV MAE** (lower is better), mean of 4 folds. 13 distinct con
 | E09 | dropout | [128, 64, 32] | 0.001 | 16 | 0.4 | adam | 0.0001 | mse | 1.2050 (± 0.4380) |  |
 | E10 | dropout | [128, 64, 32] | 0.001 | 16 | 0.5 | adam | 0.0001 | mse | 1.3307 (± 0.4126) |  |
 | E11 | optimizer | [128, 64, 32] | 0.001 | 16 | 0.2 | rmsprop | 0.0001 | mse | 1.0186 (± 0.3992) |  |
-| E12 | L2 regularisation | [128, 64, 32] | 0.001 | 16 | 0.2 | rmsprop | 0.001 | mse | 0.9530 (± 0.4221) | ✅ |
+| E12 | L2 regularisation | [128, 64, 32] | 0.001 | 16 | 0.2 | rmsprop | 0.001 | mse | 0.9530 (± 0.4221) | selected |
 | E13 | loss function | [128, 64, 32] | 0.001 | 16 | 0.2 | rmsprop | 0.001 | huber | 0.9771 (± 0.4374) |  |
 
 **Selected:** `{'hidden_units': [128, 64, 32], 'dropout': 0.2, 'learning_rate': 0.001, 'batch_size': 16, 'optimizer': 'rmsprop', 'l2': 0.001, 'loss': 'mse'}`
@@ -47,7 +47,7 @@ Selection metric: **CV PR_AUC** (higher is better), mean of 4 folds. 13 distinct
 | E09 | dropout | [16, 8] | 0.001 | 32 | 0.2 | adam | 0.0001 | none | 0.4356 (± 0.1160) |  |
 | E10 | dropout | [16, 8] | 0.001 | 32 | 0.4 | adam | 0.0001 | none | 0.3678 (± 0.1068) |  |
 | E11 | dropout | [16, 8] | 0.001 | 32 | 0.5 | adam | 0.0001 | none | 0.4299 (± 0.1191) |  |
-| E12 | optimizer | [16, 8] | 0.001 | 32 | 0.3 | rmsprop | 0.0001 | none | 0.4817 (± 0.1152) | ✅ |
+| E12 | optimizer | [16, 8] | 0.001 | 32 | 0.3 | rmsprop | 0.0001 | none | 0.4817 (± 0.1152) | selected |
 | E13 | L2 regularisation | [16, 8] | 0.001 | 32 | 0.3 | rmsprop | 0.001 | none | 0.4731 (± 0.1503) |  |
 
 **Selected:** `{'hidden_units': [16, 8], 'dropout': 0.3, 'learning_rate': 0.001, 'batch_size': 32, 'optimizer': 'rmsprop', 'l2': 0.0001, 'class_weighted': False}`

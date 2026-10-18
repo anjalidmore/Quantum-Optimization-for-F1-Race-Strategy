@@ -1,0 +1,72 @@
+{
+  "name": "regression_model_comparison",
+  "kind": "bar",
+  "title": "Lap-time regression, model comparison",
+  "caption": "Cross-validated and held-out test error for every model that trained.",
+  "axes": {
+    "x": {
+      "label": "Model",
+      "unit": null,
+      "kind": "category"
+    },
+    "y": {
+      "label": "MAE",
+      "unit": "s",
+      "kind": "number"
+    }
+  },
+  "series": [
+    {
+      "name": "CV MAE",
+      "points": [
+        {
+          "x": "decision_tree",
+          "y": 1.1897658272973393
+        },
+        {
+          "x": "svr",
+          "y": 1.3812563662401918
+        },
+        {
+          "x": "random_forest",
+          "y": 1.3817047349139655
+        },
+        {
+          "x": "xgboost",
+          "y": 1.4384011792564109
+        },
+        {
+          "x": "linear_regression",
+          "y": 2.018115711854601
+        }
+      ]
+    },
+    {
+      "name": "Test MAE",
+      "points": [
+        {
+          "x": "decision_tree",
+          "y": 0.8673476599610876
+        },
+        {
+          "x": "svr",
+          "y": 0.7814539478981232
+        },
+        {
+          "x": "random_forest",
+          "y": 0.9253493148742158
+        },
+        {
+          "x": "xgboost",
+          "y": 1.0858447513156468
+        },
+        {
+          "x": "linear_regression",
+          "y": 0.7900968753200531
+        }
+      ]
+    }
+  ],
+  "source": "regression_model_comparison.png",
+  "data_source": "real_fastf1"
+}

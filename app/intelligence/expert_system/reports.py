@@ -170,10 +170,10 @@ def decision_table_md(rules: Sequence[Rule]) -> str:
 def validation_report_md(results: Sequence[RuleCheckResult]) -> str:
     passed = sum(1 for r in results if r.passed)
     total = len(results)
-    status = "✅ ALL CHECKS PASSED" if passed == total else "❌ FAILURES PRESENT"
+    status = "ALL CHECKS PASSED" if passed == total else "FAILURES PRESENT"
     rows = ["| Check | Result | Detail |", "|-------|--------|--------|"]
     for r in results:
-        rows.append(f"| `{r.name}` | {'✅ pass' if r.passed else '❌ fail'} | {r.detail} |")
+        rows.append(f"| `{r.name}` | {'pass' if r.passed else 'FAIL'} | {r.detail} |")
     return (
         f"# Rule-Base Validation Report\n\n_Generated {_ts()}._\n\n"
         f"**Summary:** {passed}/{total} checks passed — **{status}**\n\n"

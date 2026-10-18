@@ -1,0 +1,110 @@
+{
+  "name": "qml_roc_vs_classical",
+  "kind": "line",
+  "title": "ROC, pit decision (1 pit lap(s) of 180)",
+  "caption": "Quantum and classical classifiers on the same reduced inputs. The diagonal is chance.",
+  "axes": {
+    "x": {
+      "label": "False positive rate",
+      "unit": null,
+      "kind": "number"
+    },
+    "y": {
+      "label": "True positive rate",
+      "unit": null,
+      "kind": "number"
+    }
+  },
+  "series": [
+    {
+      "name": "vqc (AUC 0.307)",
+      "points": [
+        {
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "x": 0.00558659217877095,
+          "y": 0.0
+        },
+        {
+          "x": 0.6927374301675978,
+          "y": 0.0
+        },
+        {
+          "x": 0.6927374301675978,
+          "y": 1.0
+        },
+        {
+          "x": 1.0,
+          "y": 1.0
+        }
+      ]
+    },
+    {
+      "name": "quantum_kernel_svm (AUC 0.547)",
+      "points": [
+        {
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "x": 0.00558659217877095,
+          "y": 0.0
+        },
+        {
+          "x": 0.45251396648044695,
+          "y": 0.0
+        },
+        {
+          "x": 0.45251396648044695,
+          "y": 1.0
+        },
+        {
+          "x": 1.0,
+          "y": 1.0
+        }
+      ]
+    },
+    {
+      "name": "logistic_regression (reduced inputs) (AUC 1.000)",
+      "points": [
+        {
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "x": 0.0,
+          "y": 1.0
+        },
+        {
+          "x": 1.0,
+          "y": 1.0
+        }
+      ]
+    },
+    {
+      "name": "tiny_mlp (reduced inputs) (AUC 0.799)",
+      "points": [
+        {
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "x": 0.4022346368715084,
+          "y": 1.0
+        },
+        {
+          "x": 1.0,
+          "y": 1.0
+        }
+      ]
+    }
+  ],
+  "source": "artifacts/figures/qml_roc_pr_vs_classical.png",
+  "data_source": "real_fastf1",
+  "identity_line": [
+    0,
+    1
+  ]
+}

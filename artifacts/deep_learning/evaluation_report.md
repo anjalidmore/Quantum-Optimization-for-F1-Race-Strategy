@@ -81,7 +81,7 @@ Decision threshold 0.1524 (tuned on out-of-fold CV predictions, never on the tes
 
 Test confusion matrix (rows actual, columns predicted; 0 = stay out, 1 = pit): `[[179, 0], [1, 0]]`.
 
-> ⚠ The chronological test laps contain **1 pit event(s)**. Precision, recall, F1 and PR-AUC on so few positives are dominated by chance; the cross-validated figures in `hyperparameter_report.csv` rest on many more pit laps and are the better guide to this model's ranking ability.
+> **Caution.** The chronological test laps contain **1 pit event(s)**. Precision, recall, F1 and PR-AUC on so few positives are dominated by chance; the cross-validated figures in `hyperparameter_report.csv` rest on many more pit laps and are the better guide to this model's ranking ability.
 
 ### Overfitting
 

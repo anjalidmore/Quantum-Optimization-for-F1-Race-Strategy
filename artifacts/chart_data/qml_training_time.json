@@ -1,0 +1,56 @@
+{
+  "name": "qml_training_time",
+  "kind": "bar-horizontal",
+  "title": "Training cost",
+  "caption": "Final-fit wall clock. Simulated circuits against the equivalent classical models. A simulator is not quantum hardware, so this is a cost of simulation, not of quantum computing.",
+  "axes": {
+    "x": {
+      "label": "Training time",
+      "unit": "s",
+      "kind": "number"
+    },
+    "y": {
+      "label": "Model",
+      "unit": null,
+      "kind": "category"
+    }
+  },
+  "series": [
+    {
+      "name": "Training time",
+      "points": [
+        {
+          "x": "vqc\n(pit_next_lap)",
+          "y": 0.4425107080023736
+        },
+        {
+          "x": "quantum_kernel_svm\n(pit_next_lap)",
+          "y": 3.7215832079964457
+        },
+        {
+          "x": "logistic_regression (reduced inputs)\n(pit_next_lap)",
+          "y": 0.0024620829935884103
+        },
+        {
+          "x": "tiny_mlp (reduced inputs)\n(pit_next_lap)",
+          "y": 0.022529541005496867
+        },
+        {
+          "x": "vqr\n(laptime)",
+          "y": 0.4372376249957597
+        },
+        {
+          "x": "linear_regression (reduced inputs)\n(laptime)",
+          "y": 0.00030020899430382997
+        },
+        {
+          "x": "tiny_mlp (reduced inputs)\n(laptime)",
+          "y": 0.004602750006597489
+        }
+      ]
+    }
+  ],
+  "source": "artifacts/figures/qml_training_time.png",
+  "data_source": "real_fastf1",
+  "log_x": true
+}

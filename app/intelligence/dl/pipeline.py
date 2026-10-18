@@ -37,6 +37,7 @@ from app.core.paths import (
     ArtifactPaths,
     ensure_dirs,
 )
+from app.intelligence.charts import follows_output_root
 from app.intelligence.dl import models as models_mod
 from app.intelligence.dl import persistence, training, tuning, visualize
 from app.intelligence.ml.data_contract import build_task_frame, load_and_validate
@@ -146,6 +147,7 @@ def _diagnose(task: str, history: dict, best_epoch: int, train_m: dict, val_m: d
     }
 
 
+@follows_output_root
 def train_all(force: bool = False, quick: bool = False, output_root: Path | None = None) -> dict:
     """Train both deep networks end to end. Returns the results dict that the
     reports, registry and API all read from.

@@ -1,0 +1,56 @@
+{
+  "name": "qml_metrics_target_laptime",
+  "kind": "bar",
+  "title": "target_laptime, 4-fold cross-validation",
+  "caption": "CV MAE (lower is better) with fold-to-fold spread. Cross-validation rather than the test laps, because the holdout holds one pit event and a test metric would turn on a single lap. Where two error bars overlap, this data cannot separate those models.",
+  "axes": {
+    "x": {
+      "label": "Model",
+      "unit": null,
+      "kind": "category"
+    },
+    "y": {
+      "label": "CV MAE",
+      "unit": null,
+      "kind": "number"
+    }
+  },
+  "series": [
+    {
+      "name": "mean",
+      "points": [
+        {
+          "x": "vqr (14 params)",
+          "y": 1.7458938019769565
+        },
+        {
+          "x": "linear_regression (reduced inputs) (5 params)",
+          "y": 1.6242745539291337
+        },
+        {
+          "x": "tiny_mlp (reduced inputs) (13 params)",
+          "y": 1.7696955084261976
+        },
+        {
+          "x": "svr (Task 6, all features) (Task 6)",
+          "y": 1.3812563662401918
+        }
+      ]
+    }
+  ],
+  "source": "artifacts/figures/qml_metric_comparison.png",
+  "data_source": "real_fastf1",
+  "error": [
+    0.3706263882206466,
+    0.33568149068574454,
+    0.23877773964154386,
+    0.558390041441915
+  ],
+  "families": [
+    "quantum",
+    "classical (parameter-matched)",
+    "classical (parameter-matched)",
+    "task6 reference"
+  ],
+  "lower_is_better": true
+}

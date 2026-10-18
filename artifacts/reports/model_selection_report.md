@@ -42,20 +42,20 @@ Neither holds here. Per-model thresholds appear in the table below.
 | Model | CV MAE | CV RMSE | CV R² | Test MAE | Test RMSE | Test R² | Selected |
 |---|---:|---:|---:|---:|---:|---:|:---:|
 | decision_tree | 1.1898 | 1.6321 | 0.3381 | 0.8673 | 1.3308 | -0.1669 |  |
-| svr | 1.3813 | 1.6942 | 0.2553 | 0.7815 | 1.0290 | 0.3023 | ✅ |
+| svr | 1.3813 | 1.6942 | 0.2553 | 0.7815 | 1.0290 | 0.3023 | selected |
 | random_forest | 1.3817 | 1.7624 | 0.2141 | 0.9253 | 1.2671 | -0.0579 |  |
 | xgboost | 1.4384 | 1.8325 | 0.1351 | 1.0858 | 1.4412 | -0.3686 |  |
 | linear_regression | 2.0181 | 2.7964 | -1.2807 | 0.7901 | 1.1414 | 0.1415 |  |
 
 Selected: **svr**
 
-> ⚠ **Selection warning.** CV ranking overridden by the generalisation guard: the best CV MAE model (decision_tree, CV MAE 1.1898) scores test R2 -0.1669 — worse than predicting the mean. Selected svr instead (CV MAE 1.3813, test R2 0.3023), the best CV performer among candidates that generalise to the holdout. This disagreement between CV and holdout is itself a finding: the holdout is the closing laps of a single race, a different fuel and tyre regime from training.
+> **Selection warning.** CV ranking overridden by the generalisation guard: the best CV MAE model (decision_tree, CV MAE 1.1898) scores test R2 -0.1669 — worse than predicting the mean. Selected svr instead (CV MAE 1.3813, test R2 0.3023), the best CV performer among candidates that generalise to the holdout. This disagreement between CV and holdout is itself a finding: the holdout is the closing laps of a single race, a different fuel and tyre regime from training.
 
 ## Classification
 
 | Model | CV ROC-AUC | CV PR-AUC | CV F1 | Test ROC-AUC | Test PR-AUC | Test F1 | Selected |
 |---|---:|---:|---:|---:|---:|---:|:---:|
-| random_forest | 0.8482 | 0.3863 | 0.1967 | 0.9832 | 0.2500 | 0.0833 | ✅ |
+| random_forest | 0.8482 | 0.3863 | 0.1967 | 0.9832 | 0.2500 | 0.0833 | selected |
 | svm | 0.7843 | 0.3321 | 0.1429 | 0.7989 | 0.0270 | 0.0000 |  |
 | xgboost | 0.8125 | 0.3083 | 0.2307 | 0.9274 | 0.0714 | 0.0606 |  |
 | logistic_regression | 0.8298 | 0.2964 | 0.2887 | 0.9832 | 0.2500 | 0.0213 |  |

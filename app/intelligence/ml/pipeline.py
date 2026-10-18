@@ -33,6 +33,7 @@ from app.core.paths import (
     ArtifactPaths,
     ensure_dirs,
 )
+from app.intelligence.charts import follows_output_root
 from app.intelligence.ml import classification as clf_mod
 from app.intelligence.ml import regression as reg_mod
 from app.intelligence.ml import reports as reports_mod
@@ -432,6 +433,7 @@ def _registry_entries(reg: dict, clf: dict, dataset, out: ArtifactPaths) -> list
     return entries
 
 
+@follows_output_root
 def train_all(output_root: Path | None = None) -> dict:
     """Run the full Task 6 pipeline and write every artifact. Returns a
     JSON-safe summary dict (also used directly by the test suite).

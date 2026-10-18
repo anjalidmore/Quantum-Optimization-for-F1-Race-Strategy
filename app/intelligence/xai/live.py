@@ -44,6 +44,41 @@ def _target_bundle(target: str):
     return _CACHE[target]
 
 
+def predict_point(target: str, row: dict[str, float]) -> dict:
+    """Task 7 DNN point prediction only — no SHAP, no LIME.
+
+    Used by the strategy pipeline's DL stage, which needs a fast per-request
+    prediction on every call (unlike ``explain_feature_row``, which a caller
+    opts into). Shares ``_target_bundle``'s cache, so a later ``explain=true``
+    call on the same target pays no extra model-load cost.
+    """
+    try:
+        t = _target_bundle(target)
+    except ExplainerUnavailableError as exc:
+        return {"available": False, "reason": str(exc)}
+
+    missing = [f for f in t.features if f not in row]
+    if missing:
+        return {
+            "available": False,
+            "reason": f"feature row is missing {len(missing)} feature(s) the model expects: {missing[:5]}",
+        }
+
+    X = np.array([[float(row[f]) for f in t.features]], dtype="float32")
+    try:
+        p_dnn = float(np.asarray(t.dnn_predict(X)).ravel()[0])
+    except Exception as exc:  # pragma: no cover - inference failure guard
+        log.warning("live DL point-prediction failed for %s: %s", target, exc)
+        return {"available": False, "reason": f"{type(exc).__name__}: {exc}"}
+
+    out = {"available": True, "target": target, "model": "dnn_mlp", "deep_prediction": p_dnn}
+    if t.task == "classification":
+        threshold = t.decision_threshold or 0.5
+        out["decision_threshold"] = threshold
+        out["predicted_class"] = int(p_dnn >= threshold)
+    return out
+
+
 def explain_feature_row(target: str, row: dict[str, float]) -> dict:
     """Explain one caller-supplied feature row.
 

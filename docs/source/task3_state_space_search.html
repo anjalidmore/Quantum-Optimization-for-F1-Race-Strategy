@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 1 · Task 3 — State-Space Search</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<nav class="doc-bar" aria-label="Documentation"><span class="mark" aria-hidden="true"></span>
+<strong>F1 Race Strategy Intelligence</strong>
+<a href="../study_guide.html">Study guide (all documents)</a>
+<a href="../../README.md">README</a></nav>
+<main class="doc-page prose">
+<h1 id="phase-1--task-3--state-space-search">Phase 1 · Task 3 — State-Space Search</h1>
+<p>Part of <strong>Quantum Optimization for Formula 1 Race Strategy</strong>.</p>
+<blockquote>
+<p><strong>Scope of this module:</strong> classical state-space search. No machine learning,
+no quantum computing. Race strategy is cast as a shortest-path search and
+solved with five algorithms whose behaviour is compared head-to-head.</p>
+</blockquote>
+<hr />
+<h2 id="1-what-this-module-does">1. What this module does</h2>
+<p>It formulates F1 race-strategy selection as a <strong>search problem</strong> — when to pit
+and which tyre to fit, to complete the race in minimum estimated time — and
+solves it with <strong>BFS, DFS, Uniform-Cost Search, Greedy Best-First, and A*</strong>.
+Each run is instrumented so the algorithms can be compared on execution time,
+nodes expanded, memory, solution cost, and optimality.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Deliverable</th>
+<th>Artifact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>State-space formulation</td>
+<td><code>outputs/reports/state_space_formulation.md</code></td>
+</tr>
+<tr>
+<td>Algorithm comparison report</td>
+<td><code>outputs/reports/comparison_report.md</code></td>
+</tr>
+<tr>
+<td>Metrics comparison chart</td>
+<td><code>outputs/diagrams/metrics_comparison.png</code></td>
+</tr>
+<tr>
+<td>Optimal-strategy stint plot</td>
+<td><code>outputs/diagrams/optimal_strategy_path.png</code></td>
+</tr>
+<tr>
+<td>Search-tree diagram</td>
+<td><code>outputs/diagrams/search_tree.png</code></td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="2-the-formulation">2. The formulation</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>State</strong></td>
+<td><code>(lap, compound, tyre_age, stops_made, fuel_kg, compounds_used)</code></td>
+</tr>
+<tr>
+<td><strong>Actions</strong></td>
+<td><code>RUN</code> (one lap on current tyres) · <code>PIT(compound)</code> (fit a new compound, run out-lap)</td>
+</tr>
+<tr>
+<td><strong>Step cost</strong></td>
+<td>estimated lap time (compound, age, fuel, track-temp) + pit-loss if pitting</td>
+</tr>
+<tr>
+<td><strong>Goal</strong></td>
+<td>reach <code>total_laps</code> and (dry race) use ≥ 2 dry compounds — a real F1 rule</td>
+</tr>
+<tr>
+<td><strong>Heuristic</strong></td>
+<td><code>laps_remaining × fastest_possible_lap</code> — admissible ⇒ A* is optimal</td>
+</tr>
+</tbody>
+</table></div>
+<p>The cost model captures the pace-versus-durability trade-off: softer compounds
+are faster when fresh but degrade quicker (with an accelerated "cliff" past a
+compound-specific age), the car speeds up as fuel burns off, and a hotter track
+amplifies degradation. This makes pit strategy a genuine optimisation, not a
+lookup.</p>
+<p>See <code>outputs/reports/state_space_formulation.md</code> for the full formal statement.</p>
+<hr />
+<h2 id="3-the-five-algorithms">3. The five algorithms</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>Frontier</th>
+<th>Optimal?</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>BFS</strong></td>
+<td>FIFO queue</td>
+<td>No</td>
+<td>Finds the <em>shallowest</em> goal; not cheapest when step costs vary</td>
+</tr>
+<tr>
+<td><strong>DFS</strong></td>
+<td>LIFO stack (depth-limited)</td>
+<td>No</td>
+<td>Very memory-light; returns the first goal reached</td>
+</tr>
+<tr>
+<td><strong>UCS</strong></td>
+<td>min-priority on <code>g(n)</code></td>
+<td><strong>Yes</strong></td>
+<td>Dijkstra; ground-truth optimum for non-negative costs</td>
+</tr>
+<tr>
+<td><strong>Greedy</strong></td>
+<td>min-priority on <code>h(n)</code></td>
+<td>No</td>
+<td>Fast (few expansions); ignores accumulated cost</td>
+</tr>
+<tr>
+<td><strong>A*</strong></td>
+<td>min-priority on <code>g(n)+h(n)</code></td>
+<td><strong>Yes</strong></td>
+<td>Optimal <em>and</em> efficient with an admissible heuristic</td>
+</tr>
+</tbody>
+</table></div>
+<p>All are implemented as graph search (explored set / best-<code>g</code> map) sharing one
+instrumented <code>Node</code> and <code>SearchResult</code> type for a fair comparison.</p>
+<hr />
+<h2 id="4-representative-result">4. Representative result</h2>
+<p>For a 24-lap dry race starting on softs (38 °C, one to two stops allowed):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>Cost (s)</th>
+<th>Optimal</th>
+<th>Expanded</th>
+<th>Frontier</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BFS</td>
+<td>2270.7</td>
+<td></td>
+<td>1455</td>
+<td>135</td>
+<td>74 ms</td>
+</tr>
+<tr>
+<td>DFS</td>
+<td>2299.9</td>
+<td></td>
+<td>24</td>
+<td>5</td>
+<td>0.9 ms</td>
+</tr>
+<tr>
+<td>UCS</td>
+<td><strong>2262.4</strong></td>
+<td>optimal</td>
+<td>1589</td>
+<td>135</td>
+<td>76 ms</td>
+</tr>
+<tr>
+<td>Greedy</td>
+<td>2270.7</td>
+<td></td>
+<td>26</td>
+<td>47</td>
+<td>2 ms</td>
+</tr>
+<tr>
+<td>A*</td>
+<td><strong>2262.4</strong></td>
+<td>optimal</td>
+<td>1005</td>
+<td>134</td>
+<td>48 ms</td>
+</tr>
+</tbody>
+</table></div>
+<p>The textbook story emerges cleanly: <strong>UCS and A* find the identical optimal
+cost</strong>; <strong>A* expands ~37% fewer nodes than UCS</strong> thanks to the heuristic; <strong>DFS
+and Greedy are far cheaper to run but sub-optimal</strong>. (Exact numbers vary with
+the problem instance and machine.)</p>
+<hr />
+<h2 id="5-installation--execution">5. Installation &amp; execution</h2>
+<p>Requires <strong>Python 3.10+</strong>.</p>
+<div class="hl"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>phase1_task3_state_space_search
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+python<span class="w"> </span>run_search.py<span class="w">                 </span><span class="c1"># defaults to a 24-lap race</span>
+python<span class="w"> </span>run_search.py<span class="w"> </span>--laps<span class="w"> </span><span class="m">30</span><span class="w">       </span><span class="c1"># larger instance</span>
+</code></pre></div>
+
+<p>The driver runs all algorithms, builds the comparison, renders the three
+diagrams, writes both reports, and <strong>asserts the optimality invariant</strong>
+(<code>A* cost == UCS cost</code>), exiting non-zero if it is ever violated — so it doubles
+as a CI correctness gate.</p>
+<blockquote>
+<p><strong>Note on race length.</strong> Uninformed search (BFS/UCS) explores a state space
+that grows with lap count, so the default is a modest race length. A* scales
+considerably further; increase <code>--laps</code> to see the heuristic's advantage widen.</p>
+</blockquote>
+<hr />
+<h2 id="6-tests">6. Tests</h2>
+<div class="hl"><pre><span></span><code>pytest<span class="w"> </span>-q
+</code></pre></div>
+
+<p>18 tests verify the transition model, the two-dry-compound goal rule, heuristic
+admissibility, that <strong>UCS and A* agree on the optimum</strong>, that A* expands no
+more nodes than UCS, that no algorithm beats the true optimum, and that reported
+costs equal recomputed path costs.</p>
+<hr />
+<h2 id="7-folder-structure">7. Folder structure</h2>
+<div class="hl"><pre><span></span><code>phase1_task3_state_space_search/
+├── run_search.py               # driver / CI correctness gate
+├── requirements.txt
+├── pytest.ini
+├── README.md
+├── src/f1search/
+│   ├── __init__.py
+│   ├── problem.py              # RaceState / RaceProblem, cost model, heuristic
+│   ├── algorithms.py           # BFS, DFS, UCS, Greedy, A* (instrumented)
+│   ├── comparison.py           # metrics aggregation &amp; optimality
+│   ├── visualize.py            # charts, stint plot, search tree
+│   └── reports.py              # Markdown generators
+├── tests/
+│   └── test_search.py
+└── outputs/                    # generated on run
+    ├── reports/*.md
+    └── diagrams/*.png
+</code></pre></div>
+
+<hr />
+<h2 id="8-relationship-to-other-tasks">8. Relationship to other tasks</h2>
+<ul>
+<li><strong>Reuses Task 1 &amp; Task 2 vocabulary.</strong> The state variables (lap, compound,
+  tyre age, fuel, track temperature) are the same domain concepts formalised in
+  the knowledge representation and reasoned over by the expert system.</li>
+<li><strong>Feeds Phase 3.</strong> This classical search establishes the <em>optimal-strategy
+  baseline</em> against which the quantum-optimisation approaches (QAOA / hybrid)
+  will be benchmarked for solution quality and cost.</li>
+</ul>
+<h2 id="9-next-task">9. Next task</h2>
+<p><strong>Task 4 — Data Engineering &amp; EDA</strong> builds the data pipeline (loading, cleaning,
+feature statistics, correlation, visual analytics) over the historical dataset
+and FastF1, completing the classical Phase 1 foundation.</p>
+</main>
+</body>
+</html>

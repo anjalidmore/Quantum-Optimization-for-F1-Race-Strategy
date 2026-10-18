@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deployment guide</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<nav class="doc-bar" aria-label="Documentation"><span class="mark" aria-hidden="true"></span>
+<strong>F1 Race Strategy Intelligence</strong>
+<a href="../study_guide.html">Study guide (all documents)</a>
+<a href="../../README.md">README</a></nav>
+<main class="doc-page prose">
+<h1 id="deployment-guide">Deployment guide</h1>
+<p>A standalone reference for installing, building, running, serving and troubleshooting the F1 Race
+Strategy Intelligence platform — expanded from <a href="DEPLOYMENT.html"><code>DEPLOYMENT.md</code></a> with more detail on
+environment variables, the choice between building from raw data and using the committed artifacts,
+and what to do when something in the chain isn't there yet. Where <code>DEPLOYMENT.md</code> states a fact,
+this document explains why it's true and what depends on it; read this one first if you're setting
+up a new environment, <code>DEPLOYMENT.md</code> remains the terser reference.</p>
+<h2 id="contents">Contents</h2>
+<ol>
+<li><a href="#1-prerequisites">Prerequisites</a></li>
+<li><a href="#2-first-time-setup">First-time setup</a></li>
+<li><a href="#3-building-the-artifacts-from-raw-data-vs-using-whats-committed">Building the artifacts: from raw data vs. using what's committed</a></li>
+<li><a href="#4-running-it">Running it</a></li>
+<li><a href="#5-environment-variables">Environment variables</a></li>
+<li><a href="#6-serving-it-to-other-people">Serving it to other people</a></li>
+<li><a href="#7-health-checks">Health checks</a></li>
+<li><a href="#8-retraining-on-a-different-race">Retraining on a different race</a></li>
+<li><a href="#9-docker-deployment">Docker deployment</a></li>
+<li><a href="#10-troubleshooting">Troubleshooting</a></li>
+<li><a href="#11-what-to-back-up">What to back up</a></li>
+</ol>
+<h2 id="1-prerequisites">1. Prerequisites</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Version</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>3.12+ (developed and its committed artifacts generated on 3.14.6)</td>
+<td>the whole backend</td>
+</tr>
+<tr>
+<td>Node.js</td>
+<td>20+</td>
+<td>the Next.js dashboard</td>
+</tr>
+<tr>
+<td><code>libomp</code></td>
+<td>any</td>
+<td>XGBoost only; the build skips XGBoost with a stated reason ("XGBoost unavailable — skipped") if it is missing, rather than failing</td>
+</tr>
+<tr>
+<td>pandoc</td>
+<td>optional</td>
+<td>converts a generated Markdown strategy report to PDF (<code>pandoc report.md -o report.pdf</code>)</td>
+</tr>
+</tbody>
+</table></div>
+<p>No database, no message queue, no cloud service. The system reads and writes plain files under
+<code>data/</code> and <code>artifacts/</code>, and that is its entire persistence layer.</p>
+<p>The Python dependency set that produces the committed metrics is version-pinned in
+<code>requirements.txt</code> — notably <code>scikit-learn==1.9.0</code>, <code>xgboost==3.4.1</code>, <code>keras==3.15.1</code>,
+<code>torch==2.14.0</code>, <code>shap==0.52.0</code>, <code>lime==0.2.0.1</code>. This is deliberate: an unpinned install could
+silently drift the committed numbers on a future release of any of these libraries. If you need to
+upgrade one, expect to rebuild and re-verify against <code>docs/TESTING_REPORT.md</code>'s recorded run rather
+than assuming the numbers still hold.</p>
+<p><strong>A note on the deep-learning stack.</strong> Keras 3 is backend-agnostic, and this project runs it on the
+<strong>PyTorch</strong> backend, not TensorFlow — TensorFlow currently publishes no wheel for Python 3.14
+(<code>requirements.txt</code>'s own comment records this was verified with <code>pip index versions tensorflow</code>).
+<code>app/core/runtime.py</code> sets <code>KERAS_BACKEND=torch</code> and, importantly, imports XGBoost <em>before</em> Keras/
+PyTorch to claim the OpenMP runtime first — PyTorch ships its own copy of <code>libomp</code>, and importing
+XGBoost after PyTorch has already initialized it can segfault on macOS. Any code path that needs
+both must go through <code>app.core.runtime.prepare_dl_runtime()</code> rather than importing <code>keras</code>/<code>torch</code>
+directly; see <a href="#10-troubleshooting">Troubleshooting</a> if you hit this.</p>
+<h2 id="2-first-time-setup">2. First-time setup</h2>
+<div class="hl"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>&lt;repo&gt;<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>CIL
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w">                       </span><span class="c1"># makes `app` importable as a package</span>
+<span class="nb">cd</span><span class="w"> </span>frontend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>install<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>..
+</code></pre></div>
+
+<p>That's the whole install. There is no separate configuration file to edit for a default local run —
+every configurable value has a sensible default and is overridden by an environment variable when
+needed (§5).</p>
+<h2 id="3-building-the-artifacts-from-raw-data-vs-using-whats-committed">3. Building the artifacts: from raw data vs. using what's committed</h2>
+<p><strong>You may not need to build anything.</strong> <code>artifacts/</code> (about 15 MB) and <code>data/processed/</code> are
+committed to the repository, so a fresh clone already has a complete, working system — every
+trained model, every metric, every figure and report the dashboard reads already exists on disk.
+This is intentional: cloning the repo and running <code>./run.sh</code> should show real numbers immediately,
+not force a 15-minute rebuild before the first page loads.</p>
+<p>You need to build (or rebuild) only when:</p>
+<ul>
+<li>you've changed code in <code>app/intelligence/</code> and want to see the effect on the trained models or
+  reports;</li>
+<li>you're retraining on a different race session (§8);</li>
+<li>you want to verify reproducibility end-to-end (a <code>--force</code> rebuild is the project's own
+  correctness check — see <code>docs/TESTING_REPORT.md</code>).</li>
+</ul>
+<div class="hl"><pre><span></span><code>python<span class="w"> </span>scripts/build_all.py<span class="w">            </span><span class="c1"># builds what is missing, skips what already exists</span>
+python<span class="w"> </span>scripts/build_all.py<span class="w"> </span>--force<span class="w">    </span><span class="c1"># rebuilds everything from the raw data</span>
+python<span class="w"> </span>scripts/build_all.py<span class="w"> </span>--skip-dl<span class="w">  </span><span class="c1"># Tasks 1-6 only (no Keras/PyTorch needed)</span>
+python<span class="w"> </span>scripts/build_all.py<span class="w"> </span>--skip-qml<span class="w"> </span><span class="c1"># skip the quantum stage (no PennyLane needed)</span>
+</code></pre></div>
+
+<p>Stages run in a fixed order and each one independently skips itself when its own artifacts already
+exist — so a partial build (say, Tasks 1–6 already present, Task 7 not yet run) resumes correctly
+rather than redoing completed work. <strong>Tasks 7–9 depend on Task 6 and the build refuses to run them
+against nothing</strong> — if you see an error about a missing Task 6 registry, run Task 6 first (or just
+run <code>build_all.py</code> without flags, which orders this correctly for you).</p>
+<p>Approximate timings on a laptop CPU, from the project's own committed run (<code>DEPLOYMENT.md</code> §3):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tasks 1–4 (knowledge, rules, search, cleaning)</td>
+<td>seconds</td>
+</tr>
+<tr>
+<td>Task 5 feature engineering</td>
+<td>~40 s</td>
+</tr>
+<tr>
+<td>Task 6 machine learning</td>
+<td>~25 s</td>
+</tr>
+<tr>
+<td>Task 7 deep learning</td>
+<td>~12 min (the hyperparameter search dominates)</td>
+</tr>
+<tr>
+<td>Task 8 explainable AI</td>
+<td>~2 min</td>
+</tr>
+<tr>
+<td>Quantum ML</td>
+<td>~30 s</td>
+</tr>
+</tbody>
+</table></div>
+<p>A full <code>--force</code> rebuild is therefore about 15 minutes, nearly all of it Task 7's hyperparameter
+search over the cross-validation folds.</p>
+<h3 id="single-stages">Single stages</h3>
+<p>When you only want one stage rebuilt (faster iteration on one task's code):</p>
+<div class="hl"><pre><span></span><code>python<span class="w"> </span>scripts/build_knowledge_base.py<span class="w">     </span><span class="c1"># Task 1</span>
+python<span class="w"> </span>scripts/run_expert_system.py<span class="w">        </span><span class="c1"># Task 2</span>
+python<span class="w"> </span>scripts/run_search.py<span class="w">               </span><span class="c1"># Task 3</span>
+python<span class="w"> </span>scripts/run_eda.py<span class="w">                  </span><span class="c1"># Task 4</span>
+python<span class="w"> </span>scripts/build_features.py<span class="w">           </span><span class="c1"># Task 5</span>
+python<span class="w"> </span>scripts/run_qml.py<span class="w">                  </span><span class="c1"># Quantum ML</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from app.intelligence.ml import pipeline; pipeline.train_all()"</span><span class="w">    </span><span class="c1"># Task 6</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from app.intelligence.dl import pipeline; pipeline.train_all()"</span><span class="w">    </span><span class="c1"># Task 7</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from app.intelligence.xai import pipeline; pipeline.run_all()"</span><span class="w">     </span><span class="c1"># Task 8</span>
+</code></pre></div>
+
+<h2 id="4-running-it">4. Running it</h2>
+<h3 id="one-command">One command</h3>
+<div class="hl"><pre><span></span><code>./run.sh
+</code></pre></div>
+
+<p>This is the supported path for a laptop demo or local development. It does the following, in
+order (<code>run.sh</code>'s own comment block):</p>
+<ol>
+<li>Creates and activates <code>.venv</code> if it doesn't exist, installs Python dependencies on first run.</li>
+<li>Resolves the backend and frontend ports — honouring <code>BACKEND_PORT</code>/<code>FRONTEND_PORT</code> if you set
+   them explicitly, otherwise starting from 8000/3000 and walking forward if something else (that
+   isn't this project's own leftover process) already holds the port, asking before killing
+   anything it doesn't recognise as its own.</li>
+<li>Sets <code>F1_ALLOWED_ORIGINS</code> to include whatever frontend origin it actually resolved, so CORS
+   works out of the box even if the port moved.</li>
+<li>Builds any missing artifact stages.</li>
+<li>Starts the API, warms it with a few real predictions (proving the trained models actually
+   respond before you look at the dashboard), starts the frontend, and opens your browser.</li>
+</ol>
+<p>Useful flags and variables:</p>
+<div class="hl"><pre><span></span><code>./run.sh<span class="w"> </span>--force-retrain<span class="w">               </span><span class="c1"># rebuild everything first</span>
+./run.sh<span class="w"> </span>--force-ports<span class="w">                 </span><span class="c1"># kill whatever holds :8000 / :3000 without asking</span>
+./run.sh<span class="w"> </span>--skip-qml<span class="w">                    </span><span class="c1"># skip the quantum stage (needs pennylane; slowest cold-build stage)</span>
+<span class="nv">BACKEND_PORT</span><span class="o">=</span><span class="m">8001</span><span class="w"> </span><span class="nv">FRONTEND_PORT</span><span class="o">=</span><span class="m">3001</span><span class="w"> </span>./run.sh
+</code></pre></div>
+
+<p><code>./run.sh --help</code> prints the same summary from the terminal at any time.</p>
+<h3 id="running-backend-and-frontend-separately">Running backend and frontend separately</h3>
+<p>Useful when iterating on one side only, or when you want the backend's auto-reload:</p>
+<div class="hl"><pre><span></span><code>uvicorn<span class="w"> </span>app.api.main:app<span class="w"> </span>--reload<span class="w">                       </span><span class="c1"># backend, :8000</span>
+<span class="nb">cd</span><span class="w"> </span>frontend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev<span class="w">                               </span><span class="c1"># dashboard, :3000</span>
+</code></pre></div>
+
+<p>The dashboard finds the API through <code>NEXT_PUBLIC_API_BASE_URL</code>, which defaults to
+<code>http://localhost:8000</code>. Point it elsewhere with:</p>
+<div class="hl"><pre><span></span><code><span class="nv">NEXT_PUBLIC_API_BASE_URL</span><span class="o">=</span>http://127.0.0.1:8001<span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev
+</code></pre></div>
+
+<h2 id="5-environment-variables">5. Environment variables</h2>
+<p>Every configurable value the system reads, confirmed against <code>run.sh</code> and <code>app/api/main.py</code>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Read by</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BACKEND_PORT</code></td>
+<td><code>8000</code></td>
+<td><code>run.sh</code></td>
+<td>Which port <code>uvicorn</code> binds. Explicitly set values are honoured or the script stops (rather than silently moving); an unset default is free to move if taken.</td>
+</tr>
+<tr>
+<td><code>FRONTEND_PORT</code></td>
+<td><code>3000</code></td>
+<td><code>run.sh</code></td>
+<td>Which port the Next.js dev/start server binds.</td>
+</tr>
+<tr>
+<td><code>NEXT_PUBLIC_API_BASE_URL</code></td>
+<td><code>http://localhost:8000</code></td>
+<td><code>frontend/lib/api.ts</code> (baked in at Next.js build time)</td>
+<td>Where the dashboard's fetch client sends requests. Must be rebuilt (<code>npm run build</code>) if changed for a production build, since Next.js inlines <code>NEXT_PUBLIC_*</code> variables at build time.</td>
+</tr>
+<tr>
+<td><code>F1_ALLOWED_ORIGINS</code></td>
+<td><code>http://localhost:3000,http://127.0.0.1:3000</code></td>
+<td><code>app/api/main.py</code> (CORS middleware)</td>
+<td>Comma-separated list of origins allowed to call the API cross-origin. <code>run.sh</code> appends the frontend origin it actually resolved to whatever you set, rather than replacing it.</td>
+</tr>
+</tbody>
+</table></div>
+<p>CORS is deliberately not a wildcard (<code>app/api/main.py</code>'s own comment explains why: "any website the
+developer visits in the same browser can issue cross-origin requests to 127.0.0.1:8000 and read the
+responses"). If you deploy the dashboard at a real domain, set <code>F1_ALLOWED_ORIGINS</code> to that domain
+explicitly — omitting it will leave the API rejecting the deployed dashboard's requests.</p>
+<h2 id="6-serving-it-to-other-people">6. Serving it to other people</h2>
+<h3 id="backend">Backend</h3>
+<div class="hl"><pre><span></span><code>uvicorn<span class="w"> </span>app.api.main:app<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">4</span>
+</code></pre></div>
+
+<p>Multiple workers are safe specifically because the API is read-only at request time: trained models
+are loaded once per process and cached (<code>app/services/model_cache.py</code>), and nothing writes to
+<code>artifacts/</code> while serving. If you add a write path to the API in the future, revisit this
+assumption before scaling workers.</p>
+<p><strong>Set the allowed origins</strong> to the real dashboard domain, not the default:</p>
+<div class="hl"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">F1_ALLOWED_ORIGINS</span><span class="o">=</span><span class="s2">"https://dashboard.example.com"</span>
+</code></pre></div>
+
+<p><strong>What the API does and does not expose.</strong> Only these artifact directories are mounted read-only
+under <code>/artifacts/</code> (<code>app/api/main.py</code>, <code>PUBLIC_ARTIFACT_DIRS</code>):</p>
+<div class="hl"><pre><span></span><code>figures/  reports/  data_engineering/  knowledge_representation/
+expert_system/  search/  deep_learning/  xai/
+</code></pre></div>
+
+<p><code>artifacts/models/</code> and <code>artifacts/metadata/</code> are <strong>never</strong> mounted (<code>PRIVATE_ARTIFACT_DIRS</code> in the
+same file), so trained weights (<code>.joblib</code>, <code>.h5</code>, <code>.npy</code>) are not downloadable over HTTP — a request
+for one returns 404 because no route exists for it, not because of a filtering rule that could be
+misconfigured. If you add a new artifact subdirectory that should stay private, do not add it to
+<code>PUBLIC_ARTIFACT_DIRS</code>.</p>
+<h3 id="frontend">Frontend</h3>
+<div class="hl"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>frontend
+<span class="nv">NEXT_PUBLIC_API_BASE_URL</span><span class="o">=</span>https://api.example.com<span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>build
+npm<span class="w"> </span>run<span class="w"> </span>start<span class="w"> </span>--<span class="w"> </span>--port<span class="w"> </span><span class="m">3000</span>
+</code></pre></div>
+
+<p><code>npm run build</code> bakes the API URL into the built assets, so you must rebuild (not just restart)
+whenever <code>NEXT_PUBLIC_API_BASE_URL</code> changes.</p>
+<h3 id="behind-a-reverse-proxy">Behind a reverse proxy</h3>
+<p>Serving the dashboard at <code>/</code> and the API at <code>/api</code> on one hostname removes the CORS question
+entirely — the browser sees same-origin requests. Nginx sketch:</p>
+<div class="hl"><pre><span></span><code><span class="k">location</span><span class="w"> </span><span class="s">/api/</span><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:8000</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="k">location</span><span class="w"> </span><span class="s">/artifacts/</span><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:8000</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w">            </span><span class="p">{</span><span class="w"> </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:3000</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+
+<h2 id="7-health-checks">7. Health checks</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Command</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API up</td>
+<td><code>curl localhost:8000/api/health</code></td>
+<td><code>200</code> with a status body (<code>status</code>, <code>models_trained</code>, <code>model_count</code>, <code>xgboost_available</code>)</td>
+</tr>
+<tr>
+<td>Models loaded</td>
+<td><code>curl localhost:8000/api/ml/models</code></td>
+<td>the model registry, not a 404</td>
+</tr>
+<tr>
+<td>Artifacts served</td>
+<td><code>curl -I localhost:8000/artifacts/figures/qml_circuit.png</code></td>
+<td><code>200</code></td>
+</tr>
+<tr>
+<td>Weights <strong>not</strong> served</td>
+<td><code>curl -I localhost:8000/artifacts/models/qml/vqc_weights.npy</code></td>
+<td><code>404</code></td>
+</tr>
+<tr>
+<td>Dashboard up</td>
+<td><code>curl -I localhost:3000</code></td>
+<td><code>200</code></td>
+</tr>
+<tr>
+<td>Tests pass</td>
+<td><code>pytest -q</code></td>
+<td>all green — 284 tests as of the 2026-09-27 audit (<code>docs/TESTING_REPORT.md</code>)</td>
+</tr>
+</tbody>
+</table></div>
+<p>If you extend <code>GET /api/health</code> with a richer per-model breakdown (a <code>models: {ml, dl,
+xai_available}</code> shape was under discussion at the time this guide was written but had not landed in
+this worktree — see <a href="sdd.html"><code>sdd.md</code></a> §2.1), update this table's first row to match whatever shape
+actually ships rather than assuming the extension is live.</p>
+<h2 id="8-retraining-on-a-different-race">8. Retraining on a different race</h2>
+<div class="hl"><pre><span></span><code>python<span class="w"> </span>scripts/fetch_real_session.py<span class="w"> </span>--year<span class="w"> </span><span class="m">2023</span><span class="w"> </span>--event<span class="w"> </span>Monza<span class="w"> </span>--session<span class="w"> </span>R
+python<span class="w"> </span>scripts/build_all.py<span class="w"> </span>--force
+</code></pre></div>
+
+<p>Step 1 fetches the new session via FastF1 (needs network access; cached locally afterward, so a
+second run against the same session is fast) and writes a provenance marker
+(<code>data/raw/.data_source.json</code>). Step 2 re-cleans Task 4 on the new raw data, rebuilds Task 5's
+feature contract as a pipeline stage (it used to be a presence check that silently left Task 6
+training on the <em>previous</em> race's features — this was fixed and is now a real, verified rebuild
+stage, per <code>docs/architecture.md</code>'s "Rebuilding the feature contract" section), and retrains every
+downstream model and report. The dashboard then shows the new race automatically, with its
+provenance badge updated — nothing needs editing by hand, because every number flows from
+<code>data/processed/data_source.json</code> through the API to the frontend rather than being assumed
+anywhere.</p>
+<p><strong>Caveat found in the committed real-data run</strong> (<code>docs/architecture.md</code>, "Synthetic vs. real
+data"): with 20 real drivers and 10 real teams, Task 5's feature-selection funnel tends to keep more
+one-hot driver/team identity dummies than the synthetic demo data did (45 regression features vs. 6
+for the synthetic case), which is a real overfitting risk on a session with only ~800 development
+rows that the selection funnel does not itself guard against. Retraining on a different single race
+will likely reproduce this pattern; it is not specific to Bahrain.</p>
+<h2 id="9-docker-deployment">9. Docker deployment</h2>
+<p><code>Dockerfile</code> (backend), <code>frontend/Dockerfile</code>, and <code>docker-compose.yml</code> live at the repository root.
+Both images are code-only — <code>artifacts/</code> and <code>data/</code> are excluded via <code>.dockerignore</code> and bind-mounted
+at runtime instead, since they're produced by <code>scripts/build_all.py</code> and meant to be regenerated, not
+shipped as a stale image layer. <code>./run.sh</code> is unaffected and remains the primary local path; Docker is
+additive.</p>
+<div class="hl"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>build<span class="w">        </span><span class="c1"># builds the backend and frontend images</span>
+docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w">           </span><span class="c1"># starts both; frontend waits on the backend's healthcheck</span>
+</code></pre></div>
+
+<ul>
+<li>Backend: <code>http://localhost:8000</code> by default, with <code>data/</code> and <code>artifacts/</code> bind-mounted read-write so
+  <code>docker compose exec backend python scripts/build_all.py</code> can (re)generate them from inside the
+  container exactly as it would on the host.</li>
+<li>Frontend: <code>http://localhost:3001</code> by default — <strong>not</strong> 3000, since this machine commonly has an
+  unrelated dev server (<code>./run.sh</code> or a plain <code>npm run dev</code>) already holding that port, and
+  <code>docker compose up</code> shouldn't have to fight it. <code>NEXT_PUBLIC_API_BASE_URL</code> is baked into the client
+  bundle at <code>docker compose build</code> time (a Next.js constraint — <code>NEXT_PUBLIC_*</code> values are inlined at
+  build, not read at runtime) via a Docker build arg in <code>docker-compose.yml</code>, mirroring how <code>run.sh</code>
+  passes the same variable to <code>next dev</code>.</li>
+<li>Both host ports are overridable without editing the compose file:
+  <code>BACKEND_HOST_PORT=8001 FRONTEND_HOST_PORT=3002 docker compose up</code> — the backend's CORS
+  (<code>F1_ALLOWED_ORIGINS</code>) and the frontend's build-time <code>NEXT_PUBLIC_API_BASE_URL</code> both pick up the
+  override automatically.</li>
+<li><strong>Verified in this repo</strong> (2026-10-01): <code>docker compose build</code> succeeds for both images;
+  <code>docker compose up -d</code> brings up <code>backend</code> (healthy via its own <code>GET /api/health</code>, serving the full
+  per-model breakdown) and <code>frontend</code> (HTTP 200, server-rendering real data fetched from the backend
+  container — confirmed by curling the rendered page for the real dataset-source badge).</li>
+<li>The backend's healthcheck hits <code>GET /api/health</code> with a 90-second <code>start_period</code>, since the process
+  imports the full ML/DL/XAI/QML stack (torch, keras, shap, lime, pennylane) at startup.</li>
+<li><code>docker compose exec backend python scripts/record_environment.py</code> writes
+  <code>artifacts/deployment/environment.txt</code> from inside the container, if you want a record of exactly
+  what the containerized build installed.</li>
+<li><code>docker compose down</code> stops both services. Neither image's <code>artifacts</code>/<code>data</code> volumes are removed
+  by <code>down</code> alone (they're host bind mounts, not named Docker volumes) — your trained models and data
+  stay on disk between runs.</li>
+</ul>
+<p>If <code>artifacts/</code>/<code>data/</code> are empty on first <code>docker compose up</code> (a fresh clone with no prior
+<code>./run.sh</code> or <code>build_all.py</code> run), the API will report models as untrained via <code>GET /api/health</code>
+rather than fabricating predictions — run the build step first, on the host or inside the container.</p>
+<h2 id="10-troubleshooting">10. Troubleshooting</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause and fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Task 5 outputs missing</code></td>
+<td>Run <code>python scripts/build_features.py</code>, or <code>python scripts/build_all.py</code>.</td>
+</tr>
+<tr>
+<td><code>No trained model registered</code></td>
+<td>Task 6 has not run: <code>python scripts/build_all.py</code>.</td>
+</tr>
+<tr>
+<td>Dashboard shows "Backend unreachable"</td>
+<td>API isn't running, or <code>NEXT_PUBLIC_API_BASE_URL</code> points at the wrong port — check with <code>curl localhost:8000/api/health</code>.</td>
+</tr>
+<tr>
+<td>A page says "Not generated yet"</td>
+<td>That task's artifacts are missing on disk. The page itself names the exact command to run — it is read live from <code>artifacts/</code>, not a stale message.</td>
+</tr>
+<tr>
+<td><code>XGBoost unavailable — skipped</code></td>
+<td><code>libomp</code> is not installed. This is by design, not an error: nine models train instead of ten, and the report says so.</td>
+</tr>
+<tr>
+<td>Segfault when importing Keras with XGBoost</td>
+<td>Import order. Always go through <code>app.core.runtime.prepare_dl_runtime()</code> rather than importing <code>keras</code>/<code>torch</code> directly — see §1's note on the deep-learning stack.</td>
+</tr>
+<tr>
+<td><code>TensorFlow not found</code></td>
+<td>Expected. Keras runs on the PyTorch backend here; TensorFlow has no wheel for Python 3.14.</td>
+</tr>
+<tr>
+<td>Port already in use</td>
+<td><code>./run.sh --force-ports</code>, or set <code>BACKEND_PORT</code>/<code>FRONTEND_PORT</code> to move out of the way instead. Under Docker, set <code>BACKEND_HOST_PORT</code>/<code>FRONTEND_HOST_PORT</code> (§9) — the frontend already defaults to 3001, not 3000, for exactly this reason.</td>
+</tr>
+<tr>
+<td>CORS error in the browser console</td>
+<td>The dashboard's actual origin isn't in <code>F1_ALLOWED_ORIGINS</code>. If you're running <code>./run.sh</code> with a non-default <code>FRONTEND_PORT</code>, it handles this for you; if you started the backend and frontend separately with custom ports, set <code>F1_ALLOWED_ORIGINS</code> yourself.</td>
+</tr>
+<tr>
+<td>A downloaded strategy report is missing the SHAP/trust section</td>
+<td>Explanations are opt-in on <code>/api/strategy/predict</code> (<code>explain: false</code> by default) but always forced on for <code>/api/strategy/report</code> — if a report is missing that section, check the live explainer didn't fail (<code>e.get("reason")</code> in the response) rather than assuming it was skipped.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="11-what-to-back-up">11. What to back up</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Back up?</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data/raw/</code>, <code>data/processed/</code></td>
+<td>yes</td>
+<td>the session data and the Task 5 feature contract — losing these means re-fetching from FastF1</td>
+</tr>
+<tr>
+<td><code>artifacts/</code></td>
+<td>yes</td>
+<td>every trained model, metric, figure and report — losing these means a full ~15-minute rebuild</td>
+</tr>
+<tr>
+<td><code>.venv/</code>, <code>frontend/node_modules/</code>, <code>frontend/.next/</code></td>
+<td>no</td>
+<td>reinstallable from <code>requirements.txt</code> / <code>package.json</code></td>
+</tr>
+<tr>
+<td><code>fastf1_cache/</code></td>
+<td>no</td>
+<td>re-downloads on demand from FastF1</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>artifacts/</code> is about 15 MB and is already committed to the repository, so in practice a git clone
+of this project already constitutes a backup of the current trained state.</p>
+</main>
+</body>
+</html>

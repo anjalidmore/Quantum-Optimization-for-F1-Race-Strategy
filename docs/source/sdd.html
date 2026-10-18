@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Software Design Document</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<nav class="doc-bar" aria-label="Documentation"><span class="mark" aria-hidden="true"></span>
+<strong>F1 Race Strategy Intelligence</strong>
+<a href="../study_guide.html">Study guide (all documents)</a>
+<a href="../../README.md">README</a></nav>
+<main class="doc-page prose">
+<h1 id="software-design-document">Software Design Document</h1>
+<p>How the F1 Race Strategy Intelligence system is actually built, at the level of modules,
+components, data shapes and control flow. Where <a href="architecture.html"><code>architecture.md</code></a> gives the
+repository layout and the high-level end-to-end diagram, this document goes one level deeper into
+the services that sit between the API and the intelligence packages, and into the exact stage
+sequence one strategy request goes through.</p>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#1-architecture-overview">1. Architecture overview</a></li>
+<li><a href="#2-component-design">2. Component design</a></li>
+<li><a href="#3-data-design">3. Data design</a></li>
+<li><a href="#4-the-strategy-pipeline-stage-sequence">4. The strategy pipeline: stage sequence</a></li>
+<li><a href="#5-error-handling-and-honesty-patterns">5. Error handling and honesty patterns</a></li>
+<li><a href="#6-deployment-view">6. Deployment view</a></li>
+</ul>
+<h2 id="1-architecture-overview">1. Architecture overview</h2>
+<p>The system is four layers, each with one job, wired together by a single shared data/artifact
+contract rather than by direct imports between intelligence packages:</p>
+<div class="hl"><pre><span></span><code>frontend/            Next.js 15 dashboard — six pages, one typed fetch client, no local data
+        │  HTTP (JSON, fetched at request/render time)
+        ▼
+app/api/              FastAPI routers + Pydantic schemas — the only externally reachable surface
+        │
+        ▼
+app/services/          Orchestration — chains intelligence modules together, caches loaded models,
+                        approximates features from a UI snapshot, generates the strategy report
+        │
+        ▼
+app/intelligence/       One package per computational-intelligence task (1–8), each independently
+                         testable, each reading/writing only through app/core/paths.py
+        │
+        ▼
+data/, artifacts/       The only persistent state: raw/processed data and every generated model,
+                         metric, figure and report. No database.
+</code></pre></div>
+
+<h3 id="module-responsibility-table">Module-responsibility table</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+<th>Depends on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>app/core/paths.py</code></td>
+<td>Single source of truth for every filesystem path (data + artifacts); the <code>ArtifactPaths</code> dataclass lets the test suite redirect all writes to a temp root without touching production code</td>
+<td>nothing else in the project</td>
+</tr>
+<tr>
+<td><code>app/core/runtime.py</code></td>
+<td>Import-order guard so XGBoost and the PyTorch-backed Keras coexist without a native OpenMP segfault</td>
+<td><code>app/core/paths.py</code></td>
+</tr>
+<tr>
+<td><code>app/intelligence/knowledge_representation/</code></td>
+<td>Task 1: entity/attribute/relationship schema, ontology and graph generation</td>
+<td><code>app/core/paths.py</code></td>
+</tr>
+<tr>
+<td><code>app/intelligence/expert_system/</code></td>
+<td>Task 2: rule base definition, forward/backward-chaining inference engine</td>
+<td><code>app/core/paths.py</code></td>
+</tr>
+<tr>
+<td><code>app/intelligence/search/</code></td>
+<td>Task 3: race-as-search problem formulation, BFS/DFS/UCS/Greedy/A*</td>
+<td><code>app/core/paths.py</code></td>
+</tr>
+<tr>
+<td><code>app/intelligence/data/</code></td>
+<td>Task 4: cleaning, imputation, outlier capping, EDA</td>
+<td><code>app/core/paths.py</code></td>
+</tr>
+<tr>
+<td><code>app/intelligence/features/</code></td>
+<td>Task 5: feature construction (<code>build.py</code>), the feature contract reader (<code>contract.py</code>), and display helpers (<code>display.py</code>) that every other module treats as the sole feature-name authority</td>
+<td>Task 4's cleaned CSV</td>
+</tr>
+<tr>
+<td><code>app/intelligence/ml/</code></td>
+<td>Task 6: data contract adapter, time-aware splits, preprocessing (fit-inside-fold), regression + classification model families, tuning, evaluation, selection, persistence, registry</td>
+<td><code>app/intelligence/features/contract.py</code></td>
+</tr>
+<tr>
+<td><code>app/intelligence/dl/</code></td>
+<td>Task 7: Keras network definitions, training loop, persistence (HDF5 + reload verification)</td>
+<td>imports <code>app/intelligence/ml/splits.py</code> and <code>.evaluation.py</code> directly (not copied)</td>
+</tr>
+<tr>
+<td><code>app/intelligence/xai/</code></td>
+<td>Task 8: permutation importance, SHAP, LIME, counterfactual scan, trust score, narrative generation, fairness stratification, plus the reduced-budget live-explanation path (<code>live.py</code>)</td>
+<td>Task 6's persisted <code>.joblib</code> (through <code>ModelCache</code>) and Task 7's saved <code>.h5</code> network</td>
+</tr>
+<tr>
+<td><code>app/intelligence/qml/</code></td>
+<td>Quantum-ML extension: PennyLane circuits, PCA-reduced encoding, parameter-matched classical baselines</td>
+<td><code>app/intelligence/ml/splits.py</code></td>
+</tr>
+<tr>
+<td><code>app/services/model_cache.py</code></td>
+<td>Loads a Task 6 pipeline once per process and caches it; resolves "the selected-best model" from the registry when no specific model is named</td>
+<td><code>app/intelligence/ml/persistence.py</code>, <code>.registry.py</code></td>
+</tr>
+<tr>
+<td><code>app/services/feature_approximation.py</code></td>
+<td>Maps a race-state <em>snapshot</em> (from the Strategy page form) onto a full Task 5 feature row, generically from the live feature contract</td>
+<td><code>app/intelligence/features/contract.py</code></td>
+</tr>
+<tr>
+<td><code>app/services/strategy_service.py</code></td>
+<td>Orchestrates ML + expert system + search into one recommendation</td>
+<td><code>model_cache</code>, <code>feature_approximation</code>, <code>expert_system</code>, <code>search</code></td>
+</tr>
+<tr>
+<td><code>app/services/strategy_report.py</code></td>
+<td>Renders one <code>run_strategy_analysis</code> result as a self-contained Markdown briefing</td>
+<td><code>strategy_service</code>'s output shape only — computes nothing itself</td>
+</tr>
+<tr>
+<td><code>app/api/routers/*.py</code></td>
+<td>One router per task/concern; every handler either returns real computed/read data or a structured 404/503</td>
+<td>the corresponding <code>app/services/</code> or <code>app/intelligence/</code> module</td>
+</tr>
+<tr>
+<td><code>frontend/lib/api.ts</code></td>
+<td>Typed fetch client — the only place the frontend knows the backend's URL shape</td>
+<td><code>NEXT_PUBLIC_API_BASE_URL</code></td>
+</tr>
+<tr>
+<td><code>frontend/app/*/page.tsx</code></td>
+<td>Six server/client components, each fetching its own data at render/interaction time</td>
+<td><code>frontend/lib/api.ts</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="2-component-design">2. Component design</h2>
+<h3 id="21-appservicesstrategy_servicepy">2.1 <code>app/services/strategy_service.py</code></h3>
+<p><strong>Responsibility.</strong> The single place where the ML, expert-system and search paradigms actually
+meet for a live request. It is a thin orchestrator with no model-fitting or rule-authoring logic of
+its own — every real computation is delegated.</p>
+<p><strong>Key functions</strong> (all module-level, no class — there is no per-request state to hold):</p>
+<ul>
+<li><code>_run_ml(race_state, laptime_model, pit_model) -&gt; dict</code> — for each of the two targets, builds a
+  feature row via <code>feature_approximation.build_feature_row</code>, records which features were
+  approximated or out-of-range, fetches a cached pipeline via <code>model_cache.get_pipeline</code>, and
+  predicts. A <code>ModelUnavailableError</code> for one target is appended to <code>errors</code> and does not abort the
+  other target's prediction.</li>
+<li><code>_run_expert_system(race_state) -&gt; dict</code> — builds a 16-key <code>inputs</code> dict (mapping race-state fields
+  to the rule base's vocabulary, e.g. <code>tyre_wear = tyre_age * 3.0</code> as a percentage, <code>fuel_margin</code> as a
+  computed ratio) and runs <code>InferenceEngine.forward_chain</code>, returning every firing with its matched
+  conditions. Four of those keys — <code>in_pit_window</code>, <code>safety_car_probability</code>, <code>safety_car_likelihood</code>,
+  <code>tyre_age_laps</code> — were added after a reachability audit (<code>scripts/evaluate_system.py</code>'s
+  <code>rule_base_reachability_check</code>) found 14 of the 32 rules referenced an input this function never
+  populated; adding these four (all genuinely derivable — see the module-level "Rule-base input
+  coverage" comment in <code>strategy_service.py</code>) made R-SC-002, R-SC-003, R-PIT-004 and R-STRAT-004
+  reachable. <code>safety_car_probability</code>/<code>_likelihood</code> come from <code>_historical_safety_car_rate()</code>, a
+  cached empirical SC/VSC-lap rate read from the cleaned training data (2.94% for 2023 Bahrain), not a
+  live incident prediction. The remaining 10 unreachable rules need rival-car telemetry, multi-circuit
+  data, or a tyre-graining model this project doesn't have, and are documented as limitations rather
+  than worked around (§7, below).</li>
+<li><code>_run_search(race_state) -&gt; dict</code> — builds a fresh <code>RaceProblem</code> for the <em>remaining</em> laps only
+  (search does not carry over tyre age already accumulated — stated explicitly in the returned
+  <code>note</code> field) and runs <code>astar_search</code>.</li>
+<li><code>_explain(ml) -&gt; dict</code> — opt-in (only called when <code>explain=True</code>); imports
+  <code>app.intelligence.xai.live</code> locally so a plain prediction call never pays the cost of loading the
+  deep-learning stack. Wraps each target's explanation in a <code>try/except</code> so an explainer failure
+  degrades to <code>{"available": False, "reason": ...}</code> rather than failing the whole request.</li>
+<li><code>run_strategy_analysis(race_state, laptime_model, pit_model, explain) -&gt; dict</code> — the public entry
+  point (called by <code>app/api/routers/strategy.py</code>). Composes the three private runners, decides
+  <code>recommended_action</code> (the expert system's <code>pit_decision</code> conclusion if present, else the ML
+  classifier's own class), and assembles the final response dict.</li>
+</ul>
+<p><strong>Current response shape</strong> (<code>app/services/strategy_service.py::run_strategy_analysis</code>): <code>race_state</code>,
+<code>validation</code> (the normalised inputs plus <code>laps_remaining</code> — a stage-1 card for the frontend, not a
+re-validation; the schema and domain-option checks already ran at the API layer), <code>feature_construction</code>
+(<code>feature_rows</code>/<code>approximated_features</code>/<code>out_of_range</code>/<code>context_only</code>, duplicated into <code>prediction</code>
+below for backward compatibility with existing callers), <code>prediction</code> (the Task 6 ML result:
+<code>predicted_lap_time_seconds</code>, <code>laptime_model</code>, <code>probability_pit</code>, <code>pit_model</code>, plus the
+feature-construction fields again, <code>errors</code>), <code>dl_prediction</code> (the Task 7 network's lap-time and
+pit-probability predictions at the tuned decision threshold — see §4), <code>recommended_action</code> (kept for
+backward compatibility: the expert system's raw <code>pit_decision</code> conclusion, or the ML class as a
+fallback), <code>recommendation</code> (the richer combiner's output: <code>action</code> one of <code>"PIT NOW"</code> /
+<code>"STAY OUT"</code> / <code>"PIT IN N LAPS"</code>, <code>confidence</code>, <code>source</code>, <code>disagreement</code>, <code>ml_pit_probability</code>,
+<code>dl_pit_probability</code>, <code>reason</code> — see §4), <code>expected_cost_seconds</code>, <code>optimal_search_strategy</code>
+(aliased as <code>search_plan</code>), <code>triggered_expert_rules</code>, <code>evidence</code>, <code>xai_explanation</code> (<code>{"available":
+false, "reason": ...}</code> when <code>explain=false</code>; otherwise identical to the legacy <code>explanation</code> key,
+kept alongside it rather than renaming it, so existing tests/report code did not need to change),
+<code>data_source</code>.</p>
+<h3 id="22-appservicesmodel_cachepy">2.2 <code>app/services/model_cache.py</code></h3>
+<p><strong>Responsibility.</strong> Keep exactly one loaded copy of each trained Task 6 pipeline in memory per
+process, and resolve "give me the best model for this task" without every caller having to read the
+registry itself.</p>
+<p><strong>Design.</strong> <code>ModelCache</code> holds a <code>dict[(task, model_name), pipeline]</code>. <code>get_pipeline(task,
+model_name=None)</code> resolves an omitted <code>model_name</code> to the registry's <code>is_selected_best</code> entry for
+that task, raises <code>ModelUnavailableError</code> (a plain <code>RuntimeError</code> subclass, not an HTTP exception —
+callers translate it) if nothing is registered or the artifact file is missing, and otherwise loads
+the <code>.joblib</code> pipeline once with <code>joblib.load</code> and caches it for the process lifetime. A
+module-level <code>get_model_cache()</code> is memoized with <code>functools.lru_cache(maxsize=1)</code>, so the whole
+application shares one cache instance without any explicit dependency injection.</p>
+<p><strong>Why this shape.</strong> Training is a separate, offline operation
+(<code>scripts/build_all.py</code> / <code>pipeline.train_all()</code>); the API is documented and tested as read-only at
+request time (<code>docs/DEPLOYMENT.md</code> §5: "Workers are safe: the API is read-only at request time...
+nothing writes to <code>artifacts/</code> while serving"), which is only true because prediction requests never
+touch the training code path.</p>
+<h3 id="23-appservicesfeature_approximationpy">2.3 <code>app/services/feature_approximation.py</code></h3>
+<p><strong>Responsibility.</strong> Turn a race-state <em>snapshot</em> (the handful of fields a UI form or API caller can
+realistically supply — driver, team, compound, tyre age, lap, temperature, ...) into a complete
+Task 5 feature row, for models that were trained on features requiring multi-lap history a snapshot
+cannot supply.</p>
+<p><strong>Design — the important part is that it is generic, not a fixed mapping.</strong> <code>build_feature_row</code>
+iterates the <em>live</em> feature contract's selected feature names for the target and classifies each
+one at request time by pattern-matching its name against known Task 5 naming conventions:</p>
+<ul>
+<li><code>driver_&lt;code&gt;</code> / <code>team_&lt;slug&gt;</code> — one-hot identity dummies, matched via regex
+  (<code>_DRIVER_RE</code>, <code>_TEAM_RE</code>) against the contract's own <code>binary_features_no_scaling_needed</code> list to
+  tell "genuine one-hot dummy" apart from "continuous per-driver statistic that happens to share a
+  name" (see the module's docstring for the exact historical bug this fixes: a hard-coded
+  <code>driver_sai</code> special case silently broke on real data because a real one-hot dummy for driver
+  Carlos Sainz happens to share that literal name with the synthetic dataset's driver-skill index).</li>
+<li><code>compound_&lt;slug&gt;</code> — one-hot compound dummy.</li>
+<li><code>tyrelife_x_&lt;slug&gt;</code> — tyre-age × compound interaction, zero unless the compound matches.</li>
+<li><code>tyre_life</code>, <code>race_progress</code>, <code>tracktemp_dev_x_tyrelife</code> — computed directly from race-state
+  fields.</li>
+<li>Anything else — filled from the training data's per-driver/per-team/overall median and recorded
+  in <code>approximated</code>, because it needs history (a rolling gap, a field-pace lag) the snapshot cannot
+  supply.</li>
+</ul>
+<p><code>_flag_out_of_range</code> then checks every <em>exactly derived</em> (non-approximated, non-binary) feature
+value against the training column's real min/max and records any that fall outside it — the source
+of the strategy response's <code>out_of_range</code> field and the dashboard's "Extrapolating beyond training
+data" warning.</p>
+<h3 id="24-appintelligencexailivepy--the-live-explanation-path">2.4 <code>app/intelligence/xai/live.py</code> — the live-explanation path</h3>
+<p><strong>Responsibility.</strong> Explain one arbitrary, caller-supplied feature row while the caller waits,
+using the <em>same</em> trust/SHAP/narrative code the batch Task 8 pipeline uses, at a reduced sampling
+budget.</p>
+<p><strong>Design.</strong> <code>explain_feature_row(target, row)</code>:</p>
+<ol>
+<li>Loads (and process-caches, in a plain module-level <code>_CACHE</code> dict) a <code>TargetBundle</code> via
+   <code>xai.loading.load_target(target)</code> — the trained DNN, the classical second-opinion model, the
+   training data needed as a SHAP background, and the decision threshold.</li>
+<li>Validates that <code>row</code> actually contains every feature the model expects; returns a structured
+   <code>available: False</code> payload naming the missing features rather than raising.</li>
+<li>Runs <code>shap_analysis.kernel_shap</code> with <code>LIVE_NSAMPLES = 60</code> and <code>LIVE_BACKGROUND_K = 15</code> — both
+   far smaller than the batch pipeline's budget, and both reported back in the response's <code>method</code>
+   block so a caller can see exactly how this differs from a committed report.</li>
+<li>Deliberately skips LIME (a 2,000-perturbation surrogate per request is judged not worth the
+   latency) and calls <code>trust.compute(..., shap_top=None, lime_top=None, ...)</code>, which drops the
+   <code>explanation_stability</code> term and <strong>renormalises the remaining weights</strong> rather than scoring a
+   missing component as zero — stated explicitly in the module docstring as the reason the trust
+   score for a live explanation is not bit-for-bit the same formula as a committed Task 8 report's.</li>
+<li>Generates a plain-English sentence via <code>narrative.pit_decision_sentence</code> /
+   <code>narrative.laptime_sentence</code> and returns SHAP factors, the two models' raw predictions, the
+   trust score/band/components, and the narrative together.</li>
+</ol>
+<p>This is the module <code>strategy_service._explain</code> calls for <code>explain=True</code> strategy predictions, and
+that <code>strategy_report.py</code> always calls (with <code>explain=True</code> forced) when rendering a downloadable
+report — so the Explainability page's committed-artifact explanations and a fresh strategy report's
+explanation are produced by variations of the same code, at different sampling budgets, never by
+two independently-written implementations.</p>
+<h2 id="3-data-design">3. Data design</h2>
+<h3 id="31-the-feature-contract">3.1 The feature contract</h3>
+<p>The single artifact every downstream module (Task 6, 7, 8, and the live services above) treats as
+authoritative for "what is a valid feature and what is its type" is
+<code>data/processed/feature_metadata.json</code>, read through <code>app/intelligence/features/contract.py</code>. As
+inspected for this document, its top-level structure is:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>task</code></td>
+<td><code>"Phase 2 / Task 5 - Feature Engineering &amp; Feature Selection"</code></td>
+</tr>
+<tr>
+<td><code>source_dataset</code></td>
+<td><code>data/processed/fastf1_laps_clean.csv</code></td>
+</tr>
+<tr>
+<td><code>dataset_source</code></td>
+<td><code>{source, year, event, session, fetched_at, n_laps, n_drivers}</code> — real-vs-synthetic provenance</td>
+</tr>
+<tr>
+<td><code>rows</code></td>
+<td><code>995</code></td>
+</tr>
+<tr>
+<td><code>random_state</code></td>
+<td><code>42</code></td>
+</tr>
+<tr>
+<td><code>identifier_columns</code></td>
+<td>5 non-feature id columns kept for traceability</td>
+</tr>
+<tr>
+<td><code>targets</code></td>
+<td><code>target_laptime</code>, <code>target_pit_next_lap</code>, <code>target_laptime_fuel_corrected</code></td>
+</tr>
+<tr>
+<td><code>selected_features</code></td>
+<td><code>{target_laptime: [...45 names...], target_pit_next_lap: [...8 names...], union_exported: [...]}</code></td>
+</tr>
+<tr>
+<td><code>feature_provenance</code></td>
+<td>per-feature dict of where it came from (e.g. one-hot compound/driver dummies)</td>
+</tr>
+<tr>
+<td><code>numeric_features_requiring_scaling</code></td>
+<td>14 features</td>
+</tr>
+<tr>
+<td><code>binary_features_no_scaling_needed</code></td>
+<td>31 features</td>
+</tr>
+<tr>
+<td><code>preprocessing_contract</code></td>
+<td><code>{scaling: "NOT applied here — fit inside each CV fold", validation: "expanding-window lap-forward, no random K-fold", warmup_rows_dropped: 60, first_usable_lap: 4}</code></td>
+</tr>
+<tr>
+<td><code>selection_funnel</code></td>
+<td>what each of the four selection stages dropped (e.g. stage 1 dropped <code>is_rainfall</code> for near-zero variance; stage 2 dropped <code>tyre_life_sq</code>, <code>air_temp</code>, <code>track_air_delta</code> for correlation; stage 3 dropped <code>race_progress</code> for VIF; stage 4 is the importance/stability ranking that chose K*=45)</td>
+</tr>
+<tr>
+<td><code>excluded_as_leakage</code></td>
+<td><code>{columns: [Sector1Time, Sector2Time, Sector3Time, SpeedFL, SpeedST, IsPersonalBest], reason: "Sector times sum exactly to LapTime; speed traps and IsPersonalBest are only knowable during or after the lap being predicted."}</code></td>
+</tr>
+<tr>
+<td><code>validation_scores</code></td>
+<td>cross-validated MAE/R²/AUC recorded at selection time, with a stated caveat</td>
+</tr>
+</tbody>
+</table></div>
+<p>The feature matrix itself, <code>data/processed/f1_features_selected.csv</code>, is 995 rows: one row per
+usable driver-lap from the 2023 Bahrain GP (1,055 raw laps minus a 60-row warm-up trim, first usable
+lap 4). Lap-time regression trains on 45 selected features (17 race-state features and 28
+driver/team one-hot dummies, per the README's Task 7 section); pit-decision classification trains
+on 8.</p>
+<h3 id="32-artifact-layout">3.2 Artifact layout</h3>
+<p><code>app/core/paths.py</code> defines every path as either a module-level constant or, for the pipelines'
+write targets, a property on the <code>ArtifactPaths</code> frozen dataclass — the latter exists specifically
+so the test suite can pass <code>ArtifactPaths(root=&lt;tmp dir&gt;)</code> and redirect every write, which is what
+makes <code>pytest</code> hermetic (the module docstring records that before this existed, running the test
+suite retrained Task 6 and overwrote ten tracked files, so a clean clone went dirty just from
+running the documented test command).</p>
+<p>Top-level artifact directories: <code>models/{laptime,pit_decision,deep_learning,qml}</code> (private — never
+mounted over HTTP), <code>deep_learning/</code>, <code>xai/</code>, <code>metrics/</code>, <code>figures/</code>, <code>reports/</code>, <code>metadata/</code>,
+<code>chart_data/</code> (per-chart JSON so the frontend can draw its own figures instead of showing a static
+PNG), plus the Task 1–4 directories (<code>knowledge_representation/</code>, <code>expert_system/</code>, <code>search/</code>,
+<code>data_engineering/</code>, <code>feature_engineering/</code>).</p>
+<h3 id="33-data-flow-stage-to-artifact">3.3 Data flow, stage to artifact</h3>
+<div class="hl"><pre><span></span><code>data/raw/  →  [Task 4 clean]  →  data/processed/fastf1_laps_clean.csv
+                                            │
+                                  [Task 5 build.py]
+                                            │
+                    data/processed/f1_features_selected.csv  (995 × 53: ids + features + 3 targets)
+                    data/processed/feature_metadata.json      (the contract)
+                                            │
+                          ┌─────────────────┼─────────────────┐
+                   [Task 6 ml/pipeline]            [Task 7 dl/pipeline]
+                          │                                    │
+        artifacts/models/{laptime,pit_decision}/*.joblib   artifacts/models/deep_learning/*/f1_dnn_model.h5
+        artifacts/metrics/*.json, artifacts/reports/*.md   artifacts/deep_learning/*
+                          └─────────────────┬─────────────────┘
+                                   [Task 8 xai/pipeline]
+                        (loads Task 6's .joblib through ModelCache,
+                         Task 7's saved .h5 — trains nothing itself)
+                                            │
+                                  artifacts/xai/*
+                                            │
+                                  app/services/model_cache.py (in-process cache)
+                                            │
+                                     app/api/ (FastAPI)
+                                            │
+                                frontend/lib/api.ts (typed fetch)
+                                            │
+                              six dashboard pages, each real
+</code></pre></div>
+
+<h2 id="4-the-strategy-pipeline-stage-sequence">4. The strategy pipeline: stage sequence</h2>
+<p>What <code>POST /api/strategy/predict</code> and <code>POST /api/strategy/report</code> actually execute, as read from
+<code>app/api/routers/strategy.py</code> and <code>app/services/strategy_service.py</code> in this worktree:</p>
+<ol>
+<li><strong>Input validation.</strong> <code>RaceStateRequest</code> (Pydantic, <code>app/api/schemas.py</code>) enforces field-level
+   constraints (<code>current_lap &gt;= 1</code>, <code>tyre_age &gt;= 0</code>, <code>current_position</code> 1–24, a cross-field
+   validator rejecting <code>tyre_age &gt; current_lap</code> or <code>current_lap &gt; total_laps</code>). The router then
+   calls <code>_validate_against_known_options</code>, which checks driver/team/tyre_compound against
+   <code>GET /api/data/options</code>'s real dataset values (case-insensitive), returning HTTP 422 with the
+   valid option list on a mismatch — never silently accepting an unknown value. <code>_validate_model_choice</code>
+   similarly rejects a named <code>laptime_model</code>/<code>pit_model</code> that isn't a registered, non-deep model for
+   that task.</li>
+<li><strong>Feature construction.</strong> <code>feature_approximation.build_feature_row</code> maps the validated race state
+   onto each target's full Task 5 feature row (§2.3 above), recording approximated and out-of-range
+   features.</li>
+<li><strong>ML prediction.</strong> <code>model_cache.get_pipeline</code> resolves and loads (from cache) the requested or
+   selected-best Task 6 pipeline for each target and predicts (<code>strategy_service._run_ml</code>).</li>
+<li><strong>Expert system.</strong> <code>InferenceEngine.forward_chain</code> runs Task 2's rules against a derived-inputs
+   dict built from the race state (<code>strategy_service._run_expert_system</code>), independently of the ML
+   step above — it does not consume the ML prediction as an input.</li>
+<li><strong>Search.</strong> <code>astar_search</code> plans the remaining laps as a fresh <code>RaceProblem</code>
+   (<code>strategy_service._run_search</code>), also independent of the ML step.</li>
+<li><strong>DL prediction.</strong> <code>strategy_service._run_dl</code> reuses the ML stage's already-built feature rows
+   and calls <code>xai.live.predict_point</code> per target — a point-prediction-only path (no SHAP) that
+   shares <code>xai.live</code>'s module-level cache with the XAI stage below, so a DL prediction never costs a
+   second model load if an explanation is also requested. The pit target's <code>predicted_class</code> uses
+   the same tuned threshold Task 7's own <code>/api/dl/predict/pit</code> endpoint uses (read from
+   <code>DL_METRICS_JSON</code>), never a hard-coded 0.5.</li>
+<li><strong>Recommendation assembly.</strong> <code>strategy_service._combine_recommendation</code> is the actual combining
+   rule: an expert-system <code>pit_decision</code> conclusion wins outright if one fired (rules encode domain
+   knowledge — safety car, mandatory-stop windows — that the statistical models don't have);
+   otherwise the ML and DL pit-probability predicted classes are compared — agreement is used
+   directly, disagreement sets <code>disagreement: true</code> and falls back to ML (the better holdout
+   precision on this dataset's one real stop) while still surfacing both numbers. A "pit" verdict is
+   refined into <code>"PIT NOW"</code> or <code>"PIT IN N LAPS"</code> from the A* plan's first <code>PIT</code> action index.
+   <code>recommended_action</code> (the pre-existing, simpler field) is computed separately and kept for
+   backward compatibility with existing callers.</li>
+<li><strong>XAI (opt-in).</strong> Only when <code>explain=True</code> (always forced true for <code>/report</code>): <code>_explain</code> calls
+   <code>xai.live.explain_feature_row</code> per target (§2.4), computing a live SHAP explanation, trust score
+   and narrative for <em>this specific</em> feature row.</li>
+<li><strong>Report rendering (report endpoint only).</strong> <code>strategy_report.render_markdown</code> (or <code>render_html</code>
+   for <code>?format=html</code> — the two share one content path: <code>render_html</code> converts <code>render_markdown</code>'s
+   output rather than re-deriving it, so the two formats cannot say different things) takes the
+   completed analysis dict and formats it into the briefing described in the
+   <a href="user_manual.html#downloading-a-report">user manual</a>; it performs no computation of
+   its own.</li>
+</ol>
+<h2 id="5-error-handling-and-honesty-patterns">5. Error handling and honesty patterns</h2>
+<p>Two patterns recur across every layer and are worth naming as design decisions rather than
+incidental behaviour:</p>
+<ul>
+<li><strong>404/503, never a fabricated 200.</strong> Every <code>GET</code> handler that reads a generated artifact
+  (<code>_read_json</code> helpers in <code>ml.py</code>, <code>dl.py</code>; <code>_results</code>/<code>_target</code> in <code>xai.py</code>; <code>_missing</code> in
+  <code>reasoning.py</code>) returns HTTP 404 with the exact command that would generate the missing file if
+  it is absent. Every prediction handler that needs a trained model catches
+  <code>ModelUnavailableError</code>/<code>ExplainerUnavailableError</code> and returns HTTP 503 with the same kind of
+  actionable message. No handler in the codebase returns a 200 response containing a placeholder,
+  zero, or interpolated value in place of a genuinely missing artifact.</li>
+<li><strong>Approximation and extrapolation are reported, not hidden.</strong> <code>feature_approximation.py</code>'s
+  <code>approximated</code> and <code>out_of_range</code> lists, <code>strategy_service.py</code>'s <code>context_only</code> map (does the
+  currently-trained model even use this field?), and <code>xai/live.py</code>'s reduced-budget <code>method</code> block
+  are all examples of the same rule: whenever the system has to fill in, guess, or shortcut
+  something, that fact becomes a structured, named field in the response rather than an
+  undocumented implementation detail.</li>
+</ul>
+<h2 id="6-deployment-view">6. Deployment view</h2>
+<p>Two supported paths, both documented in full in <a href="deployment_guide.html"><code>deployment_guide.md</code></a>:</p>
+<p><strong>Process-based (primary local path, unchanged by Docker's addition):</strong></p>
+<ul>
+<li>The backend runs as a plain <code>uvicorn</code> ASGI process (<code>uvicorn app.api.main:app</code>), optionally with
+  multiple workers since it is read-only at request time.</li>
+<li>The frontend runs as a Next.js process (<code>npm run dev</code> for development, <code>npm run build</code> +
+  <code>npm run start</code> for production), configured at build time with <code>NEXT_PUBLIC_API_BASE_URL</code>.</li>
+<li><code>./run.sh</code> is the supported single-command way to bring both up together on one machine, with
+  port and CORS-origin resolution handled by the script itself.</li>
+</ul>
+<p><strong>Container-based (<code>Dockerfile</code>, <code>frontend/Dockerfile</code>, <code>docker-compose.yml</code>, repo root):</strong></p>
+<ul>
+<li>Both images are code-only — <code>artifacts/</code> and <code>data/</code> are excluded via <code>.dockerignore</code> and instead
+  bind-mounted at runtime (<code>docker-compose.yml</code>), since they are generated by
+  <code>python scripts/build_all.py</code> and meant to be regenerated, not baked into an image layer.</li>
+<li>The frontend image bakes <code>NEXT_PUBLIC_API_BASE_URL</code> in at <code>next build</code> time (a Next.js
+  constraint — <code>NEXT_PUBLIC_*</code> values are inlined into the client bundle) via a Docker build arg,
+  mirroring how <code>run.sh</code> passes the same variable to <code>next dev</code>.</li>
+<li><code>docker-compose.yml</code>'s backend service has a healthcheck against the extended <code>GET /api/health</code>
+  (see §4's response shape), and the frontend's <code>depends_on</code> waits on that healthcheck rather than
+  just the backend's port opening — the backend imports the full ML/DL/XAI/QML stack at process
+  start, which is slower than the port becoming reachable.</li>
+<li><code>scripts/record_environment.py</code> writes <code>artifacts/deployment/environment.txt</code> (Python/Node
+  versions, full <code>pip freeze</code>) from whichever environment runs it — intended to be run once per
+  build/deployment, not committed as a static claim.</li>
+</ul>
+<p>No database, message queue, or external service is part of either deployment path — the only
+persistent state is the <code>data/</code> and <code>artifacts/</code> directory trees on local disk (or the host, via the
+bind mounts, in the container case).</p>
+<h2 id="7-known-design-limitations--expert-system-rule-coverage">7. Known design limitations — expert-system rule coverage</h2>
+<p>10 of the Task 2 rule base's 32 rules are structurally unreachable through the live
+<code>/api/strategy/predict</code> pipeline, each for a specific, investigated reason (see
+<code>strategy_service.py</code>'s "Rule-base input coverage" module comment and
+<code>scripts/evaluate_system.py</code>'s <code>rule_base_reachability_check</code>, whose output is
+<code>artifacts/evaluation/domain_validation.json</code>'s <code>rule_base_reachability_check</code> key):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Rule(s)</th>
+<th>Needs</th>
+<th>Why it isn't supplied</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R-PIT-002, R-PIT-003, R-ERS-001, R-TAC-001/002/003</td>
+<td><code>gap_ahead</code>, <code>gap_behind</code>, <code>drs_enabled</code>, <code>undercut_threat</code>, <code>overcut_opportunity</code></td>
+<td>Rival-car state. <code>RaceStateRequest</code> is a single-car snapshot; this project has no rival-car telemetry anywhere. (The feature contract's <code>gap_roll3_mean</code>/<code>gap_expanding</code> mean "gap to the field median pace" — a different quantity; reusing them here would be a fabrication, not a proxy.)</td>
+</tr>
+<tr>
+<td>R-STRAT-001</td>
+<td><code>circuit</code>, <code>grid_position</code></td>
+<td>This system only ever runs on one circuit (2023 Bahrain GP, fixed by the training data), and <code>RaceStateRequest</code> has no starting-grid field.</td>
+</tr>
+<tr>
+<td>R-STRAT-002, R-STRAT-003</td>
+<td><code>overtaking_difficulty</code>, <code>pit_loss</code></td>
+<td>Circuit characteristics in no dataset this system reads; asserting a value would be an opinion presented as a fact.</td>
+</tr>
+<tr>
+<td>R-DEG-003</td>
+<td><code>graining_risk</code></td>
+<td>No tyre-graining model exists anywhere in this codebase to ground a value on.</td>
+</tr>
+</tbody>
+</table></div>
+<p>These are not bugs to be silently patched with an invented number — they are places where the rule
+base was authored for a richer live-telemetry system than this project actually builds. Closing them
+for real would mean adding rival-car position/gap data and multi-circuit characteristics to the data
+pipeline, which is out of scope for Task 9/10.</p>
+</main>
+</body>
+</html>

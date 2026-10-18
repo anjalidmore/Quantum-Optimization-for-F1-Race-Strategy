@@ -10,8 +10,8 @@ import { TARGET_LABEL } from "@/lib/format";
 export function StratificationTable({ strat }: { strat: XaiStratification }) {
   return (
     <section>
-      <h2 className="text-lg font-semibold text-white mb-1">F1-specific performance stratification</h2>
-      <p className="text-sm text-white/50 mb-3 max-w-3xl">
+      <h2 className="text-lg font-semibold text-paper-900 mb-1">F1-specific performance stratification</h2>
+      <p className="text-sm text-paper-500 mb-3 max-w-3xl">
         This is <strong>not</strong> a protected-attribute fairness analysis — the data holds no demographic
         attributes. All laps come from one race, so there is no circuit stratum. Rows marked small are
         descriptive only.
@@ -25,9 +25,9 @@ export function StratificationTable({ strat }: { strat: XaiStratification }) {
           const rows = s.rows.filter((r) => r.group_type !== "Driver");
           return (
             <div key={target} className="card overflow-x-auto">
-              <h3 className="font-semibold text-white mb-2">{TARGET_LABEL[target] ?? target}</h3>
+              <h3 className="font-semibold text-paper-900 mb-2">{TARGET_LABEL[target] ?? target}</h3>
               <table className="w-full text-sm min-w-[40rem]">
-                <thead className="text-white/50">
+                <thead className="text-paper-500">
                   <tr>
                     <th className="text-left font-normal py-1">Group</th>
                     <th className="text-right font-normal">laps</th>
@@ -39,9 +39,9 @@ export function StratificationTable({ strat }: { strat: XaiStratification }) {
                     <th className="text-left font-normal pl-3">note</th>
                   </tr>
                 </thead>
-                <tbody className="text-white/80">
+                <tbody className="text-paper-700">
                   {rows.map((r) => (
-                    <tr key={`${r.group_type}-${r.group}`} className="border-t border-white/5">
+                    <tr key={`${r.group_type}-${r.group}`} className="border-t border-track-300">
                       <td className="py-1">
                         {r.group_type === "overall" ? <strong>{r.group}</strong> : `${r.group_type}: ${r.group}`}
                       </td>
@@ -53,7 +53,7 @@ export function StratificationTable({ strat }: { strat: XaiStratification }) {
                       ))}
                       <td
                         className={`pl-3 text-xs ${
-                          r.sample_note === "OK" ? "text-white/40" : "text-amber-400/70"
+                          r.sample_note === "OK" ? "text-paper-400" : "text-paper-500"
                         }`}
                       >
                         {r.sample_note}
@@ -62,7 +62,7 @@ export function StratificationTable({ strat }: { strat: XaiStratification }) {
                   ))}
                 </tbody>
               </table>
-              <p className="text-xs text-white/40 mt-2">
+              <p className="text-xs text-paper-400 mt-2">
                 Per-driver rows are in <code>artifacts/xai/fairness_assessment.csv</code> and the figure below.
               </p>
               {s.figure && (

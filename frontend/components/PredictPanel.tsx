@@ -28,13 +28,13 @@ export function LaptimePredictPanel({ features }: { features: string[] }) {
 
   return (
     <div className="card">
-      <div className="font-semibold text-white mb-3">Try a lap-time prediction</div>
+      <div className="font-semibold text-paper-900 mb-3">Try a lap-time prediction</div>
       <div className="grid grid-cols-2 gap-2">
         {features.map((f) => (
-          <label key={f} className="text-xs text-white/60">
+          <label key={f} className="text-xs text-paper-500">
             {f}
             <input
-              className="mt-1 w-full bg-panel2 border border-white/10 rounded px-2 py-1 text-white text-sm"
+              className="mt-1 w-full bg-track-200 border border-track-300 rounded px-2 py-1 text-paper-900 text-sm"
               value={values[f]}
               onChange={(e) => setValues((v) => ({ ...v, [f]: e.target.value }))}
             />
@@ -44,17 +44,17 @@ export function LaptimePredictPanel({ features }: { features: string[] }) {
       <button
         onClick={submit}
         disabled={loading}
-        className="mt-3 bg-f1red hover:bg-f1red/80 text-white text-sm font-semibold px-4 py-2 rounded disabled:opacity-50"
+        className="mt-3 btn-primary mt-0"
       >
         {loading ? "Predicting…" : "Predict lap time"}
       </button>
       {result && (
-        <div className="mt-3 text-sm text-white/80">
-          Model <span className="text-white font-medium">{result.model}</span> predicts{" "}
-          <span className="text-white font-semibold">{result.prediction.toFixed(3)}s</span>
+        <div className="mt-3 text-sm text-paper-700">
+          Model <span className="text-paper-900 font-medium">{result.model}</span> predicts{" "}
+          <span className="text-paper-900 font-semibold">{result.prediction.toFixed(3)}s</span>
         </div>
       )}
-      {error && <div className="mt-3 text-sm text-red-400">{error}</div>}
+      {error && <div className="mt-3 text-sm text-accent">{error}</div>}
     </div>
   );
 }
@@ -86,13 +86,13 @@ export function PitPredictPanel({ features }: { features: string[] }) {
 
   return (
     <div className="card">
-      <div className="font-semibold text-white mb-3">Try a pit-decision prediction</div>
+      <div className="font-semibold text-paper-900 mb-3">Try a pit-decision prediction</div>
       <div className="grid grid-cols-2 gap-2">
         {features.map((f) => (
-          <label key={f} className="text-xs text-white/60">
+          <label key={f} className="text-xs text-paper-500">
             {f}
             <input
-              className="mt-1 w-full bg-panel2 border border-white/10 rounded px-2 py-1 text-white text-sm"
+              className="mt-1 w-full bg-track-200 border border-track-300 rounded px-2 py-1 text-paper-900 text-sm"
               value={values[f]}
               onChange={(e) => setValues((v) => ({ ...v, [f]: e.target.value }))}
             />
@@ -102,18 +102,18 @@ export function PitPredictPanel({ features }: { features: string[] }) {
       <button
         onClick={submit}
         disabled={loading}
-        className="mt-3 bg-f1red hover:bg-f1red/80 text-white text-sm font-semibold px-4 py-2 rounded disabled:opacity-50"
+        className="mt-3 btn-primary mt-0"
       >
         {loading ? "Predicting…" : "Predict pit decision"}
       </button>
       {result && (
-        <div className="mt-3 text-sm text-white/80">
-          Model <span className="text-white font-medium">{result.model}</span> —{" "}
-          probability of pit <span className="text-white font-semibold">{(result.probability_pit * 100).toFixed(1)}%</span>{" "}
+        <div className="mt-3 text-sm text-paper-700">
+          Model <span className="text-paper-900 font-medium">{result.model}</span> —{" "}
+          probability of pit <span className="text-paper-900 font-semibold">{(result.probability_pit * 100).toFixed(1)}%</span>{" "}
           (predicted class: {result.predicted_class === 1 ? "PIT" : "NO PIT"})
         </div>
       )}
-      {error && <div className="mt-3 text-sm text-red-400">{error}</div>}
+      {error && <div className="mt-3 text-sm text-accent">{error}</div>}
     </div>
   );
 }

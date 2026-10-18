@@ -312,6 +312,20 @@ def test_reports_exist_and_are_non_trivial():
 
 
 @_artifacts
+def test_trust_report_states_the_formula_trust_py_computes(tmp_path):
+    """The report's formula used to be hand-written (0.40/0.30/0.30, confidence
+    from 0.5) and outlived several changes to trust.py. It is now generated from
+    trust.WEIGHTS; this pins both a fresh render and the committed file to it."""
+    from app.intelligence.xai import reports
+    fresh = reports.trust_report(xai_pipeline.load_results()["targets"], trust.WEIGHTS,
+                                 tmp_path / "Trust_Score_Report.md").read_text()
+    for text in (fresh, (XAI_DIR / "Trust_Score_Report.md").read_text()):
+        for name, weight in trust.WEIGHTS.items():
+            assert f"{weight:.2f} * {name}" in text
+        assert "tuned" in text and "2 * abs(p - 0.5)" not in text and "0.40 * confidence" not in text
+
+
+@_artifacts
 def test_dataset_source_is_reported_in_task8_too():
     data = xai_pipeline.load_results()
     assert data["dataset_source"].get("source") in {"real_fastf1", "synthetic", "unknown"}

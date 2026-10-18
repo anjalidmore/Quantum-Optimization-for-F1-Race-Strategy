@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-10-01T10:00:48.382519+00:00",
+  "note": "A short list, not a measurement \u2014 included for Task 10 completeness.",
+  "items": [
+    {
+      "title": "More races",
+      "detail": "Fit/evaluate across multiple Grands Prix so results generalise beyond one circuit's tyre/fuel/safety-car regime."
+    },
+    {
+      "title": "Multi-session Task 4/5",
+      "detail": "Extend data engineering and feature selection to practice/qualifying sessions, not race-only."
+    },
+    {
+      "title": "QAOA / quantum optimisation vs. the A* baseline",
+      "detail": "The project already has a parameter-matched VQC/VQR/quantum-kernel comparison (Extension task); a QAOA formulation of the pit-stop scheduling problem itself, compared against A*'s plan cost, is the natural next step."
+    },
+    {
+      "title": "Live FastF1 timing feed",
+      "detail": "Replace the single-snapshot race-state form with a live timing subscription so laps_remaining, fuel and position stop being user-entered approximations."
+    }
+  ]
+}

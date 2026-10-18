@@ -253,7 +253,7 @@ def test_artifacts_exist_helper_agrees_with_the_filesystem():
 
 
 # --------------------------------------------------------------------------
-# Registry survival (TODO.md — "A non-hermetic test run silently deleted
+# Registry survival (docs/TODO.html — "A non-hermetic test run silently deleted
 # Task 7's registry rows")
 # --------------------------------------------------------------------------
 def test_task6_retrain_preserves_task7_registry_entries(tmp_path):

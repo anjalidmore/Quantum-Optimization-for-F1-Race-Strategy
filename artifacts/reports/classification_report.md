@@ -47,7 +47,7 @@ no-pit" already scores 95.2% accuracy while being useless.
 
 | Model | CV ROC-AUC | CV PR-AUC | CV F1 | Test ROC-AUC | Test PR-AUC | Test F1 | Selected |
 |---|---:|---:|---:|---:|---:|---:|:---:|
-| random_forest | 0.8482 | 0.3863 | 0.1967 | 0.9832 | 0.2500 | 0.0833 | ✅ |
+| random_forest | 0.8482 | 0.3863 | 0.1967 | 0.9832 | 0.2500 | 0.0833 | selected |
 | svm | 0.7843 | 0.3321 | 0.1429 | 0.7989 | 0.0270 | 0.0000 |  |
 | xgboost | 0.8125 | 0.3083 | 0.2307 | 0.9274 | 0.0714 | 0.0606 |  |
 | logistic_regression | 0.8298 | 0.2964 | 0.2887 | 0.9832 | 0.2500 | 0.0213 |  |

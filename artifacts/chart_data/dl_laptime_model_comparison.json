@@ -1,0 +1,55 @@
+{
+  "name": "dl_laptime_model_comparison",
+  "kind": "bar-horizontal",
+  "title": "Task 7 \u2014 lap-time regression: DNN vs Task 6 models (same test laps)",
+  "caption": "mae: lower is better. The deep models are marked.",
+  "axes": {
+    "x": {
+      "label": "mae",
+      "unit": null,
+      "kind": "number"
+    },
+    "y": {
+      "label": "Model",
+      "unit": null,
+      "kind": "category"
+    }
+  },
+  "series": [
+    {
+      "name": "mae",
+      "points": [
+        {
+          "x": "dnn_mlp",
+          "y": 0.5651487986246745
+        },
+        {
+          "x": "linear_regression",
+          "y": 0.7900968753200531
+        },
+        {
+          "x": "decision_tree",
+          "y": 0.8673476599610876
+        },
+        {
+          "x": "random_forest",
+          "y": 0.9253493148742199
+        },
+        {
+          "x": "svr",
+          "y": 0.7814539478981232
+        },
+        {
+          "x": "xgboost",
+          "y": 1.0858447513156468
+        }
+      ]
+    }
+  ],
+  "source": "artifacts/deep_learning/laptime/model_comparison.png",
+  "data_source": "real_fastf1",
+  "lower_is_better": true,
+  "highlight": [
+    "dnn_mlp"
+  ]
+}

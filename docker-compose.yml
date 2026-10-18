@@ -1,0 +1,62 @@
+# Docker deployment for the F1 Race Strategy Intelligence platform.
+#
+# This is purely additive to ./run.sh, which remains the primary local
+# (non-Docker) path and is untouched. Both images are code-only: artifacts/
+# and data/ are bind-mounted from the host below rather than baked in, since
+# they are produced by `python scripts/build_all.py` (run on the host, or
+# inside the backend container via `docker compose exec backend ...`) and
+# are meant to be regenerated, not shipped as a stale image layer.
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${BACKEND_HOST_PORT:-8000}:8000"
+    volumes:
+      # Read-write: scripts/build_all.py and friends can regenerate these
+      # (retrain models, refresh chart_data, etc.) from inside the container.
+      - ./artifacts:/app/artifacts
+      - ./data:/app/data
+    environment:
+      # Same CORS convention run.sh uses: the origin the dashboard is
+      # actually served from. Inside compose that's the frontend service's
+      # published port on the host, since the browser (not the frontend
+      # container) is what makes the cross-origin request.
+      - F1_ALLOWED_ORIGINS=http://localhost:${FRONTEND_HOST_PORT:-3001},http://127.0.0.1:${FRONTEND_HOST_PORT:-3001}
+    healthcheck:
+      # curl is installed in Dockerfile specifically for this. The backend
+      # imports the full ML/DL/XAI/QML stack (torch, keras, shap, lime,
+      # pennylane) at process startup — see app/core/runtime.py's
+      # prepare_dl_runtime() docstring on why import order matters there —
+      # so a generous start_period avoids flagging unhealthy during that
+      # one-time cold import rather than an actual failure.
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Baked into the client bundle at `next build` time (see
+        # frontend/Dockerfile's comment on NEXT_PUBLIC_* inlining). From the
+        # browser's point of view the backend is reached at
+        # localhost:${BACKEND_HOST_PORT} via the port mapping above, not at
+        # the backend service's in-network hostname.
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:${BACKEND_HOST_PORT:-8000}
+    ports:
+      # Defaults to 3001, not 3000: this machine commonly has an unrelated
+      # dev server already holding 3000 (./run.sh or a plain `npm run dev`),
+      # and docker compose up should not have to fight that. Override either
+      # port with BACKEND_HOST_PORT / FRONTEND_HOST_PORT if 8000/3001 collide
+      # too, e.g. `FRONTEND_HOST_PORT=3002 docker compose up`.
+      - "${FRONTEND_HOST_PORT:-3001}:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:${BACKEND_HOST_PORT:-8000}
+    depends_on:
+      backend:
+        condition: service_healthy

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 1 · Task 4 — Data Engineering &amp; EDA</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<nav class="doc-bar" aria-label="Documentation"><span class="mark" aria-hidden="true"></span>
+<strong>F1 Race Strategy Intelligence</strong>
+<a href="../study_guide.html">Study guide (all documents)</a>
+<a href="../../README.md">README</a></nav>
+<main class="doc-page prose">
+<h1 id="phase-1--task-4--data-engineering--eda">Phase 1 · Task 4 — Data Engineering &amp; EDA</h1>
+<p>Part of <strong>Quantum Optimization for Formula 1 Race Strategy</strong>.</p>
+<blockquote>
+<p><strong>Scope of this module:</strong> classical data engineering and exploratory data
+analysis. No machine-learning modelling, no quantum computing. This task
+builds the clean, analysed data foundation that Phase 2 (ML/DL/QML) trains on.</p>
+</blockquote>
+<hr />
+<h2 id="1-what-this-module-does">1. What this module does</h2>
+<p>A complete, auditable data pipeline over the two project data sources:</p>
+<p><strong>Load → Clean → Transform → Analyse → Visualise → Report</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Load</strong></td>
+<td>Read the CSVs, validate schema columns, convert the Ergast <code>\N</code> null sentinel to NaN</td>
+</tr>
+<tr>
+<td><strong>Clean</strong></td>
+<td>Remove duplicates; coerce dtypes; <strong>parse <code>m:ss.mmm</code> lap times to seconds</strong>; normalise inconsistent categorical spellings; impute missing values (median/mode by column kind); detect &amp; optionally cap IQR outliers — with a full audit trail</td>
+</tr>
+<tr>
+<td><strong>Transform</strong></td>
+<td>Label / one-hot encode categoricals; standardise numeric features for downstream ML</td>
+</tr>
+<tr>
+<td><strong>Analyse</strong></td>
+<td>Statistical summaries (incl. skew/kurtosis), correlation analysis, a data-quality scorecard, and <strong>nine domain analyses</strong></td>
+</tr>
+<tr>
+<td><strong>Visualise</strong></td>
+<td>Correlation heatmap, driver/constructor bars, lap-time distribution, pit-duration box, tyre-degradation trend, and a composite <strong>dashboard</strong></td>
+</tr>
+<tr>
+<td><strong>Report</strong></td>
+<td>Five Markdown reports + cleaned &amp; encoded CSVs</td>
+</tr>
+</tbody>
+</table></div>
+<p>The nine domain analyses are: driver, constructor, circuit, pit-stop, tyre,
+lap-time, weather, season, and safety-car / track-status.</p>
+<hr />
+<h2 id="2-data-sources--the-synthetic-generator">2. Data sources &amp; the synthetic generator</h2>
+<p>The pipeline targets:</p>
+<ol>
+<li><strong>Historical Kaggle dataset</strong> — <em>Formula 1 World Championship (1950–2020)</em>
+   (<code>rohanrao/formula-1-world-championship-1950-2020</code>), Ergast-derived CSVs.</li>
+<li><strong>FastF1</strong> — session laps, stints, tyre, weather and telemetry summaries.</li>
+</ol>
+<p><code>src/f1data/schemas.py</code> encodes the <strong>real column names</strong> of both sources, so the
+loader works unchanged on a genuine download.</p>
+<p>To keep this module <strong>fully runnable without a multi-gigabyte download or live
+network calls</strong>, <code>src/f1data/synthetic.py</code> generates realistic,
+internally-consistent sample data matching those exact schemas — and
+deliberately injects the data-quality problems (missing values, duplicate rows,
+outliers, inconsistent spellings, <code>\N</code> sentinels) that the cleaning stage is
+built to fix. The tyre model even bakes in the correct pace-versus-durability
+physics, so the EDA reveals SOFT &lt; MEDIUM &lt; HARD degradation.</p>
+<h3 id="running-on-the-real-data-instead">Running on the real data instead</h3>
+<ol>
+<li>Download the Kaggle CSVs and place them in <code>data/raw/</code> (keep the original
+   filenames: <code>races.csv</code>, <code>drivers.csv</code>, <code>results.csv</code>, …).</li>
+<li>Optionally <code>pip install fastf1</code> and export a session's laps to
+   <code>data/raw/fastf1_laps.csv</code> with the columns in <code>FASTF1_LAPS</code>.</li>
+<li>Run <code>python run_eda.py</code> <strong>without</strong> <code>--regenerate</code>. Because the schemas
+   match, every stage runs identically on the real data.</li>
+</ol>
+<hr />
+<h2 id="3-installation--execution">3. Installation &amp; execution</h2>
+<p>Requires <strong>Python 3.10+</strong>.</p>
+<div class="hl"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>phase1_task4_data_engineering
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+python<span class="w"> </span>run_eda.py<span class="w">                 </span><span class="c1"># generates synthetic data on first run</span>
+python<span class="w"> </span>run_eda.py<span class="w"> </span>--regenerate<span class="w">    </span><span class="c1"># force fresh synthetic data</span>
+python<span class="w"> </span>run_eda.py<span class="w"> </span>--data-dir<span class="w"> </span>/path/to/real/csvs<span class="w">   </span><span class="c1"># use the real dataset</span>
+</code></pre></div>
+
+<p>Expected tail:</p>
+<div class="hl"><pre><span></span><code>Cleaned results        rows 242 -&gt; 240, quality 100.0/100
+Cleaned pit_stops      rows 479 -&gt; 475, quality 89.3/100
+Cleaned lap_times      rows 13495 -&gt; 13363, quality 100.0/100
+Rendering figures ...
+All Task-4 deliverables generated successfully in .../outputs
+</code></pre></div>
+
+<hr />
+<h2 id="4-deliverables-written-to-outputs">4. Deliverables (written to <code>outputs/</code>)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Deliverable</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EDA report (9 domain analyses)</td>
+<td><code>outputs/reports/eda_report.md</code></td>
+</tr>
+<tr>
+<td>Correlation report</td>
+<td><code>outputs/reports/correlation_report.md</code></td>
+</tr>
+<tr>
+<td>Data-quality report</td>
+<td><code>outputs/reports/data_quality_report.md</code></td>
+</tr>
+<tr>
+<td>Cleaning audit</td>
+<td><code>outputs/reports/cleaning_audit.md</code></td>
+</tr>
+<tr>
+<td>Statistical summary</td>
+<td><code>outputs/reports/statistical_summary.md</code></td>
+</tr>
+<tr>
+<td>Visual analytics dashboard</td>
+<td><code>outputs/figures/dashboard.png</code></td>
+</tr>
+<tr>
+<td>Individual figures</td>
+<td><code>outputs/figures/*.png</code></td>
+</tr>
+<tr>
+<td>Cleaned datasets</td>
+<td><code>outputs/clean/*_clean.csv</code></td>
+</tr>
+<tr>
+<td>Encoded + scaled feature frame</td>
+<td><code>outputs/clean/fastf1_laps_encoded_scaled.csv</code></td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="5-tests">5. Tests</h2>
+<div class="hl"><pre><span></span><code>pytest<span class="w"> </span>-q
+</code></pre></div>
+
+<p>17 tests cover lap-time parsing (incl. null handling), synthetic generation &amp;
+schema conformance, null-sentinel conversion, primary-key validation, duplicate
+removal + imputation, time-column parsing, outlier capping, the statistical /
+correlation / quality analyses, and encoding + scaling (verifying scaled columns
+have ~zero mean and that the tyre physics — SOFT degrades faster than HARD —
+holds in the analysis).</p>
+<hr />
+<h2 id="6-folder-structure">6. Folder structure</h2>
+<div class="hl"><pre><span></span><code>phase1_task4_data_engineering/
+├── run_eda.py                  # end-to-end driver
+├── requirements.txt
+├── pytest.ini
+├── README.md
+├── src/f1data/
+│   ├── __init__.py
+│   ├── schemas.py              # real Kaggle + FastF1 column schemas
+│   ├── synthetic.py            # runnable sample-data generator
+│   ├── pipeline.py             # load / clean / encode / scale + audit
+│   ├── eda.py                  # statistics, correlation, quality, domain analyses
+│   ├── visualize.py            # figures + dashboard
+│   └── reports.py              # Markdown generators
+├── tests/
+│   └── test_data_engineering.py
+├── data/raw/                   # generated (or real) CSVs
+└── outputs/                    # generated on run
+    ├── reports/*.md
+    ├── figures/*.png
+    └── clean/*.csv
+</code></pre></div>
+
+<hr />
+<h2 id="7-relationship-to-other-tasks">7. Relationship to other tasks</h2>
+<ul>
+<li><strong>Completes classical Phase 1.</strong> Together with Knowledge Representation
+  (Task 1), the Expert System (Task 2) and State-Space Search (Task 3), this
+  task delivers the full classical foundation.</li>
+<li><strong>Feeds Phase 2 directly.</strong> The cleaned, encoded, scaled feature frames and the
+  correlation / feature statistics produced here are the inputs to Feature
+  Engineering (Task 5) and the ML / DL / QML models (Tasks 6–8).</li>
+</ul>
+<hr />
+<h2 id="8-phase-1-is-now-complete">8. Phase 1 is now complete</h2>
+<p>All four classical tasks are implemented, documented, tested and validated:
+knowledge representation, the rule-based expert system, state-space search, and
+this data-engineering &amp; EDA foundation. Phase 2 introduces machine learning,
+deep learning, explainable AI and — for the first time — quantum machine
+learning.</p>
+</main>
+</body>
+</html>

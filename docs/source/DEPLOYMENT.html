@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deployment guide</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<nav class="doc-bar" aria-label="Documentation"><span class="mark" aria-hidden="true"></span>
+<strong>F1 Race Strategy Intelligence</strong>
+<a href="../study_guide.html">Study guide (all documents)</a>
+<a href="../../README.md">README</a></nav>
+<main class="doc-page prose">
+<h1 id="deployment-guide">Deployment guide</h1>
+<p>How to build, run and serve this system. Two commands cover the normal case:</p>
+<div class="hl"><pre><span></span><code>python<span class="w"> </span>scripts/build_all.py<span class="w">     </span><span class="c1"># build every artifact (Tasks 1-9)</span>
+./run.sh<span class="w">                        </span><span class="c1"># start the backend and the dashboard</span>
+</code></pre></div>
+
+<p>Everything else in this document is detail for a different machine, a different
+race, or a server rather than a laptop.</p>
+<hr />
+<h2 id="1-what-has-to-be-installed">1. What has to be installed</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Version</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>3.12+ (developed on 3.14.6)</td>
+<td>the whole backend</td>
+</tr>
+<tr>
+<td>Node.js</td>
+<td>20+</td>
+<td>the Next.js dashboard</td>
+</tr>
+<tr>
+<td><code>libomp</code></td>
+<td>any</td>
+<td>XGBoost only; the build skips XGBoost with a stated reason if it is missing</td>
+</tr>
+<tr>
+<td>pandoc</td>
+<td>optional</td>
+<td>converts a generated strategy report to PDF</td>
+</tr>
+</tbody>
+</table></div>
+<p>No database, no message queue, no cloud service. The system reads and writes
+plain files under <code>data/</code> and <code>artifacts/</code>.</p>
+<h2 id="2-first-time-setup">2. First-time setup</h2>
+<div class="hl"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>&lt;repo&gt;<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>CIL
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w">                       </span><span class="c1"># makes `app` importable</span>
+<span class="nb">cd</span><span class="w"> </span>frontend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>install<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>..
+</code></pre></div>
+
+<p>The libraries that produce committed metrics (keras, torch, shap, lime,
+scikit-learn, xgboost, pennylane) are pinned to exact versions in
+<code>requirements.txt</code>, so a fresh install reproduces the numbers in <code>artifacts/</code>
+rather than drifting with a new release.</p>
+<h2 id="3-building-the-artifacts">3. Building the artifacts</h2>
+<div class="hl"><pre><span></span><code>python<span class="w"> </span>scripts/build_all.py<span class="w">            </span><span class="c1"># builds what is missing, skips what exists</span>
+python<span class="w"> </span>scripts/build_all.py<span class="w"> </span>--force<span class="w">    </span><span class="c1"># rebuilds everything from the raw data</span>
+python<span class="w"> </span>scripts/build_all.py<span class="w"> </span>--skip-dl<span class="w">  </span><span class="c1"># Tasks 1-6 only (no Keras needed)</span>
+python<span class="w"> </span>scripts/build_all.py<span class="w"> </span>--skip-qml<span class="w"> </span><span class="c1"># skip the quantum stage (no PennyLane needed)</span>
+</code></pre></div>
+
+<p>Stages run in order, and each one skips itself when its artifacts already exist.
+Tasks 7-9 depend on Task 6, and the build refuses to run them against nothing.</p>
+<p>Approximate timings on a laptop CPU, from the committed run:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tasks 1-4 (knowledge, rules, search, cleaning)</td>
+<td>seconds</td>
+</tr>
+<tr>
+<td>Task 5 feature engineering</td>
+<td>~40 s</td>
+</tr>
+<tr>
+<td>Task 6 machine learning</td>
+<td>~25 s</td>
+</tr>
+<tr>
+<td>Task 7 deep learning</td>
+<td>~12 min (the hyperparameter search dominates)</td>
+</tr>
+<tr>
+<td>Task 8 explainable AI</td>
+<td>~2 min</td>
+</tr>
+<tr>
+<td>Quantum ML</td>
+<td>~30 s</td>
+</tr>
+</tbody>
+</table></div>
+<p>A full <code>--force</code> rebuild is therefore about 15 minutes, nearly all of it Task 7.</p>
+<p>Single stages, when you only want one:</p>
+<div class="hl"><pre><span></span><code>python<span class="w"> </span>scripts/build_knowledge_base.py<span class="w">     </span><span class="c1"># Task 1</span>
+python<span class="w"> </span>scripts/run_expert_system.py<span class="w">        </span><span class="c1"># Task 2</span>
+python<span class="w"> </span>scripts/run_search.py<span class="w">               </span><span class="c1"># Task 3</span>
+python<span class="w"> </span>scripts/run_eda.py<span class="w">                  </span><span class="c1"># Task 4</span>
+python<span class="w"> </span>scripts/build_features.py<span class="w">           </span><span class="c1"># Task 5</span>
+python<span class="w"> </span>scripts/run_qml.py<span class="w">                  </span><span class="c1"># Quantum ML</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from app.intelligence.ml import pipeline; pipeline.train_all()"</span><span class="w">    </span><span class="c1"># Task 6</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from app.intelligence.dl import pipeline; pipeline.train_all()"</span><span class="w">    </span><span class="c1"># Task 7</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from app.intelligence.xai import pipeline; pipeline.run_all()"</span><span class="w">     </span><span class="c1"># Task 8</span>
+</code></pre></div>
+
+<h2 id="4-running-it">4. Running it</h2>
+<h3 id="one-command">One command</h3>
+<div class="hl"><pre><span></span><code>./run.sh
+</code></pre></div>
+
+<p>It creates the virtual environment if needed, installs dependencies on first
+run, builds the artifacts if none exist, starts the API on <code>:8000</code> and the
+dashboard on <code>:3000</code>, prints a few live predictions to prove the models work,
+and opens the browser.</p>
+<p>Useful flags and variables:</p>
+<div class="hl"><pre><span></span><code>./run.sh<span class="w"> </span>--force-retrain<span class="w">               </span><span class="c1"># rebuild everything first</span>
+./run.sh<span class="w"> </span>--force-ports<span class="w">                 </span><span class="c1"># kill whatever holds :8000 / :3000</span>
+<span class="nv">BACKEND_PORT</span><span class="o">=</span><span class="m">8001</span><span class="w"> </span><span class="nv">FRONTEND_PORT</span><span class="o">=</span><span class="m">3001</span><span class="w"> </span>./run.sh
+</code></pre></div>
+
+<h3 id="separately">Separately</h3>
+<div class="hl"><pre><span></span><code>uvicorn<span class="w"> </span>app.api.main:app<span class="w"> </span>--reload<span class="w">                       </span><span class="c1"># backend, :8000</span>
+<span class="nb">cd</span><span class="w"> </span>frontend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev<span class="w">                              </span><span class="c1"># dashboard, :3000</span>
+</code></pre></div>
+
+<p>The dashboard finds the API through <code>NEXT_PUBLIC_API_BASE_URL</code>, default
+<code>http://localhost:8000</code>. Point it elsewhere with:</p>
+<div class="hl"><pre><span></span><code><span class="nv">NEXT_PUBLIC_API_BASE_URL</span><span class="o">=</span>http://127.0.0.1:8001<span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev
+</code></pre></div>
+
+<h2 id="5-serving-it-to-other-people">5. Serving it to other people</h2>
+<h3 id="backend">Backend</h3>
+<div class="hl"><pre><span></span><code>uvicorn<span class="w"> </span>app.api.main:app<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">4</span>
+</code></pre></div>
+
+<p>Workers are safe: the API is read-only at request time. It loads trained models
+once per process and caches them (<code>app/services/model_cache.py</code>); nothing writes
+to <code>artifacts/</code> while serving.</p>
+<p><strong>Set the allowed origins.</strong> CORS is not a wildcard — it reads a list, so the
+dashboard's real origin has to be included:</p>
+<div class="hl"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">F1_ALLOWED_ORIGINS</span><span class="o">=</span><span class="s2">"https://dashboard.example.com"</span>
+</code></pre></div>
+
+<p><strong>What the API does and does not expose.</strong> Only these artifact directories are
+mounted read-only under <code>/artifacts/</code>:</p>
+<div class="hl"><pre><span></span><code>figures/  reports/  data_engineering/  knowledge_representation/
+expert_system/  search/  deep_learning/  xai/
+</code></pre></div>
+
+<p><code>artifacts/models/</code> and <code>artifacts/metadata/</code> are <strong>not</strong> mounted, so trained
+weights (<code>.joblib</code>, <code>.h5</code>, <code>.npy</code>) are never downloadable over HTTP. A request
+for one returns 404. Keep it that way if you add directories.</p>
+<h3 id="frontend">Frontend</h3>
+<div class="hl"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>frontend
+<span class="nv">NEXT_PUBLIC_API_BASE_URL</span><span class="o">=</span>https://api.example.com<span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>build
+npm<span class="w"> </span>run<span class="w"> </span>start<span class="w"> </span>--<span class="w"> </span>--port<span class="w"> </span><span class="m">3000</span>
+</code></pre></div>
+
+<p><code>npm run build</code> bakes the API URL in at build time, so rebuild when it changes.</p>
+<h3 id="behind-a-reverse-proxy">Behind a reverse proxy</h3>
+<p>Serve the dashboard at <code>/</code> and the API at <code>/api</code> on one hostname, which removes
+the CORS question entirely. Nginx sketch:</p>
+<div class="hl"><pre><span></span><code><span class="k">location</span><span class="w"> </span><span class="s">/api/</span><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:8000</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="k">location</span><span class="w"> </span><span class="s">/artifacts/</span><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:8000</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w">            </span><span class="p">{</span><span class="w"> </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:3000</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+
+<h2 id="6-training-on-a-different-race">6. Training on a different race</h2>
+<div class="hl"><pre><span></span><code>python<span class="w"> </span>scripts/fetch_real_session.py<span class="w"> </span>--year<span class="w"> </span><span class="m">2023</span><span class="w"> </span>--event<span class="w"> </span>Monza<span class="w"> </span>--session<span class="w"> </span>R
+python<span class="w"> </span>scripts/build_all.py<span class="w"> </span>--force
+</code></pre></div>
+
+<p>Step 1 fetches the session and writes a provenance marker; step 2 re-cleans,
+rebuilds the features, retrains every model and regenerates every report. The
+dashboard then shows the new race, and the provenance badge shows which session
+it is. Nothing needs editing by hand.</p>
+<h2 id="7-health-checks">7. Health checks</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Command</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API up</td>
+<td><code>curl localhost:8000/api/health</code></td>
+<td><code>200</code> with a status body</td>
+</tr>
+<tr>
+<td>Models loaded</td>
+<td><code>curl localhost:8000/api/ml/models</code></td>
+<td>the model registry</td>
+</tr>
+<tr>
+<td>Artifacts served</td>
+<td><code>curl -I localhost:8000/artifacts/figures/qml_circuit.png</code></td>
+<td><code>200</code></td>
+</tr>
+<tr>
+<td>Weights <strong>not</strong> served</td>
+<td><code>curl -I localhost:8000/artifacts/models/qml/vqc_weights.npy</code></td>
+<td><code>404</code></td>
+</tr>
+<tr>
+<td>Dashboard up</td>
+<td><code>curl -I localhost:3000</code></td>
+<td><code>200</code></td>
+</tr>
+<tr>
+<td>Tests pass</td>
+<td><code>pytest -q</code></td>
+<td>all green</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="8-troubleshooting">8. Troubleshooting</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause and fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Task 5 outputs missing</code></td>
+<td>Run <code>python scripts/build_features.py</code>, or <code>build_all.py</code>.</td>
+</tr>
+<tr>
+<td><code>No trained model registered</code></td>
+<td>Task 6 has not run: <code>python scripts/build_all.py</code>.</td>
+</tr>
+<tr>
+<td>Dashboard shows "Backend unreachable"</td>
+<td>API not running, or <code>NEXT_PUBLIC_API_BASE_URL</code> points at the wrong port.</td>
+</tr>
+<tr>
+<td>A page says "Not generated yet"</td>
+<td>That task's artifacts are missing. The page names the command to run.</td>
+</tr>
+<tr>
+<td><code>XGBoost unavailable — skipped</code></td>
+<td><code>libomp</code> is not installed. By design, not an error: nine models train instead of ten.</td>
+</tr>
+<tr>
+<td>Segfault when importing Keras with XGBoost</td>
+<td>Import order. Always go through <code>app.core.runtime.prepare_dl_runtime()</code>.</td>
+</tr>
+<tr>
+<td><code>TensorFlow not found</code></td>
+<td>Expected. Keras runs on the PyTorch backend here; TensorFlow has no wheel for Python 3.14.</td>
+</tr>
+<tr>
+<td>Port already in use</td>
+<td><code>./run.sh --force-ports</code>, or set <code>BACKEND_PORT</code> / <code>FRONTEND_PORT</code>.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="9-what-to-back-up">9. What to back up</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Back up?</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data/raw/</code>, <code>data/processed/</code></td>
+<td>yes</td>
+<td>the session data and the Task 5 feature contract</td>
+</tr>
+<tr>
+<td><code>artifacts/</code></td>
+<td>yes</td>
+<td>every trained model, metric, figure and report</td>
+</tr>
+<tr>
+<td><code>.venv/</code>, <code>frontend/node_modules/</code>, <code>frontend/.next/</code></td>
+<td>no</td>
+<td>reinstallable</td>
+</tr>
+<tr>
+<td><code>fastf1_cache/</code></td>
+<td>no</td>
+<td>re-downloads on demand</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>artifacts/</code> is about 15 MB and is committed to the repository, so a clone
+already has a working system before anything is built.</p>
+</main>
+</body>
+</html>

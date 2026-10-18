@@ -2,9 +2,9 @@
 export function NotGenerated({ title, reason }: { title: string; reason: string }) {
   return (
     <section className="card">
-      <h2 className="font-semibold text-white">{title}</h2>
-      <p className="text-sm text-white/50 mt-2">Not generated yet.</p>
-      <p className="text-xs text-white/40 mt-1">{reason}</p>
+      <h2 className="font-semibold text-paper-900">{title}</h2>
+      <p className="text-sm text-paper-500 mt-2">Not generated yet.</p>
+      <p className="text-xs text-paper-400 mt-1">{reason}</p>
     </section>
   );
 }

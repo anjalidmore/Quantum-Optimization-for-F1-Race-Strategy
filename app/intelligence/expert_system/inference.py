@@ -263,7 +263,7 @@ class ProofNode:
 
     def render(self, indent: int = 0) -> str:
         """Return a pretty indented text rendering of the proof tree."""
-        mark = "✓" if self.proven else "✗"
+        mark = "[proven]" if self.proven else "[unproven]"
         line = f"{'  ' * indent}{mark} {self.goal}  [{self.via}]"
         lines = [line]
         for child in self.children:

@@ -15,11 +15,16 @@ Task 2 expert system and the Task 3 search, plus the live Task 8 explainer. If a
 component is unavailable the report says which and why, rather than leaving a
 blank that reads like a zero.
 
-Markdown rather than PDF on purpose: it needs no extra dependency, it diffs, and
-``pandoc report.md -o report.pdf`` converts it for anyone who wants PDF.
+Markdown is the default: it needs no extra dependency and it diffs cleanly.
+``render_html`` below renders the identical content as a self-contained HTML
+page (``GET/POST /api/strategy/report?format=html``) for a caller that wants
+something to open directly in a browser or print to PDF, without pulling in a
+PDF-rendering dependency for one endpoint.
 """
 from __future__ import annotations
 
+import html as _html
+import re
 from datetime import datetime, timezone
 
 TARGET_LABEL = {
@@ -36,17 +41,19 @@ def _f(value, digits: int = 3, suffix: str = "") -> str:
     return f"{value}{suffix}"
 
 
-def filename_for(race_state: dict) -> str:
+def filename_for(race_state: dict, extension: str = "md") -> str:
     """A stable, descriptive filename, e.g. ``strategy_VER_lap30_20260927.md``."""
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
     driver = str(race_state.get("driver", "unknown")).replace(" ", "")
-    return f"strategy_{driver}_lap{race_state.get('current_lap', 0)}_{stamp}.md"
+    return f"strategy_{driver}_lap{race_state.get('current_lap', 0)}_{stamp}.{extension}"
 
 
 def render_markdown(analysis: dict) -> str:
     """Render one analysis dict as a Markdown strategy briefing."""
     rs = analysis["race_state"]
     pred = analysis["prediction"]
+    dl = analysis.get("dl_prediction") or {}
+    rec = analysis.get("recommendation") or {}
     search = analysis["optimal_search_strategy"]
     rules = analysis["triggered_expert_rules"]
     explanation = analysis.get("explanation") or {}
@@ -77,14 +84,27 @@ def render_markdown(analysis: dict) -> str:
         "",
         "## 2. Recommendation",
         "",
-        f"### {analysis.get('recommended_action') or 'No recommendation available'}",
+        f"### {rec.get('action') or analysis.get('recommended_action') or 'No recommendation available'}",
         "",
+        f"**Confidence: {rec.get('confidence', 'unknown')}** — {rec.get('reason', '')}",
+        "",
+    ]
+    if rec.get("disagreement"):
+        L += ["> **ML and DL disagree on this call.** See the table below — the recommendation "
+              "engine's combining rule (documented in `app/services/strategy_service.py`) falls "
+              "back to ML in this case, not because DL is wrong, but because ML had the better "
+              "holdout precision on this dataset's one real pit stop.", ""]
+    L += [
         "| Output | Value | From |",
         "|---|---|---|",
         f"| Predicted lap time | {_f(pred.get('predicted_lap_time_seconds'), 3, ' s')} | "
         f"Task 6 model `{pred.get('laptime_model')}` |",
-        f"| Pit probability | {_f(pred.get('probability_pit'), 4)} | "
+        f"| Predicted lap time (DL) | {_f(dl.get('predicted_lap_time_seconds'), 3, ' s')} | "
+        "Task 7 network |",
+        f"| Pit probability (ML) | {_f(pred.get('probability_pit'), 4)} | "
         f"Task 6 model `{pred.get('pit_model')}` |",
+        f"| Pit probability (DL) | {_f(dl.get('probability_pit'), 4)} | "
+        f"Task 7 network, tuned threshold {_f(dl.get('threshold'), 4)} |",
         f"| Expected cost, remaining stint | {_f(analysis.get('expected_cost_seconds'), 1, ' s')} | "
         f"Task 3 {search.get('algorithm')} search |",
         "",
@@ -194,9 +214,11 @@ def render_markdown(analysis: dict) -> str:
           "Every number above was produced by this system at report time:", "",
           "| Section | Produced by |",
           "|---|---|",
-          "| Prediction | `app/intelligence/ml/` (Task 6), served through `app/services/model_cache.py` |",
+          "| ML prediction | `app/intelligence/ml/` (Task 6), served through `app/services/model_cache.py` |",
+          "| DL prediction | `app/intelligence/dl/` (Task 7), served through `app/intelligence/xai/live.py`'s cache |",
           "| Rules | `app/intelligence/expert_system/` (Task 2) |",
           "| Search plan | `app/intelligence/search/` (Task 3) |",
+          "| Recommendation engine | `app/services/strategy_service.py::_combine_recommendation` (Task 9) |",
           "| Explanation and trust | `app/intelligence/xai/live.py` (Task 8) |",
           "| This report | `app/services/strategy_report.py` (Task 9) |",
           "",
@@ -209,3 +231,102 @@ def render_markdown(analysis: dict) -> str:
           "- Decision support for engineers, not an autonomous strategy system, and not for betting.",
           ""]
     return "\n".join(L) + "\n"
+
+
+def _inline_md(text: str) -> str:
+    text = _html.escape(text)
+    text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+    text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
+    return text
+
+
+def _markdown_to_html_body(markdown: str) -> str:
+    """Converts exactly the Markdown subset ``render_markdown`` produces
+    (headers, tables, blockquotes, bold, inline code, paragraphs, ``---``) —
+    not a general-purpose parser. Kept in lock-step with the generator above
+    so the HTML and Markdown reports never say different things.
+    """
+    lines = markdown.split("\n")
+    out: list[str] = []
+    i, n = 0, len(lines)
+    while i < n:
+        line = lines[i]
+        stripped = line.strip()
+        if not stripped:
+            i += 1
+            continue
+        if stripped == "---":
+            out.append("<hr>")
+            i += 1
+        elif stripped.startswith("#"):
+            level = len(stripped) - len(stripped.lstrip("#"))
+            level = min(max(level, 1), 6)
+            out.append(f"<h{level}>{_inline_md(stripped.lstrip('#').strip())}</h{level}>")
+            i += 1
+        elif stripped.startswith(">"):
+            block = []
+            while i < n and lines[i].strip().startswith(">"):
+                block.append(_inline_md(lines[i].strip().lstrip(">").strip()))
+                i += 1
+            out.append(f"<blockquote>{' '.join(block)}</blockquote>")
+        elif stripped.startswith("|"):
+            rows = []
+            while i < n and lines[i].strip().startswith("|"):
+                rows.append([c.strip() for c in lines[i].strip().strip("|").split("|")])
+                i += 1
+            if len(rows) >= 2 and set(rows[1][0]) <= set("-: "):
+                header, body = rows[0], rows[2:]
+            else:
+                header, body = rows[0], rows[1:]
+            out.append("<table><thead><tr>" +
+                        "".join(f"<th>{_inline_md(c)}</th>" for c in header) +
+                        "</tr></thead><tbody>" +
+                        "".join("<tr>" + "".join(f"<td>{_inline_md(c)}</td>" for c in r) + "</tr>" for r in body) +
+                        "</tbody></table>")
+        elif stripped.startswith("- "):
+            items = []
+            while i < n and lines[i].strip().startswith("- "):
+                items.append(f"<li>{_inline_md(lines[i].strip()[2:])}</li>")
+                i += 1
+            out.append(f"<ul>{''.join(items)}</ul>")
+        else:
+            out.append(f"<p>{_inline_md(stripped)}</p>")
+            i += 1
+    return "\n".join(out)
+
+
+def render_html(analysis: dict) -> str:
+    """The same report as ``render_markdown``, as a self-contained HTML page.
+
+    Converts the Markdown output rather than re-deriving the content, so the
+    two formats cannot drift apart — there is exactly one place that decides
+    what goes in a strategy report.
+    """
+    rs = analysis.get("race_state", {})
+    title = f"Race Strategy Report — {rs.get('driver')} ({rs.get('team')})"
+    body = _markdown_to_html_body(render_markdown(analysis))
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{_html.escape(title)}</title>
+<style>
+  body {{ font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; max-width: 860px;
+          margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; line-height: 1.5; }}
+  h1 {{ font-size: 1.6rem; border-bottom: 2px solid #1a1a1a; padding-bottom: .4rem; }}
+  h2 {{ font-size: 1.25rem; margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: .3rem; }}
+  h3 {{ font-size: 1.05rem; color: #b00020; }}
+  table {{ border-collapse: collapse; width: 100%; margin: .75rem 0; font-size: .9rem; }}
+  th, td {{ border: 1px solid #ddd; padding: .4rem .6rem; text-align: left; }}
+  th {{ background: #f5f5f5; }}
+  blockquote {{ border-left: 4px solid #b00020; margin: .75rem 0; padding: .3rem .8rem;
+                 background: #fdf2f2; color: #444; }}
+  code {{ background: #f0f0f0; padding: .1rem .3rem; border-radius: 3px; font-size: .85em; }}
+  hr {{ border: none; border-top: 1px solid #ccc; margin: 1.5rem 0; }}
+</style>
+</head>
+<body>
+{body}
+</body>
+</html>
+"""

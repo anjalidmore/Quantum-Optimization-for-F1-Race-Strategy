@@ -43,6 +43,11 @@ export type HealthResponse = {
   model_count: number;
   xgboost_available: boolean;
   xgboost_status: string | null;
+  models?: {
+    ml: Record<string, { trained: boolean; selected_model: string | null }>;
+    dl: Record<string, { trained: boolean }>;
+    xai_available: boolean;
+  };
 };
 
 export type RegistryModel = {
@@ -123,6 +128,8 @@ export type TaskEvidence = {
   reports: string[];
   figures: string[];
   other_artifacts: string[];
+  documents_complete?: number;
+  documents_total?: number;
 };
 
 export type TaskEvidenceResponse = {
@@ -145,10 +152,19 @@ export type RaceState = {
   current_position: number;
   laptime_model?: string | null;
   pit_model?: string | null;
+  explain?: boolean;
 };
 
 export type StrategyResponse = {
   race_state: RaceState;
+  validation?: {
+    passed: boolean;
+    current_lap: number;
+    total_laps: number;
+    laps_remaining: number;
+    tyre_compound: string;
+    note: string;
+  };
   prediction: {
     predicted_lap_time_seconds: number | null;
     laptime_model: string | null;
@@ -159,6 +175,22 @@ export type StrategyResponse = {
     out_of_range: Record<string, { feature: string; value: number; training_min: number; training_max: number }[]>;
     context_only: Record<string, Record<string, boolean>>;
     errors: string[];
+  };
+  dl_prediction?: {
+    predicted_lap_time_seconds: number | null;
+    probability_pit: number | null;
+    predicted_class: number | null;
+    threshold: number | null;
+    errors: string[];
+  };
+  recommendation?: {
+    action: string;
+    confidence: "high" | "moderate" | "low" | "none" | string;
+    source: string;
+    disagreement: boolean;
+    ml_pit_probability: number | null;
+    dl_pit_probability: number | null;
+    reason: string;
   };
   recommended_action: string | null;
   expected_cost_seconds: number | null;
@@ -172,6 +204,7 @@ export type StrategyResponse = {
   };
   triggered_expert_rules: { rule_id: string; name: string; matched_conditions: string[]; asserted: Record<string, unknown> }[];
   evidence: Record<string, unknown>;
+  xai_explanation?: Record<string, any>;
   data_source: string;
 };
 
@@ -188,6 +221,11 @@ export type DlModel = {
   format_note: string;
   training_rows: number;
   test_rows: number;
+  // Present in /api/dl/models responses; optional so older payloads still type-check.
+  artifact?: string;
+  framework?: string;
+  features?: string[];
+  trained_at?: string;
 };
 export type DlComparison = {
   generated_at: string;
@@ -405,6 +443,50 @@ export type SearchSummary = {
   final_cost_seconds: number | null;
 };
 
+// --- Responsible AI (RAI tab) ------------------------------------------------
+export type RaiModelKey = "simple" | "ml" | "dnn";
+export type RaiGap = { value: number; max_group: string; max: number; min_group: string; min: number; n_groups: number } | null;
+export type RaiGroupRow = Record<string, any> & { model: RaiModelKey; group_type: string; group: string; n_laps: number; sample_note: string };
+export type RaiFlag = {
+  model: RaiModelKey; group_type: string; group: string; metric: string; value: number; overall: number;
+  ratio?: number; difference?: number; n_laps: number; adequate_sample: boolean;
+};
+export type RaiHistBin = { lo: number; hi: number; count: number; correct?: number; incorrect?: number };
+export type RaiReviewLap = {
+  row: number; driver: string | null; team: string | null; compound: string | null; lap: number | null;
+  actual: number | null; scores: Record<string, number | null>; calls: Record<string, number> | null;
+  reasons: string[]; std?: number; abs_error?: number;
+};
+export type RaiConfidenceModel = Record<string, any> & { available: boolean; reason?: string; mechanism?: string };
+export type RaiSummary = {
+  target: string;
+  task: "regression" | "classification";
+  n_test: number;
+  n_positive: number | null;
+  models: Record<RaiModelKey, { name: string | null; available: boolean; threshold: number | null }>;
+  check: Record<string, Record<string, number | null>>;
+  fairness: {
+    groups: string[];
+    rows: RaiGroupRow[];
+    summary: Record<string, Record<string, Record<string, any>>>;
+    flags: RaiFlag[];
+    rules: { min_rows_per_group: number; min_pit_laps_per_group: number; disparity_ratio: number; disparity_abs_rate: number };
+    protected_attributes_available: boolean;
+    note: string;
+  };
+  confidence: {
+    kind: "probability" | "interval";
+    n_test: number;
+    n_positive?: number;
+    near_threshold?: number;
+    mc_passes?: number | null;
+    models: Record<RaiModelKey, RaiConfidenceModel>;
+    review: RaiReviewLap[];
+    n_review: number;
+  };
+  source_dataset: string;
+};
+
 export const api = {
   health: () => getJson<HealthResponse>("/api/health"),
   models: () => getJson<Registry>("/api/ml/models"),
@@ -453,6 +535,9 @@ export const api = {
   xaiLap: (target: string, rowIndex: number) =>
     getJson<XaiLap>(`/api/xai/lap?target=${target}&row_index=${rowIndex}`),
 
+  // Responsible AI
+  raiSummary: (target: string) => getJson<RaiSummary>(`/api/rai/summary?target=${target}`),
+
   // Quantum ML
   qmlSummary: () => getJson<QmlSummary>("/api/qml/summary"),
 
@@ -461,9 +546,13 @@ export const api = {
   expertSystem: () => getJson<ExpertSystemSummary | Unavailable>("/api/reasoning/expert-system"),
   searchComparison: () => getJson<SearchSummary | Unavailable>("/api/reasoning/search"),
 
-  // Task 9 — the race-strategy report generator. Returns markdown, not JSON.
-  strategyReport: async (raceState: RaceState): Promise<{ filename: string; markdown: string }> => {
-    const res = await fetch(`${API_BASE}/api/strategy/report`, {
+  // Task 9 — the race-strategy report generator. Returns the rendered text
+  // (Markdown or HTML, per `format`), not JSON.
+  strategyReport: async (
+    raceState: RaceState,
+    format: "markdown" | "html" = "markdown",
+  ): Promise<{ filename: string; content: string; mimeType: string }> => {
+    const res = await fetch(`${API_BASE}/api/strategy/report?format=${format}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(raceState),
@@ -472,6 +561,11 @@ export const api = {
     if (!res.ok) throw new ApiError(res.status, `Report generation failed (${res.status})`);
     const disposition = res.headers.get("content-disposition") ?? "";
     const match = disposition.match(/filename="?([^"]+)"?/);
-    return { filename: match?.[1] ?? "strategy_report.md", markdown: await res.text() };
+    const fallback = format === "html" ? "strategy_report.html" : "strategy_report.md";
+    return {
+      filename: match?.[1] ?? fallback,
+      content: await res.text(),
+      mimeType: format === "html" ? "text/html" : "text/markdown",
+    };
   },
 };

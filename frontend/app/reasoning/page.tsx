@@ -2,6 +2,7 @@ import { api, ApiError } from "@/lib/api";
 import { KnowledgeCard } from "@/components/reasoning/KnowledgeCard";
 import { ExpertSystemCard } from "@/components/reasoning/ExpertSystemCard";
 import { SearchCard } from "@/components/reasoning/SearchCard";
+import { PageHero } from "@/components/PageHero";
 
 /**
  * Tasks 1-3 — the symbolic half of the project.
@@ -29,26 +30,22 @@ export default async function ReasoningPage() {
 
   if (error) {
     return (
-      <div className="card border-red-500/30 bg-red-500/5">
+      <div className="card border-accent">
         <div className="badge badge-warning">Backend unreachable</div>
-        <p className="text-sm text-white/70 mt-2">{error}</p>
+        <p className="text-sm text-paper-700 mt-2">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-10">
-      <section>
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl font-bold text-white">Reasoning</h1>
-          <span className="badge">Tasks 1 – 3</span>
-        </div>
-        <p className="text-white/60 mt-1 max-w-3xl">
-          The symbolic half of the platform: what the system <em>knows</em> (an ontology and knowledge graph),
-          what it <em>concludes</em> (a forward-chaining rule base), and what it <em>plans</em> (a state-space
-          search over pit strategies). Two of these feed the live strategy recommendation alongside the models.
-        </p>
-      </section>
+    <div className="space-y-10 pb-10">
+      <PageHero
+        photo="/images/photo-aerial-circuit.jpg"
+        focus="50% 70%"
+        eyebrow="Tasks 1 – 3 · the symbolic half"
+        title="Reasoning"
+        blurb="What the system knows (an ontology and knowledge graph), what it concludes (a forward-chaining rule base), and what it plans (a state-space search over pit strategies). Two of these feed the live strategy recommendation alongside the models."
+      />
 
       {knowledge && <KnowledgeCard data={knowledge} />}
       {expert && <ExpertSystemCard data={expert} />}

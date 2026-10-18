@@ -1,5 +1,5 @@
 import { artifactUrl, QmlSummary, QmlTarget } from "@/lib/api";
-import { ArtifactImage } from "@/components/ArtifactImage";
+import { Chart } from "@/components/charts/Chart";
 import { fmt, TARGET_LABEL } from "@/lib/format";
 
 /**
@@ -14,12 +14,12 @@ export function QuantumSection({ summary }: { summary: QmlSummary }) {
     <>
       <section>
         <div className="flex items-center gap-3 flex-wrap">
-          <h2 className="text-lg font-semibold text-white">Quantum machine learning</h2>
+          <h2 className="text-lg font-semibold text-paper-900">Quantum machine learning</h2>
           <span className="badge">PennyLane {summary.framework.pennylane}</span>
           <span className="badge badge-warning">simulated</span>
         </div>
-        <p className="text-white/60 mt-2 max-w-3xl text-sm">{summary.honesty_note}</p>
-        <p className="text-xs text-white/40 mt-2 max-w-3xl">
+        <p className="text-paper-500 mt-2 max-w-3xl text-sm">{summary.honesty_note}</p>
+        <p className="text-xs text-paper-400 mt-2 max-w-3xl">
           {summary.simulator}. Same laps, same chronological split and the same metric code as Tasks 6 and 7.
           Hyperparameters (layers ∈ {summary.search_space.n_layers.join(", ")}, learning rate ∈{" "}
           {summary.search_space.learning_rate.join(", ")}) were chosen on the cross-validation folds only. Whole
@@ -31,34 +31,29 @@ export function QuantumSection({ summary }: { summary: QmlSummary }) {
         <QuantumTargetTable key={target} target={target} t={t} />
       ))}
 
-      <section className="grid gap-4 md:grid-cols-2">
-        {[
-          ["circuit", "The variational circuit, drawn by PennyLane from the training code"],
-          ["loss_curves", "Training loss per epoch (final fit)"],
-          ["metric_comparison", "Every model on the same test laps"],
-          ["training_time", "Training cost — simulated circuits vs equivalent classical models"],
-          ["roc_pr", "ROC and precision-recall, pit decision"],
-          ["predicted_vs_actual", "Predicted vs actual lap time"],
-        ].map(([key, caption]) =>
-          summary.figures[key] ? (
-            <div key={key} className="card">
-              <ArtifactImage src={artifactUrl(summary.figures[key])} alt={caption} className="w-full rounded" />
-              <p className="text-xs text-white/50 mt-2">{caption}</p>
-            </div>
-          ) : null,
-        )}
+      {/* The circuit is wide by nature, so it gets a full-width row of its own
+          and is the only element permitted to scroll sideways - inside its own
+          box, never the page. */}
+      <Chart name="qml_circuit" height={300} />
+
+      <section className="grid gap-5 md:grid-cols-2">
+        {["qml_training_loss", "qml_metrics_target_laptime", "qml_metrics_target_pit_next_lap",
+          "qml_training_time", "qml_roc_vs_classical", "qml_pr_vs_classical",
+          "qml_predicted_vs_actual"].map((name) => (
+          <Chart key={name} name={name} />
+        ))}
       </section>
 
       <section className="card">
-        <p className="text-sm text-white/60">
+        <p className="text-sm text-paper-500">
           Full write-up, including what this experiment cannot tell you:{" "}
           <a
-            className="text-sky-400 hover:underline"
+            className="text-paper-900 underline decoration-edge underline-offset-[3px] hover:decoration-paper-900"
             href={artifactUrl(summary.report)}
             target="_blank"
             rel="noreferrer"
           >
-            classical_vs_quantum_report.md ↗
+            classical_vs_quantum_report.md
           </a>
         </p>
       </section>
@@ -87,8 +82,8 @@ function QuantumTargetTable({ target, t }: { target: string; t: QmlTarget }) {
 
   return (
     <section>
-      <h3 className="font-semibold text-white mb-1">{TARGET_LABEL[target] ?? target}</h3>
-      <p className="text-xs text-white/50 mb-3">
+      <h3 className="font-semibold text-paper-900 mb-1">{TARGET_LABEL[target] ?? target}</h3>
+      <p className="text-xs text-paper-500 mb-3">
         {t.encoding.method}
         {t.encoding.explained_variance_ratio !== null &&
           `, retaining ${(t.encoding.explained_variance_ratio * 100).toFixed(1)}% of the variance`}{" "}
@@ -96,42 +91,42 @@ function QuantumTargetTable({ target, t }: { target: string; t: QmlTarget }) {
         {isClf && t.n_test_positive !== undefined && ` (${t.n_test_positive} pit event)`} ·{" "}
         {t.encoding.fitted_on}
       </p>
-      <div className="card overflow-x-auto">
-        <table className="w-full text-sm min-w-[42rem]">
-          <thead className="text-white/50">
+      <div className="card min-w-0">
+        {/* The CV column is the one that carries information here, so it is the
+            column that survives at phone width. Family, parameter count and the
+            test columns drop away rather than forcing the page sideways. */}
+        <table className="t-table">
+          <thead>
             <tr>
-              <th className="text-left font-normal py-1">Model</th>
-              <th className="text-left font-normal">Family</th>
-              <th className="text-right font-normal">Params</th>
-              <th className="text-right font-normal">Train (s)</th>
-              <th className="text-right font-normal">CV {metric} (mean ± sd)</th>
+              <th scope="col">Model</th>
+              <th scope="col" className="hidden md:table-cell">Family</th>
+              <th scope="col" className="num hidden md:table-cell">Params</th>
+              <th scope="col" className="num hidden sm:table-cell">Train (s)</th>
+              <th scope="col" className="num">CV {metric} (mean ± sd)</th>
               {testKeys.map((k) => (
-                <th key={k} className="text-right font-normal">
+                <th key={k} scope="col" className="num hidden lg:table-cell">
                   test {k.toUpperCase().replace("_", "-")}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="text-white/80">
+          <tbody>
             {rows.map((m) => (
-              <tr
-                key={m.model}
-                className={`border-t border-white/5 ${m.family === "quantum" ? "bg-violet-500/10" : ""}`}
-              >
-                <td className="py-1.5">
+              <tr key={m.model} className={m.family === "quantum" ? "is-marked" : ""}>
+                <td>
                   {m.model}
-                  {m.family === "quantum" && <span className="badge ml-2">quantum</span>}
+                  {m.family === "quantum" && <span className="marker ml-2">quantum</span>}
                 </td>
-                <td className="text-white/50">{m.family}</td>
-                <td className="text-right tabular-nums">{m.n_parameters || "—"}</td>
-                <td className="text-right tabular-nums">
+                <td className="hidden text-paper-500 md:table-cell">{m.family}</td>
+                <td className="num hidden md:table-cell">{m.n_parameters || "—"}</td>
+                <td className="num hidden sm:table-cell">
                   {m.train_seconds === null ? "—" : m.train_seconds.toFixed(2)}
                 </td>
-                <td className="text-right tabular-nums">
+                <td className="num">
                   {m.cv_mean === null ? "undefined" : `${fmt(m.cv_mean, 4)} ± ${fmt(m.cv_std, 4)}`}
                 </td>
                 {testKeys.map((k) => (
-                  <td key={k} className="text-right tabular-nums">
+                  <td key={k} className="num hidden lg:table-cell">
                     {fmt(m.test_metrics?.[k], 4)}
                   </td>
                 ))}
@@ -140,13 +135,13 @@ function QuantumTargetTable({ target, t }: { target: string; t: QmlTarget }) {
           </tbody>
         </table>
         {isClf && (
-          <p className="text-xs text-amber-400/70 mt-2">
-            ⚠ The test laps hold {t.n_test_positive} pit event, so every test column here is decided by one lap
+          <p className="text-xs text-paper-500 mt-2">
+            The test laps hold {t.n_test_positive} pit event, so every test column here is decided by one lap
             — a test PR-AUC of 1.0 only means that lap got the top score. The CV column is the one to read.
           </p>
         )}
         {t.notes.map((n) => (
-          <p key={n} className="text-xs text-white/40 mt-1">
+          <p key={n} className="text-xs text-paper-400 mt-1">
             {n}
           </p>
         ))}

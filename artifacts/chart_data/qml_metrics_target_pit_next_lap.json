@@ -1,0 +1,62 @@
+{
+  "name": "qml_metrics_target_pit_next_lap",
+  "kind": "bar",
+  "title": "target_pit_next_lap, 4-fold cross-validation",
+  "caption": "CV PR-AUC (higher is better) with fold-to-fold spread. Cross-validation rather than the test laps, because the holdout holds one pit event and a test metric would turn on a single lap. Where two error bars overlap, this data cannot separate those models.",
+  "axes": {
+    "x": {
+      "label": "Model",
+      "unit": null,
+      "kind": "category"
+    },
+    "y": {
+      "label": "CV PR-AUC",
+      "unit": null,
+      "kind": "number"
+    }
+  },
+  "series": [
+    {
+      "name": "mean",
+      "points": [
+        {
+          "x": "vqc (14 params)",
+          "y": 0.30367953194691055
+        },
+        {
+          "x": "quantum_kernel_svm (413 params)",
+          "y": 0.21272704323665115
+        },
+        {
+          "x": "logistic_regression (reduced inputs) (5 params)",
+          "y": 0.20465530994360712
+        },
+        {
+          "x": "tiny_mlp (reduced inputs) (13 params)",
+          "y": 0.15287246394883297
+        },
+        {
+          "x": "random_forest (Task 6, all features) (Task 6)",
+          "y": 0.3862802677035923
+        }
+      ]
+    }
+  ],
+  "source": "artifacts/figures/qml_metric_comparison.png",
+  "data_source": "real_fastf1",
+  "error": [
+    0.19118406041304098,
+    0.19400652797651358,
+    0.13327844082107618,
+    0.08834382904186906,
+    0.124920388196662
+  ],
+  "families": [
+    "quantum",
+    "quantum",
+    "classical (parameter-matched)",
+    "classical (parameter-matched)",
+    "task6 reference"
+  ],
+  "lower_is_better": false
+}

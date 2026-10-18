@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 1 · Task 1 — Knowledge Representation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<nav class="doc-bar" aria-label="Documentation"><span class="mark" aria-hidden="true"></span>
+<strong>F1 Race Strategy Intelligence</strong>
+<a href="../study_guide.html">Study guide (all documents)</a>
+<a href="../../README.md">README</a></nav>
+<main class="doc-page prose">
+<h1 id="phase-1--task-1--knowledge-representation">Phase 1 · Task 1 — Knowledge Representation</h1>
+<p>Part of <strong>Quantum Optimization for Formula 1 Race Strategy</strong> — a computational
+intelligence framework for Formula One race-strategy decision support.</p>
+<blockquote>
+<p><strong>Scope of this module:</strong> purely classical knowledge representation. No
+machine learning, no quantum computing. This task establishes the <em>knowledge
+foundation</em> on which every later phase builds.</p>
+</blockquote>
+<hr />
+<h2 id="1-what-this-module-does">1. What this module does</h2>
+<p>It formalises the Formula 1 racing domain as a machine-readable knowledge base
+and produces every Task-1 deliverable <strong>from a single declarative source of
+truth</strong> (<code>src/f1kr/schema.py</code>), so documentation can never drift from code.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Deliverable</th>
+<th>Artifact produced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entity table</td>
+<td><code>outputs/reports/entity_table.md</code></td>
+</tr>
+<tr>
+<td>Attribute table</td>
+<td><code>outputs/reports/attribute_table.md</code></td>
+</tr>
+<tr>
+<td>Relationship table</td>
+<td><code>outputs/reports/relationship_table.md</code></td>
+</tr>
+<tr>
+<td>Ontology (OWL 2)</td>
+<td><code>outputs/ontology/formula1.owl</code></td>
+</tr>
+<tr>
+<td>Ontology documentation</td>
+<td><code>outputs/reports/ontology_documentation.md</code></td>
+</tr>
+<tr>
+<td>Knowledge graph (schema + instance)</td>
+<td><code>outputs/graph/*.graphml</code>, <code>outputs/graph/instance_graph.ttl</code></td>
+</tr>
+<tr>
+<td>Knowledge graph visualisation</td>
+<td><code>outputs/diagrams/schema_graph.png</code>, <code>instance_graph.png</code>, <code>schema_graph.mmd</code></td>
+</tr>
+<tr>
+<td>Validation report</td>
+<td><code>outputs/reports/validation_report.md</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The domain covers <strong>61 entities</strong> and <strong>29 relationships</strong> spanning both the
+historical Kaggle dataset (Ergast-derived: seasons, races, circuits, drivers,
+constructors, results, standings, pit stops, lap times, qualifying) and the
+FastF1 live-timing / telemetry domain (sessions, stints, tyre compounds,
+weather, track status, race-control messages, car data, telemetry channels).</p>
+<hr />
+<h2 id="2-architecture">2. Architecture</h2>
+<div class="hl"><pre><span></span><code>schema.py  ──►  ontology.py       ──►  formula1.owl        (OWL 2 classes/properties)
+    │      ──►  knowledge_graph.py ──►  schema/instance graphs + RDF (Turtle)
+    │      ──►  validation.py      ──►  CheckResult records  (schema/ontology/instance)
+    │      ──►  visualize.py       ──►  PNG + Mermaid diagrams
+    └──────►  reports.py           ──►  Markdown tables + reports
+
+build_knowledge_base.py orchestrates all of the above end-to-end.
+</code></pre></div>
+
+<ul>
+<li><strong><code>schema.py</code></strong> — declarative model: <code>Entity</code>, <code>Attribute</code>, <code>Relationship</code>
+  dataclasses with datatypes, cardinalities, categories, and source provenance
+  (<code>kaggle</code> / <code>fastf1</code> / <code>both</code> / <code>derived</code>).</li>
+<li><strong><code>ontology.py</code></strong> — maps the schema to an OWL 2 ontology via <code>owlready2</code>:
+  entities → classes (with a category/subclass hierarchy), attributes → data
+  properties, relationships → object properties. Cardinalities are encoded as
+  OWL property characteristics (<code>FunctionalProperty</code>, <code>InverseFunctionalProperty</code>).</li>
+<li><strong><code>knowledge_graph.py</code></strong> — builds a NetworkX <strong>schema graph</strong> (TBox) and a
+  populated <strong>instance graph</strong> (ABox — a realistic Monaco GP 2023 scenario), and
+  exports the instance graph to RDF/Turtle via <code>rdflib</code>.</li>
+<li><strong><code>validation.py</code></strong> — 8 integrity checks across schema, ontology, and instance
+  layers (type-compatibility of every instance edge respects the subclass
+  hierarchy).</li>
+<li><strong><code>visualize.py</code></strong> — headless Matplotlib PNG rendering + Mermaid source.</li>
+<li><strong><code>reports.py</code></strong> — Markdown deliverable generators.</li>
+</ul>
+<hr />
+<h2 id="3-installation">3. Installation</h2>
+<p>Requires <strong>Python 3.10+</strong>.</p>
+<div class="hl"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>phase1_knowledge_representation
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">   </span><span class="c1"># optional but recommended</span>
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</code></pre></div>
+
+<hr />
+<h2 id="4-execution--one-command">4. Execution — one command</h2>
+<div class="hl"><pre><span></span><code>python<span class="w"> </span>build_knowledge_base.py
+</code></pre></div>
+
+<p>This regenerates every deliverable into <code>outputs/</code> and <strong>exits non-zero if any
+validation check fails</strong>, so it doubles as a CI gate. Optional custom output
+directory:</p>
+<div class="hl"><pre><span></span><code>python<span class="w"> </span>build_knowledge_base.py<span class="w"> </span>--output-dir<span class="w"> </span>/path/to/outputs
+</code></pre></div>
+
+<p>Expected tail of the log:</p>
+<div class="hl"><pre><span></span><code>Ontology built: 73 classes, 29 object props, 90 data props
+Schema graph:  {'nodes': 61, 'edges': 29, ...}
+Instance graph:{'nodes': 17, 'edges': 20, 'weakly_connected': 1}
+...
+Summary: 8/8 checks passed — ALL CHECKS PASSED
+All Task-1 deliverables generated successfully in .../outputs
+</code></pre></div>
+
+<hr />
+<h2 id="5-tests">5. Tests</h2>
+<div class="hl"><pre><span></span><code>pytest<span class="w"> </span>-q
+</code></pre></div>
+
+<p>15 unit tests cover schema integrity, ontology construction (including the
+category-vs-entity name-collision regression), graph structure, RDF round-trip,
+the validation suite (including a negative test that a malformed edge is
+<em>caught</em>), report generation, and visualisation rendering.</p>
+<hr />
+<h2 id="6-folder-structure">6. Folder structure</h2>
+<div class="hl"><pre><span></span><code>phase1_knowledge_representation/
+├── build_knowledge_base.py     # end-to-end driver / CI gate
+├── requirements.txt
+├── pytest.ini
+├── README.md
+├── src/f1kr/
+│   ├── __init__.py
+│   ├── schema.py               # single source of truth
+│   ├── ontology.py             # OWL 2 builder (owlready2)
+│   ├── knowledge_graph.py      # NetworkX + RDF graphs
+│   ├── validation.py           # integrity checks
+│   ├── visualize.py            # PNG + Mermaid
+│   └── reports.py              # Markdown deliverables
+├── tests/
+│   └── test_knowledge_representation.py
+├── docs/
+│   └── ER_DIAGRAM.md           # Mermaid entity-relationship diagram
+└── outputs/                    # generated deliverables (created on run)
+    ├── ontology/formula1.owl
+    ├── graph/{schema,instance}_graph.graphml, instance_graph.ttl
+    ├── diagrams/{schema,instance}_graph.png, schema_graph.mmd
+    └── reports/*.md
+</code></pre></div>
+
+<hr />
+<h2 id="7-design-decisions--rationale">7. Design decisions &amp; rationale</h2>
+<ul>
+<li><strong>Single source of truth.</strong> Every table, the ontology, and both graphs derive
+  from <code>schema.py</code>. Adding an entity or relationship in one place updates all
+  deliverables on the next run — no manual synchronisation.</li>
+<li><strong>Cardinality → OWL characteristics.</strong> <code>*..1</code> and <code>1..1</code> relationships become
+  <code>FunctionalProperty</code>; <code>1..1</code> additionally becomes <code>InverseFunctionalProperty</code>.
+  This lets an OWL reasoner enforce the intended multiplicity.</li>
+<li><strong>Subclass-aware validation.</strong> The instance validator resolves the subclass
+  closure, so an edge whose declared range is <code>TrackStatus</code> legitimately accepts
+  a <code>SafetyCar</code> individual.</li>
+<li><strong>Provenance on every entity.</strong> Each entity records whether it originates from
+  the Kaggle historical dataset, FastF1, both, or is derived — this feeds the
+  data-engineering task later in Phase 1.</li>
+</ul>
+<hr />
+<h2 id="8-next-task">8. Next task</h2>
+<p><strong>Task 2 — Rule-Based Expert System</strong> consumes this knowledge base: the
+entities and relationships defined here become the vocabulary over which the
+production rules (forward/backward chaining, conflict resolution, explanation)
+operate.</p>
+</main>
+</body>
+</html>

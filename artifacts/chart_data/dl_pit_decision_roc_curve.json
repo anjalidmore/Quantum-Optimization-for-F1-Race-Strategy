@@ -1,0 +1,51 @@
+{
+  "name": "dl_pit_decision_roc_curve",
+  "kind": "line",
+  "title": "Task 7 DNN \u2014 ROC (test laps)",
+  "caption": "Held-out test laps. The diagonal is chance.",
+  "axes": {
+    "x": {
+      "label": "False positive rate",
+      "unit": null,
+      "kind": "number"
+    },
+    "y": {
+      "label": "True positive rate",
+      "unit": null,
+      "kind": "number"
+    }
+  },
+  "series": [
+    {
+      "name": "DNN (AUC = 0.777)",
+      "points": [
+        {
+          "x": 0.0,
+          "y": 0.0
+        },
+        {
+          "x": 0.00558659217877095,
+          "y": 0.0
+        },
+        {
+          "x": 0.22346368715083798,
+          "y": 0.0
+        },
+        {
+          "x": 0.22346368715083798,
+          "y": 1.0
+        },
+        {
+          "x": 1.0,
+          "y": 1.0
+        }
+      ]
+    }
+  ],
+  "source": "artifacts/deep_learning/pit_decision/roc_curve.png",
+  "data_source": "real_fastf1",
+  "identity_line": [
+    0,
+    1
+  ]
+}

@@ -2,47 +2,1004 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   Design tokens — the normative layer. See /DESIGN.md.
+   Every value here was contrast-measured against the surface it is used on.
+   ========================================================================== */
+:root {
+  /* Base: the track surface, four steps of near-black. */
+  --track-000: #0b0b10;
+  --track-050: #15151e;
+  --track-100: #1c1c26;
+  --track-200: #262632;
+  --track-300: #34343f;
+
+  /* Text: warm off-white, so the dark never reads blue-grey. */
+  --paper-900: #f7f4f1; /* 15.8:1 on track-100 */
+  --paper-700: #d6d5d9; /* 12.0:1 */
+  --paper-500: #a9a9b6; /*  7.2:1 */
+  --paper-400: #8e8e9c; /*  5.0:1 */
+
+  /* One accent. Bright enough to pass AA as text, not only as a fill.
+     The detector reports this as SD2 and we let it: red on near-black is
+     Formula One's own livery language here, not a decorative escape from
+     purple. It is the one exception we keep, justified in DESIGN.md under
+     Constraints. Suppressing it would hide the trade-off rather than own it. */
+  --accent: #ff3b2f; /* 5.1:1 on track-050 */
+  --accent-ink: #15151e; /* 5.3:1 on accent */
+
+  /* Non-text UI: control boundaries and focus need >= 3.0. */
+  --edge: #727283; /* 3.3:1 on track-050 */
+  --focus: #f7f4f1; /* 16.9:1 */
+
+  /* The one glass surface in the app, and the only place blur is allowed.
+     78% of the page ground: content stays legible sliding underneath, and
+     nav text still clears AA over the lightest thing that can pass behind it
+     (paper-900 text composites to #414242, where paper-700 measures 6.8:1).
+     This is why the nav's idle links are paper-700 and not paper-500 -
+     paper-500 would measure 4.1:1 there and fail. */
+  --nav-surface: rgba(21, 21, 30, 0.84);
+
+  /* The letter inside a compound chip. Dark ink on the bright dark-mode
+     chips; see the light block for its counterpart. */
+  --compound-ink: #08090b;
+
+  /* Sign of a contribution (SHAP, LIME). Not the accent by coincidence:
+     "pushed the prediction up" is the same emphasis the accent carries
+     elsewhere. Both clear 4.5 on the card in both themes. */
+  --data-pos: #ff3b2f; /* 4.8:1 on track-100 */
+  --data-neg: #6fb6f2; /* 8.2:1 on track-100 */
+
+  /* Chart series. Every one clears 3.0 against the card, so a line or bar is
+     an identifiable graphical object and not just a pretty colour. They are
+     ordered by how often a first series matters, not by hue. */
+  --chart-1: #ff3b2f; /*  4.8:1 */
+  --chart-2: #5ec8f2; /*  8.2:1 */
+  --chart-3: #ff8000; /*  8.5:1 */
+  --chart-4: #4ec98a; /* 11.8:1 */
+  --chart-5: #f2d13c; /*  7.1:1 */
+  --chart-6: #a9a9b6; /*  7.2:1 */
+  --grid: #34343f;
+
+  /* Tyre compounds carry data meaning only: never chrome, never decoration,
+     and never the sole carrier of meaning (the chip also shows its letter). */
+  --compound-soft: #e8382b;
+  --compound-medium: #f2d13c;
+  --compound-hard: #edeae3;
+  --compound-inter: #3fb950;
+  --compound-wet: #3b8eea;
+
+  --r-sm: 2px;
+  --r-md: 4px;
+  --r-lg: 6px;
+  /* Added for the photography-led surfaces (hero, floating stat cards,
+     sticker frames) introduced in this redesign — see DESIGN.md "Luxe
+     Paddock". Data tables, inputs and chips keep the sharp 2-6px scale;
+     these are reserved for panels that sit over or beside a photograph. */
+  --r-xl: 14px;
+  --r-xxl: 22px;
+
+  --t-fast: 120ms;
+  --t-base: 180ms;
+  --t-slow: 420ms;
+  --ease: cubic-bezier(0.2, 0, 0.3, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Depth, reserved for the photo-led surfaces only. The data layer (tables,
+     stat tiles, nav) keeps the original hairline-only elevation system
+     unchanged — this is additive, not a replacement of that rule. */
+  --shadow-sticker: 0 24px 60px -16px rgba(0, 0, 0, 0.65), 0 8px 20px -8px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 20px 44px -20px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 120px rgba(225, 6, 0, 0.18);
+
+  /* The signature gradient: the accent burning up out of near-black, the
+     livery language turned into light. Used once per view, at hero scale. */
+  --gradient-ember: radial-gradient(120% 140% at 15% 0%, rgba(255, 128, 0, 0.42) 0%, rgba(225, 6, 0, 0.26) 30%, rgba(11, 11, 16, 0) 62%);
+  --gradient-veil: linear-gradient(180deg, rgba(11, 11, 16, 0.32) 0%, rgba(11, 11, 16, 0.62) 60%, rgba(11, 11, 16, 0.96) 100%);
+  --glass-surface: rgba(28, 28, 38, 0.62);
+  --glass-edge: rgba(244, 241, 234, 0.1);
+}
+
+/* ==========================================================================
+   Light theme
+   The same roles, re-measured - not the dark values lightened. Every pair
+   below was checked with the same script as the dark block; the figures in
+   the comments are the measured ratios, not intentions.
+
+   `[data-theme]` wins over the media query so an explicit choice always
+   beats the OS setting, and the media query is scoped with
+   `:not([data-theme="dark"])` so choosing dark on a light OS still works.
+   ========================================================================== */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --track-000: #ffffff;
+    --track-050: #f6f6f8;
+    --track-100: #eeeef2;
+    --track-200: #e3e3e9;
+    --track-300: #d0d0d9;
+
+    --paper-900: #15151e; /* 16.3:1 on track-050 */
+    --paper-700: #38384a; /*  9.7:1 */
+    --paper-500: #555566; /*  5.6:1 */
+    --paper-400: #5f5f70; /*  5.1:1 on page, 4.7:1 on card */
+
+    --accent: #d10f00;     /* 5.6:1 on track-050, 5.2:1 on card */
+    --accent-ink: #ffffff; /* 6.1:1 on the accent fill */
+
+    --edge: #7a7a8a; /* 3.3:1, matching the dark edge's role exactly */
+    --focus: #15151e;
+
+    /* Darkened so each chip clears 3.0 against the pale card and carries
+       white ink at 4.5+. Hard is the exception worth naming: the real hard
+       tyre is white, and a white chip on paper is invisible, so light mode
+       gives that role the neutral instead. The letter still says which. */
+    --compound-soft: #d42d1f;   /* chip 4.2:1, ink 5.0:1 */
+    --compound-medium: #856a00; /* chip 4.4:1, ink 5.2:1 */
+    --compound-hard: #4a4f57;   /* chip 7.0:1, ink 8.2:1 */
+    --compound-inter: #1a7f37;  /* chip 4.3:1, ink 5.1:1 */
+    --compound-wet: #1059b8;    /* chip 5.7:1, ink 6.7:1 */
+    --compound-ink: #ffffff;
+
+    --chart-1: #d10f00; /* 5.2:1 */
+    --chart-2: #0e5fb0; /* 6.8:1 */
+    --chart-3: #a84300; /* 4.3:1 */
+    --chart-4: #1a7f37; /* 4.3:1 */
+    --chart-5: #856a00; /* 6.3:1 */
+    --chart-6: #555566; /* 5.2:1 */
+    --grid: #d0d0d9;
+    --data-pos: #d10f00; /* 5.2:1 on track-100 */
+    --data-neg: #0e5fb0; /* 6.8:1 on track-100 */
+    --nav-surface: rgba(246, 246, 248, 0.84);
+    --gradient-ember: radial-gradient(120% 140% at 15% 0%, rgba(255, 128, 0, 0.2) 0%, rgba(209, 15, 0, 0.08) 30%, rgba(246, 246, 248, 0) 62%);
+    --gradient-veil: linear-gradient(180deg, rgba(21, 21, 30, 0.4) 0%, rgba(21, 21, 30, 0.66) 60%, rgba(21, 21, 30, 0.96) 100%);
+    --glass-surface: rgba(238, 238, 242, 0.72);
+    --glass-edge: rgba(21, 24, 28, 0.08);
+    --shadow-sticker: 0 24px 60px -18px rgba(21, 24, 28, 0.35), 0 8px 20px -10px rgba(21, 24, 28, 0.25);
+    --shadow-card: 0 20px 44px -22px rgba(21, 24, 28, 0.3);
+    --shadow-glow: 0 0 120px rgba(209, 15, 0, 0.1);
+  }
+}
+
+/* The explicit choice, which must work regardless of the OS preference. */
+:root[data-theme="light"] {
+  --track-000: #ffffff;
+  --track-050: #f6f6f8;
+  --track-100: #eeeef2;
+  --track-200: #e3e3e9;
+  --track-300: #d0d0d9;
+  --paper-900: #15151e;
+  --paper-700: #38384a;
+  --paper-500: #555566;
+  --paper-400: #5f5f70;
+  --accent: #d10f00;
+  --accent-ink: #ffffff;
+  --edge: #7a7a8a;
+  --focus: #15151e;
+  --compound-soft: #d42d1f;
+  --compound-medium: #856a00;
+  --compound-hard: #4a4f57;
+  --compound-inter: #1a7f37;
+  --compound-wet: #1059b8;
+  --compound-ink: #ffffff;
+  --data-pos: #d10f00; /* 5.2:1 on track-100 */
+  --data-neg: #0e5fb0; /* 6.8:1 on track-100 */
+  --chart-1: #d10f00; /* 5.2:1 */
+  --chart-2: #0e5fb0; /* 6.8:1 */
+  --chart-3: #a84300; /* 4.3:1 */
+  --chart-4: #1a7f37; /* 4.3:1 */
+  --chart-5: #856a00; /* 6.3:1 */
+  --chart-6: #555566; /* 5.2:1 */
+  --grid: #d0d0d9;
+  --nav-surface: rgba(246, 246, 248, 0.84);
+  --gradient-ember: radial-gradient(120% 140% at 15% 0%, rgba(255, 128, 0, 0.2) 0%, rgba(209, 15, 0, 0.08) 30%, rgba(246, 246, 248, 0) 62%);
+  --gradient-veil: linear-gradient(180deg, rgba(21, 21, 30, 0.4) 0%, rgba(21, 21, 30, 0.66) 60%, rgba(21, 21, 30, 0.96) 100%);
+  --glass-surface: rgba(238, 238, 242, 0.72);
+  --glass-edge: rgba(21, 24, 28, 0.08);
+  --shadow-sticker: 0 24px 60px -18px rgba(21, 24, 28, 0.35), 0 8px 20px -10px rgba(21, 24, 28, 0.25);
+  --shadow-card: 0 20px 44px -22px rgba(21, 24, 28, 0.3);
+  --shadow-glow: 0 0 120px rgba(209, 15, 0, 0.1);
+}
+
+/* ==========================================================================
+   F1 livery accents — the two team colours the redesign leans on.
+   `--ferrari` is a fill (white ink, 5.0:1); `--accent` stays the text-safe
+   red. `--papaya` is McLaren orange as text/lines (7.2:1 on dark ground,
+   darkened to 5.2:1 in light); `--papaya-fill` is the true colour, for
+   fills that carry dark ink (7.2:1).
+
+   The three compared models keep one colour each everywhere they appear
+   (cards, charts, legends, diagram): baseline blue, ML papaya, DNN crimson.
+   Run through the dataviz palette validator against the card surface: the
+   red is pushed to Ferrari crimson and the orange toward amber so the pair
+   separates for deutan/protan readers (dark ΔE 13.0 CVD / 19.9 normal;
+   light 16.5 / 19.9). Dark papaya sits slightly above the lightness band;
+   pulling it in turns it brown, so every mark is also direct-labelled.
+   ========================================================================== */
+:root {
+  --ferrari: #e10600;
+  --ferrari-ink: #ffffff;
+  --papaya: #ff8000;
+  --papaya-fill: #ff8000;
+  --papaya-ink: #15151e;
+  --model-simple: #3a8ee0;
+  --model-ml: #f08c00;
+  --model-dnn: #ef2a55;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --papaya: #a84300; /* 5.2:1 on track-100 */
+    --model-simple: #1d63c9;
+    --model-ml: #c06a00;
+    --model-dnn: #a3002f;
+  }
+}
+:root[data-theme="light"] {
+  --papaya: #a84300;
+  --model-simple: #1d63c9;
+  --model-ml: #c06a00;
+  --model-dnn: #a3002f;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
 body {
-  background-color: #0d0f12;
-  color: #e6e8eb;
+  background-color: var(--track-050);
+  color: var(--paper-700);
+  font-family: var(--font-text);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Browser surfaces we did not draw still carry the design. */
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+* {
+  caret-color: var(--accent);
+  /* Fixes the browser-default magenta radios and checkboxes. */
+  accent-color: var(--accent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--track-300) var(--track-050);
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--track-050);
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--track-300);
+  border-radius: 0;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--edge);
+}
+
+/* Visible focus on everything interactive. There were none before. */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Type roles
+   ========================================================================== */
+.t-display-hero {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(48px, 6vw, 76px);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  color: var(--paper-900);
+  font-variant-numeric: tabular-nums;
+}
+.t-display-lg {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(32px, 4vw, 44px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--paper-900);
+  font-variant-numeric: tabular-nums;
+}
+.t-display-md {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.1;
+  color: var(--paper-900);
+  font-variant-numeric: tabular-nums;
+}
+/* Page titles borrow the display face at masthead scale. */
+.t-page-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(34px, 4.4vw, 52px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--paper-900);
+}
+.t-title {
+  font-family: var(--font-text);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.3;
+  color: var(--paper-900);
+}
+.t-body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--paper-700);
+}
+.t-data {
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.t-micro {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--paper-400);
+}
+.t-code {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--paper-900);
+}
+
+/* Identifiers and paths have no spaces to break at, so at phone width a single
+   long feature name would push the whole page sideways. They wrap instead.
+   `<pre>` is exempt: the QML circuit is the one thing allowed to scroll, and
+   wrapping its wires would destroy it. */
+code,
+.t-code {
+  overflow-wrap: anywhere;
+}
+pre code,
+pre.t-code {
+  overflow-wrap: normal;
+}
+.unit {
+  color: var(--paper-400);
+  font-size: 11px;
+  font-weight: 400;
+  font-family: var(--font-text);
+}
+
+/* ==========================================================================
+   Components
+   ========================================================================== */
+
+/* The sanctioned glass surface: the nav, and nothing else. `saturate` keeps
+   the tyre chips from going grey as they blur underneath. The fallback is a
+   solid ground, because a browser without backdrop-filter would otherwise
+   show unreadable text over moving content.
+
+   The K3 suppressions below are the detector's own carve-out, not a dodge:
+   its guidance for the rule is to "keep blur only where layering is real,
+   like a nav over scrolling content", which is exactly this and nowhere
+   else. SD2 on --accent stays reported, because there the tool and this
+   design system genuinely disagree. */
+.nav-glass {
+  background-color: var(--track-050);
+  border-bottom: 1px solid var(--edge);
+}
+/* avoid-ai-design-ignore: K3 */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .nav-glass {
+    background-color: var(--nav-surface);
+    /* avoid-ai-design-ignore: K3 */
+    -webkit-backdrop-filter: blur(10px) saturate(1.4);
+    /* avoid-ai-design-ignore: K3 */
+    backdrop-filter: blur(10px) saturate(1.4);
+  }
+}
+
+/* A panel. Elevation is a surface step plus a hairline, never a shadow. */
 .card {
-  @apply bg-panel border border-white/10 rounded-xl p-5;
+  background-color: var(--track-100);
+  border: 1px solid var(--track-300);
+  border-radius: var(--r-md);
+  padding: 16px;
+}
+/* The one focal panel per page. */
+.card-focal {
+  border-color: var(--edge);
+  border-radius: var(--r-lg);
 }
 
-.stat-value {
-  @apply text-3xl font-bold tracking-tight text-white;
-}
-
+/* A stat tile: no border, no box. Space and one hairline separate them. */
 .stat-label {
-  @apply text-xs uppercase tracking-wider text-white/50;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--paper-500);
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.1;
+  color: var(--paper-900);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
 }
 
+/* A pill states real status only. */
 .badge {
-  @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--track-300);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--paper-500);
+  white-space: nowrap;
 }
-
-.badge-warning {
-  @apply bg-amber-500/15 text-amber-300 border border-amber-500/30;
-}
-
 .badge-info {
-  @apply bg-sky-500/15 text-sky-300 border border-sky-500/30;
+  border-color: var(--edge);
+  color: var(--paper-500);
+}
+.badge-success {
+  border-color: var(--edge);
+  color: var(--paper-900);
+}
+.badge-warning {
+  border-color: var(--accent);
+  color: var(--paper-900);
+}
+.badge-danger {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .input {
-  @apply w-full bg-panel2 border border-white/10 rounded px-2 py-1.5 text-white text-sm;
+  width: 100%;
+  background-color: var(--track-200);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-sm);
+  padding: 6px 8px;
+  color: var(--paper-900);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--t-fast) var(--ease);
+}
+.input:hover {
+  border-color: var(--paper-400);
 }
 
-table.data-table {
-  @apply w-full text-sm border-collapse;
+/* Buttons */
+.btn-primary {
+  background-color: var(--ferrari);
+  color: var(--ferrari-ink);
+  border: 1px solid var(--ferrari);
+  border-radius: var(--r-sm);
+  padding: 9px 18px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: opacity var(--t-fast) var(--ease);
+}
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.86;
+}
+.btn-primary:disabled {
+  opacity: 0.45;
+}
+.btn-secondary {
+  background-color: transparent;
+  color: var(--paper-700);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-sm);
+  padding: 9px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--paper-400);
+  color: var(--paper-900);
+}
+.btn-secondary:disabled {
+  opacity: 0.45;
 }
 
-table.data-table th {
-  @apply text-left text-white/50 font-medium uppercase text-xs tracking-wider py-2 border-b border-white/10;
+/* ==========================================================================
+   Tables: figures right, text left, no zebra striping.
+   ========================================================================== */
+table.data-table,
+table.t-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.data-table th,
+table.t-table th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  color: var(--paper-500);
+  padding: 0 10px 7px 0;
+  border-bottom: 1px solid var(--edge);
+  white-space: nowrap;
+}
+table.data-table td,
+table.t-table td {
+  padding: 7px 10px 7px 0;
+  border-bottom: 1px solid var(--track-300);
+  font-variant-numeric: tabular-nums;
+}
+table.data-table tbody tr:hover,
+table.t-table tbody tr:hover {
+  background-color: var(--track-200);
+}
+/* Figures align right; add .num to the cell. */
+table th.num,
+table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+table td.num {
+  color: var(--paper-900);
+  font-weight: 500;
+}
+/* A marked row carries an inset edge AND a text marker — never colour alone. */
+table tbody tr.is-marked td {
+  background-color: var(--track-100);
+}
+table tbody tr.is-marked td:first-child {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.marker {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
 }
 
-table.data-table td {
-  @apply py-2 border-b border-white/5;
+/* Contribution sign. Colour is never the only signal: every use sits beside
+   a signed number. */
+.data-pos { color: var(--data-pos); }
+.data-neg { color: var(--data-neg); }
+.bar-pos { background-color: var(--data-pos); }
+.bar-neg { background-color: var(--data-neg); }
+
+/* A hairline rule between sections; more space above a heading than below. */
+.rule {
+  border-top: 1px solid var(--track-300);
+}
+
+/* Loading skeleton: a block at the final height, no shimmer. */
+.skeleton {
+  background-color: var(--track-100);
+  border: 1px solid var(--track-300);
+  border-radius: var(--r-md);
+}
+
+/* ==========================================================================
+   Luxe Paddock — the photography-led surfaces added in this redesign.
+   Reserved for a page's hero/opening stage and the cards that float over a
+   photograph; the dense data layer above (tables, stat tiles, inputs, chips)
+   is untouched and keeps the original hairline-elevation discipline.
+   ========================================================================== */
+
+/* The hero stage: a real photograph, the ember gradient burning from one
+   corner, a bottom veil so overlaid text always clears AA regardless of
+   what the photo is doing underneath it.
+
+   The photo sets the brightness context, not the OS/site theme: a near-black
+   race photo under a dark veil needs light text whether the rest of the page
+   is in light or dark mode, so `.hero-stage__content` fixes its own palette
+   instead of inheriting --paper-*, which flips per theme and would put
+   near-black text over a near-black photo in light mode. */
+.hero-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-xxl);
+  background-color: var(--track-000);
+  isolation: isolate;
+  color-scheme: dark;
+}
+.hero-stage__content {
+  --hero-ink: #f8f6f1;
+  --hero-ink-dim: #c7c3ba;
+  --hero-ink-micro: #9b968d;
+}
+.hero-stage__content .stat-label {
+  color: var(--hero-ink-dim) !important;
+}
+.hero-stage__content .t-display-hero,
+.hero-stage__content .t-page-title,
+.hero-stage__content .readout__value {
+  color: var(--hero-ink) !important;
+}
+.hero-stage__content .t-body {
+  color: var(--hero-ink-dim) !important;
+}
+.hero-stage__content .t-body .tabular-nums {
+  color: var(--hero-ink) !important;
+}
+.hero-stage__content .readout__label {
+  color: var(--hero-ink-micro) !important;
+}
+.hero-stage__content .t-micro {
+  color: var(--hero-ink-micro) !important;
+}
+.hero-stage__content .badge {
+  color: var(--hero-ink-dim) !important;
+  border-color: rgba(248, 246, 241, 0.28) !important;
+  background-color: rgba(8, 9, 11, 0.4);
+}
+.hero-stage__content .badge .text-paper-900 {
+  color: var(--hero-ink) !important;
+}
+.hero-stage__content .badge .text-paper-400 {
+  color: var(--hero-ink-micro) !important;
+}
+/* The glass readouts sit over the same dark photo in both themes, so they
+   keep one fixed dark-glass tint rather than following --glass-surface,
+   which is a pale card in light mode. */
+.hero-stage__content .glass-card {
+  background-color: rgba(10, 11, 13, 0.46) !important;
+  border-color: rgba(248, 246, 241, 0.14) !important;
+}
+.hero-stage__content .text-paper-700,
+.hero-stage__content .text-paper-500,
+.hero-stage__content .text-paper-400 {
+  color: var(--hero-ink-dim) !important;
+}
+.hero-stage__content .text-paper-900 {
+  color: var(--hero-ink) !important;
+}
+.hero-stage__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--hero-focus, 50% 50%);
+}
+.hero-stage__ember {
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-ember);
+  mix-blend-mode: var(--ember-blend, normal);
+}
+.hero-stage__veil {
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-veil);
+}
+.hero-stage__content {
+  position: relative;
+  z-index: 1;
+}
+
+/* A sticker: a real cutout asset (never a geometric mask) with a soft,
+   offset shadow so it reads as sitting above the surface, plus a faint
+   ground-contact shadow baked under it for weight. */
+.sticker {
+  filter: drop-shadow(var(--shadow-sticker));
+}
+
+/* A glass card: the Luxe Paddock's second permitted blur context, beyond
+   the nav — a stat readout floating over a real photograph, exactly the
+   "layering over moving/visual content" case the original nav-only rule
+   was already written for, extended here from the nav to the hero stage.
+   Falls back to a solid elevated surface where backdrop-filter is
+   unavailable, same reasoning as .nav-glass. */
+.glass-card {
+  background-color: var(--glass-surface);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card);
+}
+/* avoid-ai-design-ignore: K3 — same justified exception as .nav-glass: real
+   photographic content sits beneath this card, so the blur is a specific
+   legibility effect, not decoration. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .glass-card {
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    backdrop-filter: blur(16px) saturate(1.3);
+  }
+}
+
+/* A photo card: a framed, full photograph (not a cutout) used where the
+   background context is part of the story — the garage, the pit lane, the
+   circuit from above. Soft shadow, generous radius, a thin warm hairline. */
+.photo-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--glass-edge);
+}
+.photo-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The countdown/readout chip pattern from the reference brief: a glass tile
+   with a big tabular figure and a dimmed label, used for the few numbers a
+   hero stage surfaces (laps, cost, confidence) before the dense tables
+   below take over. */
+.readout {
+  text-align: center;
+  min-width: 56px;
+}
+.readout__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--paper-900);
+  font-variant-numeric: tabular-nums;
+}
+.readout__label {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--paper-500);
+}
+
+/* ==========================================================================
+   F1 chrome — nav bar, logo, theme switch.
+   ========================================================================== */
+
+/* A Ferrari-red top stripe above the bar, like a broadcast graphic header. */
+.f1-topline {
+  height: 3px;
+  background: linear-gradient(90deg, var(--ferrari) 0 62%, var(--papaya-fill) 62% 100%);
+}
+
+/* Two slanted livery bars ahead of the wordmark. */
+.f1-logo-mark {
+  display: inline-flex;
+  gap: 3px;
+}
+.f1-logo-mark span {
+  display: block;
+  width: 5px;
+  height: 18px;
+  transform: skewX(-20deg);
+}
+
+/* Nav links: uppercase display face, red underline on the active one. */
+.f1-navlink {
+  position: relative;
+  padding: 16px 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--paper-700);
+  transition: color var(--t-fast) var(--ease);
+}
+.f1-navlink::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 3px;
+  background: var(--ferrari);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--t-base) var(--ease);
+}
+.f1-navlink:hover {
+  color: var(--paper-900);
+}
+.f1-navlink:hover::after {
+  transform: scaleX(0.35);
+  background: var(--papaya-fill);
+}
+.f1-navlink[aria-current="page"] {
+  color: var(--paper-900);
+}
+.f1-navlink[aria-current="page"]::after {
+  transform: scaleX(1);
+  background: var(--ferrari);
+}
+
+/* Light/dark switch: a track with a sliding knob, sun and moon either side. */
+.theme-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 58px;
+  height: 28px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid var(--edge);
+  background: var(--track-200);
+  color: var(--paper-500);
+  transition: border-color var(--t-fast) var(--ease);
+}
+.theme-switch:hover {
+  border-color: var(--paper-400);
+}
+.theme-switch__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--ferrari);
+  transition: transform var(--t-base) var(--ease-out-expo), background-color var(--t-base) var(--ease);
+}
+.theme-switch[data-mode="light"] .theme-switch__knob {
+  transform: translateX(30px);
+  background: var(--papaya-fill);
+}
+.theme-switch svg {
+  position: relative;
+  z-index: 1;
+}
+/* The icon under the knob takes the knob's ink; the idle one stays dim. */
+.theme-switch[data-mode="dark"] .theme-switch__moon {
+  color: var(--ferrari-ink);
+}
+.theme-switch[data-mode="light"] .theme-switch__sun {
+  color: var(--papaya-ink);
+}
+
+/* ==========================================================================
+   Model Comparison page. `--m` is the model's colour, set inline per card,
+   lane or chip, so one rule serves all three models.
+   ========================================================================== */
+.mc-card {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--track-100);
+  border: 1px solid var(--track-300);
+  border-radius: var(--r-lg);
+  transition: border-color var(--t-base) var(--ease), transform var(--t-base) var(--ease);
+}
+.mc-card:hover {
+  border-color: var(--m);
+  transform: translateY(-2px);
+}
+/* Livery stripe across the top in the model colour. */
+.mc-card__stripe {
+  height: 4px;
+  background-color: var(--m);
+}
+.mc-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  color: var(--m);
+  background-color: color-mix(in srgb, var(--m) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--m) 45%, transparent);
+}
+/* Grid position, broadcast style: italic, heavy, slanted plate. */
+.mc-pos {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 2px 10px 2px 8px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1.1;
+  color: var(--paper-900);
+  background-color: var(--track-200);
+  clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
+}
+.mc-pos[data-p="1"] {
+  background-color: var(--ferrari);
+  color: var(--ferrari-ink);
+}
+.mc-meter {
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--track-300);
+  overflow: hidden;
+}
+.mc-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background-color: var(--m);
+  transition: width var(--t-slow) var(--ease-out-expo);
+}
+.mc-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background-color: var(--m);
+  flex: none;
+}
+.mc-tab {
+  position: relative;
+  padding: 10px 18px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--paper-500);
+  border-radius: var(--r-sm);
+  transition: color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+}
+.mc-tab:hover {
+  color: var(--paper-900);
+}
+.mc-tab[aria-selected="true"] {
+  color: var(--ferrari-ink);
+  background-color: var(--ferrari);
+}
+/* Architecture flow blocks. */
+.mc-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 72px;
+  padding: 6px 9px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--track-300);
+  background-color: var(--track-200);
+  transition: border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+}
+.mc-block:hover {
+  border-color: var(--m);
+}
+.mc-block[data-kind="core"],
+.mc-block[data-kind="layer"] {
+  border-color: color-mix(in srgb, var(--m) 55%, transparent);
+  background-color: color-mix(in srgb, var(--m) 16%, var(--track-200));
+}
+.mc-block[data-kind="prep"],
+.mc-block[data-kind="dropout"] {
+  border-style: dashed;
+  background-color: transparent;
+}
+.mc-block[data-kind="output"] {
+  border: 2px solid var(--m);
+}
+.mc-arrow {
+  flex: none;
+  color: var(--paper-400);
 }

@@ -7,7 +7,7 @@ export function ArtifactImage({ src, alt, className }: { src: string; alt: strin
 
   if (failed) {
     return (
-      <div className={`flex items-center justify-center bg-panel2 border border-dashed border-white/15 rounded text-white/40 text-sm py-10 ${className ?? ""}`}>
+      <div className={`flex items-center justify-center bg-track-200 border border-dashed border-track-300 rounded text-paper-400 text-sm py-10 ${className ?? ""}`}>
         Artifact unavailable
       </div>
     );
