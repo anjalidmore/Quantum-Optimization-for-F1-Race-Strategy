@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tasks 7 &amp; 8 — Deep Learning and Explainable AI</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<nav class="doc-bar" aria-label="Documentation"><span class="mark" aria-hidden="true"></span>
+<strong>F1 Race Strategy Intelligence</strong>
+<a href="study_guide.html">Study guide (all documents)</a>
+<a href="../README.md">README</a></nav>
+<main class="doc-page prose">
+<h1 id="tasks-7--8--deep-learning-and-explainable-ai">Tasks 7 &amp; 8 — Deep Learning and Explainable AI</h1>
+<p>Two things in one file: <strong>what this project built</strong> (below) and the <strong>concepts and tools
+behind it</strong>, so any team member can be examined on them without reading the code.</p>
+<p>All measured results live in one place, the README sections
+<a href="../README.md#task-7--deep-learning-model-development">Task 7</a> and
+<a href="../README.md#task-8--explainable-artificial-intelligence-xai">Task 8</a>. They are not
+repeated here, so there is only ever one set of numbers to keep current.</p>
+<h2 id="0-what-we-built-and-where-it-lives">0. What we built, and where it lives</h2>
+<p>Task 7 trains one small Keras network per target on the same folds and the same holdout as
+Task 6's classical models, so the comparison is like-for-like. Task 8 trains nothing: it
+loads the saved network and explains it, using Task 6's selected model as a second opinion.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Deliverable</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trained networks (HDF5, reload-verified)</td>
+<td><code>artifacts/models/deep_learning/{laptime,pit_decision}/f1_dnn_model.h5</code></td>
+</tr>
+<tr>
+<td>Fitted scalers + feature spec</td>
+<td>same folders: <code>feature_scaler.joblib</code>, <code>target_scaler.joblib</code>, <code>model_spec.json</code></td>
+</tr>
+<tr>
+<td>Task 7 metrics, history, comparison</td>
+<td><code>artifacts/deep_learning/*.json</code>, <code>*/training_history.csv</code></td>
+</tr>
+<tr>
+<td>Task 7 curves and evaluation plots</td>
+<td><code>artifacts/deep_learning/{laptime,pit_decision}/*.png</code></td>
+</tr>
+<tr>
+<td>Task 7 reports</td>
+<td><code>artifacts/deep_learning/{evaluation_report,hyperparameter_report}.md</code></td>
+</tr>
+<tr>
+<td>Task 8 SHAP / LIME / counterfactuals</td>
+<td><code>artifacts/xai/{shap,lime,counterfactual}/</code></td>
+</tr>
+<tr>
+<td>Task 8 CSVs (importance, counterfactuals, trust, stratification)</td>
+<td><code>artifacts/xai/*.csv</code></td>
+</tr>
+<tr>
+<td>Task 8 reports</td>
+<td><code>artifacts/xai/*_Report.md</code>, <code>Explainability_Dashboard.md</code></td>
+</tr>
+<tr>
+<td>Machine-readable Task 8 results</td>
+<td><code>artifacts/xai/xai_metadata.json</code></td>
+</tr>
+<tr>
+<td>Registry</td>
+<td><code>artifacts/metadata/model_registry.json</code> (extended, not duplicated)</td>
+</tr>
+<tr>
+<td>API</td>
+<td><code>GET /api/dl/*</code>, <code>POST /api/dl/predict/{laptime,pit}</code>, <code>GET /api/xai/*</code></td>
+</tr>
+<tr>
+<td>Dashboard</td>
+<td>the Deep Learning and Explainability pages</td>
+</tr>
+</tbody>
+</table></div>
+<p>Model weights live under <code>artifacts/models/</code>, which the API does not serve.</p>
+<p>Rebuild or re-check:</p>
+<div class="hl"><pre><span></span><code>python<span class="w"> </span>scripts/build_all.py<span class="w">            </span><span class="c1"># Tasks 1-8; skips stages whose artifacts exist</span>
+python<span class="w"> </span>scripts/build_all.py<span class="w"> </span>--force<span class="w">    </span><span class="c1"># regenerate everything</span>
+python<span class="w"> </span>scripts/build_all.py<span class="w"> </span>--skip-dl<span class="w">  </span><span class="c1"># Tasks 1-6 only</span>
+pytest<span class="w"> </span>tests/test_dl_training.py<span class="w"> </span>tests/test_xai.py<span class="w"> </span>tests/test_dl_xai_api.py
+</code></pre></div>
+
+<p>Tasks 7 and 8 depend on Task 6, so <code>build_all.py</code> refuses to run them when Task 6 was
+skipped and has no artifacts, rather than comparing against nothing.</p>
+<p>Everything here is written to be defensible under follow-up questions. Where this
+project's real results contradict the textbook expectation, the textbook expectation is
+not what's written down.</p>
+<hr />
+<h2 id="1-concept-primers">1. Concept primers</h2>
+<h3 id="11-what-a-dnn--mlp-is-and-how-it-differs-from-task-6s-models">1.1 What a DNN / MLP is, and how it differs from Task 6's models</h3>
+<p>A <strong>multilayer perceptron</strong> is a stack of layers. Each layer computes
+<code>output = activation(W · input + b)</code> — a linear transform followed by a non-linearity.
+Stacking non-linear layers lets the network represent functions that no single linear
+transform can.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Task 6 classical</th>
+<th>Task 7 MLP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>How it fits</td>
+<td>Trees split on feature thresholds; linear models solve for coefficients</td>
+<td>Gradient descent on weights, iteratively</td>
+</tr>
+<tr>
+<td>Feature interactions</td>
+<td>Trees find them by splitting repeatedly; linear models need them hand-built</td>
+<td>Learned automatically in the hidden layers</td>
+</tr>
+<tr>
+<td>Scale sensitivity</td>
+<td>Trees are scale-<strong>invariant</strong></td>
+<td>Very sensitive — inputs <em>and</em> targets usually need standardising</td>
+</tr>
+<tr>
+<td>Data appetite</td>
+<td>Works well on hundreds of rows</td>
+<td>Typically needs thousands</td>
+</tr>
+<tr>
+<td>Training determinism</td>
+<td>Deterministic given a seed</td>
+<td>Deterministic given a seed, but sensitive to init and batch order</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>The honest headline for an examiner:</strong> a neural network's advantage is <em>representational
+capacity</em>, and capacity is only useful when you have enough data to constrain it. On a
+few hundred rows a random forest is often the better engineering choice, and that is a
+statement about the data, not about deep learning.</p>
+<h3 id="12-overfitting-and-the-three-countermeasures-used-here">1.2 Overfitting, and the three countermeasures used here</h3>
+<p><strong>Overfitting</strong> is when a model learns the training rows rather than the pattern behind
+them: training loss keeps falling while validation loss turns and rises. The gap between
+the two curves <em>is</em> the diagnostic.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Mechanism</th>
+<th>What it does</th>
+<th>Why it helps on small data</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Dropout</strong></td>
+<td>Randomly zeroes a fraction of units each training step</td>
+<td>Stops the network relying on any one unit; acts like averaging many thinner networks</td>
+</tr>
+<tr>
+<td><strong>L2 weight decay</strong></td>
+<td>Adds <code>λ·Σw²</code> to the loss</td>
+<td>Keeps weights small, so the fitted function stays smooth instead of contorting through every training point</td>
+</tr>
+<tr>
+<td><strong>Early stopping</strong></td>
+<td>Halts when validation loss stops improving, restores the best weights</td>
+<td>The cheapest regulariser there is — it uses the validation curve to pick the model <em>before</em> it started memorising</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>The number that frames all of this:</strong> parameters ÷ training rows. When a network has
+more parameters than examples, it <em>can</em> memorise the training set exactly, and only
+regularisation prevents it. This project's lap-time network is in that regime and the
+report says so explicitly rather than hiding it.</p>
+<h3 id="13-shap--shapley-values-conceptually">1.3 SHAP — Shapley values, conceptually</h3>
+<p>SHAP comes from <strong>cooperative game theory</strong>. Imagine the features are players
+cooperating to produce a prediction. The Shapley value of a player is its <strong>average
+marginal contribution across every possible order</strong> in which players could join the
+coalition.</p>
+<p>Formally, for feature <em>i</em>:</p>
+<div class="hl"><pre><span></span><code>φᵢ = Σ over subsets S not containing i:
+        [ |S|! · (n−|S|−1)! / n! ] · ( f(S ∪ {i}) − f(S) )
+</code></pre></div>
+
+<p>You do not need to reproduce that formula in an exam, but you should be able to say what
+it <em>does</em>: it averages "how much did adding this feature change the prediction?" over all
+orderings, weighting orderings so the result is fair.</p>
+<p>Shapley values are the unique attribution satisfying four axioms:</p>
+<ul>
+<li><strong>Local accuracy</strong> — attributions sum to <code>prediction − base_value</code>. This is the
+  guarantee LIME does not have.</li>
+<li><strong>Missingness</strong> — a feature not present gets zero attribution.</li>
+<li><strong>Consistency</strong> — if a model changes so a feature contributes more, its attribution
+  cannot go down.</li>
+<li><strong>Symmetry</strong> — two features that contribute identically get identical attributions.</li>
+</ul>
+<p><strong>The catch:</strong> exact computation is exponential in the number of features. That is why
+the choice of <em>explainer</em> matters so much (§2).</p>
+<h3 id="14-lime--and-precisely-how-it-differs-from-shap">1.4 LIME — and precisely how it differs from SHAP</h3>
+<p><strong>LIME</strong> = Local Interpretable Model-agnostic Explanations. To explain one prediction:</p>
+<ol>
+<li>Perturb the row many times (this project: 2000 perturbations).</li>
+<li>Ask the <strong>real</strong> model to predict on each perturbation.</li>
+<li>Weight each perturbation by how close it is to the original row.</li>
+<li>Fit a <strong>simple linear model</strong> to those weighted predictions.</li>
+<li>Report that linear model's coefficients as the explanation.</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>SHAP</th>
+<th>LIME</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Question</td>
+<td>How is credit for this prediction fairly divided?</td>
+<td>What simple model behaves like the real one <em>around here</em>?</td>
+</tr>
+<tr>
+<td>Basis</td>
+<td>Game theory (Shapley values)</td>
+<td>Local weighted linear regression</td>
+</tr>
+<tr>
+<td>Output</td>
+<td>Attribution per feature, in the model's output units</td>
+<td>Coefficients on (often discretised) conditions</td>
+</tr>
+<tr>
+<td>Guarantee</td>
+<td>Attributions sum to prediction − base</td>
+<td><strong>None</strong> — quality reported as the surrogate's R²</td>
+</tr>
+<tr>
+<td>Determinism</td>
+<td>Exact for trees; sampled otherwise</td>
+<td>Always sampled; needs a fixed seed</td>
+</tr>
+<tr>
+<td>Cost</td>
+<td>Cheap for trees, expensive otherwise</td>
+<td>Moderate, one model per explained row</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>The distinction an examiner will probe:</strong> SHAP is an <em>attribution</em> method with
+axiomatic guarantees; LIME is an <em>approximation</em> method that builds a surrogate. LIME's
+<code>local_r2</code> tells you whether the surrogate was any good — a low value means a straight
+line is a poor stand-in for the model near that row, so the explanation should be
+discounted however confident it looks. SHAP has no equivalent warning signal, which is
+exactly why using both and comparing them (as this project's trust score does) is more
+informative than using either alone.</p>
+<h3 id="15-counterfactual-explanations">1.5 Counterfactual explanations</h3>
+<p>A counterfactual answers: <strong>"what would have to be different for the outcome to change?"</strong>
+It is <em>contrastive</em> — the form human explanation naturally takes. "You were denied
+because your income is £28k; at £35k you would have been approved" is more useful than a
+list of attributions.</p>
+<p>Good counterfactuals are:</p>
+<ul>
+<li><strong>Actionable</strong> — change things that can actually change. Tyre age can change; a
+  driver's identity cannot.</li>
+<li><strong>Sparse</strong> — few features altered. "Change six things at once" is not an instruction.</li>
+<li><strong>Plausible</strong> — inside the data's observed range, not physically impossible values.</li>
+<li><strong>Diverse</strong> — several genuinely different routes, when several exist.</li>
+</ul>
+<p>Two families: <strong>optimisation-based</strong> (search for the nearest row crossing the boundary —
+DiCE) and <strong>perturbation/scan-based</strong> (sweep one feature and find the crossing). The
+second is less general but far more actionable, which is why this project reports both.</p>
+<h3 id="16-fairness--and-why-identity-features-are-the-specific-risk-here">1.6 Fairness — and why identity features are the specific risk here</h3>
+<p>"Fairness" usually means outcomes not depending unjustifiably on a protected attribute.
+This project is not making decisions about people's rights, so the framing is narrower
+and more concrete: <strong>is the model predicting from race state, or from who is driving?</strong></p>
+<p>Task 5's selection funnel retained one-hot <code>driver_*</code> and <code>team_*</code> dummies. A model
+leaning on those has learned "this driver's laps look like this" rather than "a tyre this
+old on a track this hot laps like this". Three concrete consequences:</p>
+<ol>
+<li>It <strong>cannot generalise</strong> to a driver it has not seen.</li>
+<li>It <strong>conflates car and driver</strong> — a driver's historical pace is mostly their car's.</li>
+<li>It would give <strong>two cars in an identical race state different calls</strong> purely because of
+   the name on the car.</li>
+</ol>
+<p>The measurement used here: identity features' share of total mean-|SHAP| attribution,
+divided by the share you would expect if attribution were spread evenly. A ratio above 1
+means identity is doing more work than its share of the feature count.</p>
+<hr />
+<h2 id="2-tool--framework-reference">2. Tool / framework reference</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>What it's for</th>
+<th>Why chosen over alternatives</th>
+<th>Where in this codebase</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Keras 3</strong></td>
+<td>High-level neural-network API</td>
+<td>Concise, readable model definition; the standard vocabulary an examiner expects (<code>Sequential</code>, <code>Dense</code>, <code>Dropout</code>, <code>EarlyStopping</code>, <code>model.fit</code>)</td>
+<td><code>app/intelligence/dl/models.py</code> — <code>build_regression_mlp</code>, <code>build_classification_mlp</code></td>
+</tr>
+<tr>
+<td><strong>PyTorch</strong> (as Keras backend)</td>
+<td>Tensor/autograd engine</td>
+<td><strong>TensorFlow publishes no wheel for Python 3.14</strong>, this project's interpreter. Keras 3 is backend-agnostic, so the same Keras code runs on torch. Setting <code>KERAS_BACKEND=tensorflow</code> on an older Python runs it unchanged.</td>
+<td><code>os.environ["KERAS_BACKEND"] = "torch"</code> at the top of <code>models.py</code></td>
+</tr>
+<tr>
+<td><strong><code>keras.callbacks.EarlyStopping</code></strong></td>
+<td>Stop before overfitting; restore best weights</td>
+<td>Built in, and <code>restore_best_weights=True</code> means the saved model is the best one seen, not the last one</td>
+<td><code>app/intelligence/dl/training.py</code> — <code>fit_fold</code></td>
+</tr>
+<tr>
+<td><strong><code>sklearn.preprocessing.StandardScaler</code></strong></td>
+<td>Standardise features and the regression target</td>
+<td>Fitted <strong>inside</strong> each fold, per the Task 5 contract, so validation statistics never leak into training</td>
+<td><code>training.scale_fit_transform</code></td>
+</tr>
+<tr>
+<td><strong>SHAP <code>TreeExplainer</code></strong></td>
+<td>Exact Shapley values for tree ensembles</td>
+<td>Polynomial-time and <em>exact</em> — free accuracy. Always prefer it when the model is a tree</td>
+<td><code>app/intelligence/xai/shap_analysis.py</code> — <code>tree_shap</code></td>
+</tr>
+<tr>
+<td><strong>SHAP <code>KernelExplainer</code></strong></td>
+<td>Model-agnostic sampled Shapley values</td>
+<td>Needs only a <code>predict</code> function, so it works on the Keras network. <code>DeepExplainer</code>'s Keras 3 support targets the TensorFlow backend, which is unavailable here</td>
+<td><code>shap_analysis.kernel_shap</code></td>
+</tr>
+<tr>
+<td><strong><code>shap.kmeans</code></strong></td>
+<td>Summarise the background distribution</td>
+<td>KernelExplainer's cost scales with background size; k-means keeps it tractable</td>
+<td><code>kernel_shap</code>, <code>k=25</code></td>
+</tr>
+<tr>
+<td><strong>LIME <code>LimeTabularExplainer</code></strong></td>
+<td>Local linear surrogates</td>
+<td>The standard tabular LIME implementation; <code>discretize_continuous=True</code> produces readable conditions like <code>tyre_life &gt; 12.00</code></td>
+<td><code>app/intelligence/xai/lime_analysis.py</code></td>
+</tr>
+<tr>
+<td><strong>DiCE (<code>dice_ml</code>)</strong></td>
+<td>Diverse whole-row counterfactuals</td>
+<td>The best-known counterfactual library; <code>method="random"</code> needs no gradients, so it works with any sklearn model</td>
+<td><code>app/intelligence/xai/counterfactual.py</code> — <code>dice_counterfactuals</code></td>
+</tr>
+<tr>
+<td><strong>Permutation importance</strong> (hand-rolled)</td>
+<td>Global importance, model-agnostic</td>
+<td><code>sklearn.inspection.permutation_importance</code> expects an estimator; this project needs to score a <strong>plain callable</strong> so the Keras network and the sklearn pipeline go through identical code</td>
+<td><code>app/intelligence/xai/importance.py</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="why-permutation-importance-rather-than-each-models-native-attribute">Why permutation importance rather than each model's native attribute</h3>
+<p>A tree's <code>feature_importances_</code> is mean impurity decrease. A linear model's is
+coefficient magnitude. A network has neither. These are <strong>not the same quantity</strong> and
+putting them side by side in one table would be meaningless. Permutation importance asks
+one question of any model — <em>how much worse does it get if I destroy this feature?</em> — in
+units of the evaluation metric. That is comparable across families by construction.</p>
+<hr />
+<h2 id="3-likely-evaluator-questions-with-model-answers">3. Likely evaluator questions, with model answers</h2>
+<p><strong>Q: Why expanding-window validation instead of K-fold?</strong>
+Because the data is a time-ordered driver × lap panel. Random K-fold would put lap 40 in
+training and lap 20 in validation, letting the model see the future of the race it is
+being scored on. Every score would be optimistic and none would predict deployed
+behaviour. Expanding-window folds train on laps 1…<em>k</em> and validate on laps <em>k+1</em>…, which
+is the situation a real strategy model is in. The Task 5 metadata states this as a
+contract — <code>"Do not use random K-fold - this is a time-ordered panel"</code> — and Task 7
+imports Task 6's <code>splits.py</code> directly rather than reimplementing it.</p>
+<p><strong>Q: Why might your DNN underperform the random forest here?</strong>
+Three reasons, in order of importance. (1) <strong>Data volume</strong> — under a thousand rows from a
+single race; the lap-time network has more parameters than training examples. (2)
+<strong>Inductive bias</strong> — tabular data with threshold-like structure (tyre age past a cliff,
+lap in a pit window) is exactly what axis-aligned splits capture natively and what a
+network has to learn from scratch. (3) <strong>Class imbalance</strong> for the pit target, where
+positives are a small fraction of laps. This is a well-documented result: gradient-boosted
+trees remain competitive with or better than deep networks on small-to-medium tabular
+problems.</p>
+<p><strong>Q: How do you know your SHAP explanation isn't misleading?</strong>
+Four independent guards. (1) The tree model uses <code>TreeExplainer</code>, which is <strong>exact</strong>, not
+sampled. (2) The network's <code>KernelExplainer</code> values are labelled approximate in the
+report, with <code>nsamples</code> recorded, and the report says to compare <strong>rank and sign</strong>, not
+magnitude. (3) LIME is computed on the same rows as an independent second opinion, and
+where the two disagree the <strong>trust score is reduced</strong> rather than one being silently
+preferred. (4) LIME's <code>local_r2</code> is reported, so a poor local surrogate is visible.
+Beyond that: SHAP explains what the <strong>model</strong> does, not what is <strong>true</strong> — a model that
+learned a spurious correlation will get a faithful explanation of that spurious
+correlation. That is precisely why the fairness assessment exists.</p>
+<p><strong>Q: Why is your target standardised but your binary features aren't?</strong>
+The regression target has mean ≈ 91 s but standard deviation ≈ 0.56 s. A linear output
+head initialised near zero, trained under MSE with L2 decay, cannot climb to 91 within
+any reasonable epoch budget — an early run of this project produced an MAE of 29 seconds
+and an R² of −5949 for exactly that reason. Standardising the target (fitted on training
+rows only, inverted before any metric) fixes it. Binary indicators are left alone because
+standardising a 0/1 dummy destroys its interpretability without helping the optimiser.</p>
+<p><strong>Q: How do you know the saved <code>.h5</code> file is the model you trained?</strong>
+Under Keras 3, HDF5 is a legacy format. An earlier version of this project could not reload its <code>.h5</code> file
+(<code>Could not deserialize 'keras.metrics.mse'</code>) and shipped <code>.keras</code> instead. The fix: recompile with a
+standard loss and metric just before saving. Recompiling does not change the weights, and a file that needs
+the project's custom class-weighted loss to deserialise is one nobody else can open. <code>persistence.save</code>
+then reloads the file with <code>compile=False</code> and <strong>refuses to continue</strong> unless the reloaded model reproduces
+the in-memory predictions (tolerance 1e-6). The result is recorded as <code>reload_verified</code> in the evaluation
+report.</p>
+<p><strong>Q: What would you change with more data?</strong>
+In priority order. (1) <strong>More sessions</strong> — hold out whole <em>races</em>, not the tail of one
+race; that alone would fix the biggest weakness in the evaluation. (2) <strong>Sequence models</strong>
+— an LSTM/GRU or temporal transformer over stint history, since lap time is a sequence
+problem currently flattened into per-lap rows. (3) <strong>Threshold tuning and class weighting</strong>
+for the pit classifier, chosen on validation folds rather than defaulting to 0.5. (4)
+<strong>Drop the identity features</strong> and check whether performance survives — if it does, the
+model generalises to new drivers; if it collapses, that is itself the finding.</p>
+<p><strong>Q: Is your trust score principled or arbitrary?</strong>
+The three <strong>components</strong> are principled: distance from the decision boundary, agreement
+between two independently-trained model families, and agreement between two independent
+explanation methods. Each captures a distinct, real failure mode. The <strong>weights</strong>
+(0.35/0.25/0.20/0.20, with input validity as a fourth component) are a documented judgement, not a
+derivation. Confidence carries the largest share because a prediction on the boundary is unusable
+regardless of explanation quality. For lap time there is no boundary, so confidence is left out and the
+rest renormalised. Checked against outcomes on the 180 test laps, the score did <strong>not</strong> track lap-time
+error (Spearman −0.09): a finding to state, not hide. They are exposed as <code>app.intelligence.xai.trust.WEIGHTS</code> precisely so they can be
+challenged. The honest framing: the score is a structured summary of three real signals,
+not a calibrated probability, and the bands are deliberately conservative.</p>
+<p><strong>Q: Why did DiCE need a timeout?</strong>
+Its random search samples the feature space until it finds an opposite-class row. With
+pit events at roughly 5% of laps, an early run sampled for <strong>15 minutes and returned
+nothing</strong>. It is now bounded to 60 seconds, queried from the row closest to the decision
+boundary (where a flip is most likely reachable), and restricted to each feature's
+observed training range. An unbounded search that produces no answer is worse than a
+bounded one that says it ran out of budget.</p>
+<p><strong>Q: Your counterfactual says "not reachable". Isn't that a failure?</strong>
+It's a result. Sweeping tyre age across its entire observed range with the rest of the
+race state fixed never crosses the decision threshold — which tells you the decision is
+driven by <strong>combinations</strong> of features rather than tyre age alone. Reporting that, with
+the range searched, is more useful than reporting a number from a search that didn't
+actually find anything.</p>
+<p><strong>Q: What does a negative R² mean here specifically?</strong>
+R² ≤ 0 means the model does worse than always predicting the training mean. It is not a
+bug and it is not impossible — it happens when a model extrapolates badly to a test
+regime unlike its training data. Here the holdout is the final laps of a single race,
+where fuel load and tyre state differ substantially from earlier laps. The correct
+reading is "this model does not extrapolate to late-race conditions", not "the code is
+broken". Note also that model selection uses <strong>cross-validated</strong> MAE, where the model is
+positive — so the selection procedure is sound even where the holdout number is poor.</p>
+<hr />
+<h2 id="4-quick-reference-cheat-sheet">4. Quick-reference cheat sheet</h2>
+<h3 id="architectures">Architectures</h3>
+<div class="hl"><pre><span></span><code>LAP-TIME REGRESSION                 PIT-DECISION CLASSIFICATION
+input (45 features)                 input (8 features)
+   ↓ Dense(128, relu) + L2 1e-3        ↓ Dense(16, relu) + L2 1e-4
+   ↓ Dropout(0.2)                      ↓ Dropout(0.3)
+   ↓ Dense(64, relu) + L2              ↓ Dense(8, relu) + L2
+   ↓ Dropout(0.2)                      ↓ Dropout(0.3)
+   ↓ Dense(32, relu) + L2              ↓ Dense(1, SIGMOID)
+   ↓ Dropout(0.2)
+   ↓ Dense(1, LINEAR)
+loss = MSE, RMSprop, batch 16       loss = binary cross-entropy, RMSprop, batch 32
+16,257 parameters                   289 parameters
+target STANDARDISED (train only)    class weighting: tried, inside the loss;
+                                    lost on CV PR-AUC, so not used
+                                    (fit(class_weight=) is ignored on this
+                                    Keras/torch install - measured)
+                                    decision threshold 0.1524 (tuned on OOF CV)
+</code></pre></div>
+
+<p>Both: early stopping on <code>val_loss</code>, patience 20, <code>restore_best_weights=True</code>, validating on laps 39–46
+(after the training laps 4–38, never inside them). Hyperparameters chosen by a one-factor-at-a-time
+search over the expanding-window folds; every value tried is in <code>artifacts/deep_learning/hyperparameter_report.csv</code>.</p>
+<h3 id="the-trust-score">The trust score</h3>
+<div class="hl"><pre><span></span><code>trust = Σ wₖ·componentₖ / Σ wₖ over the components that apply
+  0.35 · confidence            (p − t)/(1 − t) above the tuned threshold t, (t − p)/t below
+                               (not used for lap time: no decision point)
+  0.25 · model_agreement       1 − |p_dnn − p_classical|   (or 1 − gap/σ for regression)
+  0.20 · explanation_stability Jaccard(SHAP top-3, LIME top-3)
+  0.20 · input_validity        share of inputs inside the training 1st–99th percentile
+
+≥0.75 HIGH  ·  0.50–0.75 MODERATE  ·  0.25–0.50 LOW  ·  &lt;0.25 DO NOT ACT
+</code></pre></div>
+
+<h3 id="fairness-measurement">Fairness measurement</h3>
+<div class="hl"><pre><span></span><code>identity_share      = Σ mean|SHAP| over driver_*/team_*  ÷  Σ mean|SHAP| over all
+expected_if_uniform = n_identity_features ÷ n_features
+concentration       = identity_share ÷ expected_if_uniform
+
+concentration &gt; 1  → identity over-weighted relative to its feature count
+concentration &lt; 1  → race-state features dominate (the desired outcome)
+</code></pre></div>
+
+<h3 id="explainer-decision-table">Explainer decision table</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Model type</th>
+<th>Explainer</th>
+<th>Exact?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tree ensemble</td>
+<td><code>shap.TreeExplainer</code></td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Keras / any callable</td>
+<td><code>shap.KernelExplainer</code></td>
+<td>No — sampled</td>
+</tr>
+<tr>
+<td>Any (local surrogate)</td>
+<td><code>LimeTabularExplainer</code></td>
+<td>No — surrogate, check <code>local_r2</code></td>
+</tr>
+<tr>
+<td>Any (global)</td>
+<td>permutation importance</td>
+<td>Exact given enough repeats</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="the-one-line-answers">The one-line answers</h3>
+<ul>
+<li><strong>Why not K-fold?</strong> Time-ordered panel; K-fold leaks the future.</li>
+<li><strong>Why standardise the target?</strong> σ = 0.56 s around a mean of 91 s; a linear head can't reach 91.</li>
+<li><strong>How is the <code>.h5</code> verified?</strong> Recompiled with a standard loss before saving, then reloaded and required to reproduce the predictions exactly.</li>
+<li><strong>Why permutation importance?</strong> The only metric comparable across a forest and a network.</li>
+<li><strong>Why <code>TreeExplainer</code> for one model and <code>KernelExplainer</code> for the other?</strong> Exact when possible, model-agnostic when necessary.</li>
+<li><strong>Why both SHAP and LIME?</strong> Their disagreement is a signal, and the trust score uses it.</li>
+</ul>
+<hr />
+<h1 id="appendix-a--engineering-concepts-from-the-phase-1-remediation">Appendix A — Engineering concepts from the Phase 1 remediation</h1>
+<p>Added while closing the security and test-infrastructure entries in <code>TODO.md</code>. Same
+format as the primers above: the concept first, then <strong>how it showed up here and what we
+did about it</strong> — so each one can be explained from real evidence rather than theory.</p>
+<h2 id="a1-test-hermeticity">A.1 Test hermeticity</h2>
+<p><strong>The concept.</strong> A test is <em>hermetic</em> if running it leaves the world exactly as it found
+it: same files, same database, same clock-independent result. Non-hermetic tests fail in
+three characteristic ways:</p>
+<ol>
+<li><strong>Order dependence</strong> — test B passes only because test A ran first and left something
+   behind.</li>
+<li><strong>Repeat-run divergence</strong> — the second run differs from the first.</li>
+<li><strong>State pollution</strong> — the test mutates something a human cares about, outside the test.</li>
+</ol>
+<p>The third is the sneakiest, because nothing fails. Everything is green while the test is
+quietly editing your source of truth.</p>
+<p><strong>How it showed up here.</strong> Running <code>pytest</code> retrained Task 6 and overwrote <strong>ten tracked
+files</strong> under <code>artifacts/</code> — four metrics JSON, four Markdown reports, <code>manifest.json</code> and
+<code>model_registry.json</code>. A clean clone went dirty just from running the documented test
+command.</p>
+<p>Two concrete harms followed, and the second one actually happened:</p>
+<ul>
+<li>It <strong>trains contributors to run <code>git checkout -- artifacts/</code> reflexively</strong>, which is
+  precisely how a real artifact change gets discarded by accident.</li>
+<li>It <strong>destroyed data.</strong> Task 7 extends the <em>shared</em> model registry; Task 6's
+  <code>write_registry</code> overwrote that file wholesale. So running the test suite deleted Task
+  7's registry rows, leaving <code>/api/dl/models</code> returning 404 while the <code>.keras</code> files sat
+  untouched on disk. A test suite deleted production metadata, and nothing went red.</li>
+</ul>
+<p><strong>What we did.</strong> Added <code>ArtifactPaths</code> to <code>app/core/paths.py</code> — one frozen dataclass
+resolving every output location from a single root — and gave <code>train_all()</code> / <code>run_all()</code>
+an optional <code>output_root</code> that defaults to the committed layout. Production behaviour is
+byte-identical; the tests pass a <code>tmp_path</code>. Then we proved it the only way that counts:
+applied the change to a fresh clone and ran the suite <strong>twice</strong>, confirming
+<code>git status --porcelain artifacts/</code> was empty both times.</p>
+<p><strong>The structural lesson.</strong> We also added a CI step that fails if <code>git status --porcelain</code>
+is non-empty after <code>pytest</code>. That is the difference between hermeticity as a <em>convention</em>
+(which decays as soon as someone is in a hurry) and as an <em>invariant</em> (which cannot decay
+without the build going red). Prefer the second whenever you can express the property
+mechanically.</p>
+<blockquote>
+<p><strong>Likely question: "your tests write files — isn't that an integration test, not a unit
+test?"</strong> Yes, deliberately. Task 6's tests train real models and assert on real metrics;
+mocking them would test the mock. The problem was never that they write, it was <em>where</em>
+they wrote. Redirecting the output root keeps the integration value and removes the
+pollution.</p>
+</blockquote>
+<h2 id="a2-why-a-cors-wildcard-is-dangerous-even-just-locally">A.2 Why a CORS wildcard is dangerous even "just locally"</h2>
+<p><strong>The concept.</strong> The <strong>same-origin policy</strong> stops a page on <code>evil.com</code> reading responses
+from <code>yourbank.com</code>. <strong>CORS</strong> is the server's way of making exceptions:
+<code>Access-Control-Allow-Origin</code> names who may read the response. <code>allow_origins=["*"]</code> says
+<em>everyone</em>.</p>
+<p>The dangerous misconception is "it's fine, it's only on localhost." Your browser can reach
+<code>127.0.0.1</code> perfectly well, and so can any page you happen to have open. A tab on some
+unrelated site can issue <code>fetch('http://127.0.0.1:8000/api/...')</code> and, with a wildcard,
+<strong>read the response</strong>. Localhost is not a security boundary in a browser; the origin
+policy is, and a wildcard removes it.</p>
+<p>Two related points worth knowing:
+- Wildcard origins and credentialed requests are mutually exclusive by spec — the browser
+  refuses <code>allow_origins=["*"]</code> together with cookies. That is a hint that <code>*</code> was never
+  meant for anything holding data you care about.
+- <code>allow_methods=["*"]</code> and <code>allow_headers=["*"]</code> widen it further, permitting
+  content types that would otherwise trigger a preflight the server could refuse.</p>
+<p><strong>How it showed up here.</strong> <code>app/api/main.py</code> had all three wildcards, <em>and</em> mounted the
+entire <code>artifacts/</code> tree at <code>/artifacts</code> — including <code>artifacts/models/</code>. Combined, any
+page in the developer's browser could have enumerated and downloaded every trained model
+(<code>.joblib</code>, <code>.keras</code>) from the running API. Neither issue is severe alone; together they
+are exfiltration-by-default.</p>
+<p><strong>What we did.</strong> An env-configured origin allow-list defaulting to <code>localhost:3000</code>,
+methods narrowed to <code>GET, POST</code>, headers to <code>Content-Type</code>. Separately, only the six
+directories the dashboard actually reads are mounted; <code>models/</code> and <code>metadata/</code> have no
+route at all.</p>
+<p><strong>The design lesson — structural over filtered.</strong> We could have kept one mount and
+filtered requests for <code>models/</code>. Instead there is simply <em>no route</em>. A filter is code that
+can be bypassed by a path the author did not imagine (<code>../</code>, percent-encoding, symlinks);
+an absent route cannot be. When you can express a restriction as "this does not exist"
+rather than "this is checked", do. We wrote a test firing traversal attempts at the
+boundary to confirm it.</p>
+<h2 id="a3-what-a-supply-chain-advisory-actually-tells-you">A.3 What a supply-chain advisory actually tells you</h2>
+<p><strong>The concept.</strong> <code>pip-audit</code> and <code>npm audit</code> compare your resolved dependency tree against
+vulnerability databases (PyPI Advisory / OSV, and the GitHub Advisory Database). They
+answer exactly one question: <em>does a package version in your tree appear in an advisory?</em></p>
+<p>What they emphatically do <strong>not</strong> tell you:
+- <strong>Whether you are exploitable.</strong> An advisory about a code path you never call is still
+  reported. Reachability analysis is a different, harder problem.
+- <strong>Whether the fix is safe.</strong> <code>fixAvailable</code> may be a major version with breaking changes.
+- <strong>Whether you are actually safe when clean.</strong> A clean report means "nothing <em>known</em>
+  matches", not "no vulnerabilities".</p>
+<p>The useful mental model: an audit is a <strong>smoke detector, not a fire inspection</strong>. Act on
+it, but read the finding before you act.</p>
+<p><strong>How it showed up here — two findings with opposite conclusions.</strong></p>
+<p><em>Python.</em> <code>pip-audit</code> flagged <strong>msgpack 1.1.2</strong> (PYSEC-2026-3625), reaching us
+transitively via <code>fastf1 → signalrcore</code>. Pinning <code>msgpack&gt;=1.2.1</code> cleared it. But the fix
+had a <strong>cost the audit did not mention</strong>: <code>signalrcore</code> 1.0.2 hard-pins
+<code>msgpack==1.1.2</code>, so pip silently resolved <em>signalrcore itself</em> down from 1.0.2 to 0.8.8.
+We accepted it after checking <code>pip check</code>, confirming <code>fastf1.livetiming.SignalRClient</code>
+still imports, and noting this project reads historical sessions rather than live timing —
+and we wrote all of that into <code>requirements.txt</code> so the next person inherits the reasoning
+rather than a mystery pin. <strong>A transitive fix can move packages you did not name. Always
+look at what actually got installed.</strong></p>
+<p><em>JavaScript.</em> <code>npm audit</code> reported 5 high-severity advisories (Next.js SSRF, cache
+poisoning, unauthenticated disclosure of internal endpoints; postcss XSS and arbitrary
+file read). Here the correct engineering answer was <strong>not to fix it immediately</strong>:
+14.2.35 is already the latest 14.2.x, and <code>npm audit --json</code> shows the only <code>fixAvailable</code>
+is <code>next@16.3.4</code> with <code>isSemVerMajor: true</code>. A two-major-version bump is a migration to
+plan, not a reflex — so we made it <em>visible</em> (a non-gating CI step) and escalated the
+decision instead of pretending it away.</p>
+<p><strong>The judgment lesson.</strong> Two advisories, two different right answers. "Make the tool go
+quiet" is not the goal; understanding what each finding costs to fix, and being honest
+when you choose not to fix one yet, is.</p>
+<blockquote>
+<p><strong>Likely question: "your CI has <code>continue-on-error</code> on npm audit — isn't that just
+disabling the check?"</strong> No, and the distinction matters. The check still runs and still
+prints on every PR; what it does not do is block merges on something whose only remedy
+is a major migration. A gate you cannot satisfy gets bypassed permanently within a week;
+a visible warning with a tracked decision does not. The workflow comment says to remove
+the flag once the upgrade lands, so it is a marked temporary state rather than a
+quietly-weakened check.</p>
+</blockquote>
+<h2 id="a4-a-note-on-settingwithcopywarning--and-why-the-obvious-fix-was-wrong">A.4 A note on <code>SettingWithCopyWarning</code> — and why the obvious fix was wrong</h2>
+<p><strong>The concept.</strong> In pandas, indexing sometimes returns a <strong>view</strong> onto the original frame
+and sometimes a <strong>copy</strong> — and which one you get is not always predictable. So when you
+assign into the result of a previous index, pandas cannot promise the write reaches the
+original data, and warns. It is a <em>correctness</em> warning, not style: your assignment may
+silently do nothing.</p>
+<p><strong>How it showed up here.</strong> <code>clean_table()</code> took a frame, and callers passed slices of
+larger tables. Every column assignment warned — 5 sites, contributing to a 1,084-warning
+test run in which real signal was invisible.</p>
+<p><strong>The fix, and the trap.</strong> The backlog said to use <code>.loc[:, col] = …</code>. We tried it and it
+<strong>broke three tests</strong>. Here is why, and it is worth understanding:</p>
+<ul>
+<li><code>df[col] = values</code> <strong>replaces the column</strong>, including its dtype.</li>
+<li><code>df.loc[:, col] = values</code> assigns <strong>in place</strong>, <em>preserving the existing dtype</em>.</li>
+</ul>
+<p>The pipeline's whole job at that point is dtype-changing coercion — object → numeric,
+strings → seconds, object → datetime. Under <code>.loc</code>, those coercions silently became
+no-ops: the values were cast straight back to the original dtype. The warning went away
+and the function stopped working.</p>
+<p>The actual fix was one line — <code>df = df.copy()</code> at the top. The function's contract is to
+<em>return</em> a cleaned frame, so it should never have written through to the caller's data in
+the first place. Owning the frame removes the ambiguity at the source.</p>
+<p><strong>Two lessons, both general.</strong>
+1. <strong>A warning-suppression that changes behaviour is a bug, not a fix.</strong> If silencing a
+   warning also silences your logic, you have made things worse while making them look
+   better. This is only catchable if your tests assert on <em>behaviour</em> (dtypes, computed
+   moments) rather than on "it ran".
+2. <strong>Turn a fixed class of bug into an error.</strong> <code>pyproject.toml</code> now has
+   <code>filterwarnings = ["error::pandas.errors.SettingWithCopyWarning"]</code>. Once you have paid
+   to fix something, spend the extra minute making it impossible to reintroduce.</p>
+<hr />
+<h1 id="appendix-b--model-quality-concepts-from-the-phase-2-remediation">Appendix B — Model-quality concepts from the Phase 2 remediation</h1>
+<p>Added while fixing two "high ROC-AUC, useless in practice" classifiers and a regressor
+that lost to the mean out of sample. As in Appendix A: the concept, then <strong>what it looked
+like here</strong>.</p>
+<h2 id="b1-why-roc-auc-is-misleading-under-severe-class-imbalance">B.1 Why ROC-AUC is misleading under severe class imbalance</h2>
+<p><strong>The concept.</strong> ROC-AUC plots the true-positive rate against the <strong>false-positive rate</strong>
+across every threshold. The trap is in the denominator of that second term: FPR is
+<code>FP / (FP + TN)</code>, and when negatives massively outnumber positives, <code>TN</code> is enormous. A
+model can raise hundreds of false alarms and barely move FPR at all.</p>
+<p>Concretely, at a 4.8% positive rate: 947 negatives, 48 positives. Flag 50 extra negatives
+and FPR rises by 50/947 ≈ 0.05 — visually nothing on the curve. But precision has just
+been destroyed, because you flagged 50 wrong laps to catch a handful of right ones.</p>
+<p>ROC-AUC also has a probabilistic reading that makes its limits obvious: it is the chance
+that a randomly-chosen positive is ranked above a randomly-chosen negative. That is a
+statement about <strong>ranking</strong>, and it says nothing about whether any threshold produces a
+usable decision.</p>
+<p><strong>What it looked like here.</strong> Task 6's <code>random_forest</code>: test ROC-AUC <strong>0.98</strong>, and
+precision <strong>0.04</strong>. Task 7's network: ROC-AUC <strong>0.92</strong>, accuracy <strong>99.4%</strong>, and F1,
+precision and recall all exactly <strong>0.0</strong> — it predicted "never pit" for all 180 test laps.
+Both would have been reported as successes by ROC-AUC alone.</p>
+<p><strong>What we did.</strong> Made <strong>CV PR-AUC</strong> the primary selection metric in both
+<code>ml/selection.py</code> and <code>dl/tuning.py</code>, and put it first in the dashboard tables with a note
+explaining why.</p>
+<blockquote>
+<p><strong>Likely question: "so is ROC-AUC useless?"</strong> No — it is the right metric when classes
+are roughly balanced, or when you genuinely care about ranking rather than a decision
+(triage ordering, for instance). It is the wrong <em>headline</em> for a rare-event decision
+problem. We still report it as a secondary metric, because "this model ranks well but
+cannot be thresholded usefully" is itself a diagnosis worth being able to state.</p>
+</blockquote>
+<h2 id="b2-what-pr-auc-actually-measures">B.2 What PR-AUC actually measures</h2>
+<p><strong>The concept.</strong> The precision–recall curve plots precision against recall across
+thresholds; PR-AUC (also called average precision) is the area under it. Neither axis
+involves true negatives, so the vast majority class cannot flatter the score.</p>
+<p>The single most useful fact about PR-AUC, and the one most often omitted: <strong>its baseline
+is the positive rate, not 0.5.</strong> A random ranker scores ROC-AUC 0.5 regardless of
+prevalence, but scores PR-AUC ≈ prevalence. So "PR-AUC 0.38" means nothing on its own —
+you must know the base rate to interpret it.</p>
+<p><strong>What it looked like here.</strong> Prevalence 4.8%, so a random ranker scores ≈0.048.
+Task 6's <code>random_forest</code> scored CV PR-AUC <strong>0.3863</strong> — about <strong>8× better than chance</strong>,
+which is genuinely respectable and completely invisible in the ROC-AUC number. On the
+<code>task-mode</code> synthetic data the same computation scored <strong>0.0694</strong> against a 0.048 baseline:
+barely above chance, and the practical's README now says so in exactly those terms rather
+than quoting a ROC-AUC that flatters it.</p>
+<p><strong>The habit to take away.</strong> Always quote PR-AUC next to its baseline. "PR-AUC 0.07" and
+"PR-AUC 0.07 against a chance baseline of 0.05" are the same number and completely
+different claims.</p>
+<h2 id="b3-threshold-tuning-and-why-05-is-an-arbitrary-default">B.3 Threshold tuning, and why 0.5 is an arbitrary default</h2>
+<p><strong>The concept.</strong> A classifier outputs a probability; a decision needs a cut-off.
+<code>sklearn</code>'s <code>predict()</code> uses 0.5, which is <strong>provably optimal only when</strong> the classes are
+balanced <em>and</em> a false positive costs exactly as much as a false negative. Neither
+condition is common, and neither holds here.</p>
+<p>Two independent reasons 0.5 fails in this project:
+1. <strong>Imbalance.</strong> With 4.8% positives, a well-calibrated model's probabilities cluster far
+   below 0.5 for almost every row. The threshold sits outside the range where the model
+   actually discriminates.
+2. <strong>Asymmetric costs.</strong> Missing a pit window costs a driver track position and a ruined
+   stint; an unnecessary early stop costs a few seconds. Treating those as equal is a
+   modelling choice nobody made deliberately.</p>
+<p><strong>How to do it without cheating.</strong> The threshold is a hyperparameter, and tuning a
+hyperparameter on the test set is leakage in exactly the ordinary way. We tune it on
+<strong>pooled out-of-fold predictions</strong>: each validation fold's predictions come from a model
+that had not seen those rows, and pooling all four folds gives 635 predictions with 36
+positives instead of the 6–11 a single fold offers.</p>
+<p><strong>What it looked like here.</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Task 6 best (OOF)</th>
+<th style="text-align: right;">Task 7 DNN (OOF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1 @ 0.5</td>
+<td style="text-align: right;">0.2381</td>
+<td style="text-align: right;"><strong>0.0000</strong></td>
+</tr>
+<tr>
+<td>F1 @ tuned</td>
+<td style="text-align: right;"><strong>0.2921</strong></td>
+<td style="text-align: right;"><strong>0.3143</strong></td>
+</tr>
+<tr>
+<td>Threshold</td>
+<td style="text-align: right;">0.480</td>
+<td style="text-align: right;">0.1189</td>
+</tr>
+</tbody>
+</table></div>
+<p>The network's case is the vivid one: a model whose F1 was <em>exactly zero</em> — because every
+predicted probability fell below 0.5 — became usable without a single weight changing.
+Nothing was retrained. The model was always able to rank; it was never able to decide.</p>
+<p><strong>One number that looks like a regression and is not.</strong> The network's test accuracy fell
+from 0.9944 to 0.8556. That is the fix working: it now fires on ~14% of laps instead of
+none. 99.4% accuracy from a model that always says "no" is the class-imbalance illusion,
+not a result.</p>
+<blockquote>
+<p><strong>Likely question: "did tuning the threshold improve your test F1?"</strong> No, and this is
+worth being precise about. Our holdout contains <strong>one positive example in 180 rows</strong>, so
+test-set precision/recall/F1 there are a coin flip, not evidence. The improvement is
+measured out of fold, on 36 positives, which is the only place it <em>can</em> be measured
+honestly. Claiming a test-set improvement would have been claiming signal from a single
+sample.</p>
+</blockquote>
+<h2 id="b4-probability-calibration-and-why-calibratedclassifiercv-exists">B.4 Probability calibration, and why <code>CalibratedClassifierCV</code> exists</h2>
+<p><strong>The concept.</strong> A model is <strong>calibrated</strong> if its probabilities mean what they say: among
+rows it scores 0.7, about 70% should be positive. Ranking and calibration are independent
+— a model can rank perfectly while being badly calibrated (every probability squashed into
+[0.0, 0.3], say), which is precisely how you end up with F1 = 0 at a 0.5 cut-off.</p>
+<p>SVMs are the classic example: they optimise a margin, not a likelihood, so their decision
+function is not a probability at all. <code>SVC(probability=True)</code> retrofits one via <strong>Platt
+scaling</strong> — fitting a logistic regression to the decision values on internal
+cross-validation folds. <code>CalibratedClassifierCV</code> does the same thing as an explicit,
+inspectable wrapper (and also offers isotonic regression, a non-parametric alternative
+that needs more data).</p>
+<p><strong>What it looked like here.</strong> <code>SVC(probability=True)</code> is deprecated in scikit-learn 1.9
+and <strong>removed in 1.11</strong> — combined with unpinned dependencies, Task 6 would have broken on
+a routine <code>pip install</code> with no code change on our side. We replaced it with
+<code>CalibratedClassifierCV(SVC(), ensemble=False, cv=3)</code>. Metrics were essentially unchanged
+(CV PR-AUC 0.3316 → 0.3321), which is what a correct calibration swap should look like:
+the deprecation was the reason to move, not a performance claim.</p>
+<p><strong>Why the explicit form is better anyway.</strong> The calibration becomes a visible pipeline
+step you can inspect, swap for isotonic, or reason about — rather than behaviour hidden
+inside <code>SVC</code>'s constructor.</p>
+<p><strong>The connection to B.3.</strong> Calibration and threshold tuning solve <em>different halves of the
+same problem</em>. Calibration makes the probabilities meaningful; threshold tuning picks
+where to cut them. A well-calibrated model with a bad threshold is still a bad decision
+rule, and vice versa. This project now does both. Task 10's reliability diagrams and
+Brier score are how you'd <em>measure</em> the first half — which is why that entry pairs
+naturally with this work.</p>
+<h2 id="b5-what-a-negative-r²-actually-tells-you">B.5 What a negative R² actually tells you</h2>
+<p><strong>The concept.</strong> R² = 1 − (SS_residual / SS_total). The denominator is the error of the
+dumbest possible model: <strong>always predict the mean</strong>. So R² is not "correlation squared"
+and it is not bounded below by zero — on data the model did not fit, it can go arbitrarily
+negative.</p>
+<p>In plain terms: <strong>R² &lt; 0 means the model does worse than guessing the average.</strong></p>
+<p>That is not an exotic failure. It is what extrapolation failure looks like: a model fitted
+in one regime, evaluated in another, confidently producing predictions that are worse than
+no model at all.</p>
+<p><strong>What it looked like here.</strong> Task 6's <code>decision_tree</code> won on CV MAE (1.1898, CV R²
++0.34) and scored test R² <strong>−0.1669</strong>. Not a bug — the holdout is the <em>closing laps of a
+single race</em>, where fuel load is low and tyres are old, a regime under-represented in
+training. Meanwhile <code>svr</code> scored test R² <strong>+0.3023</strong> and was not selected, because
+selection looked only at CV.</p>
+<p><strong>What we did.</strong> Added a <strong>generalisation guard</strong> to <code>ml/selection.py</code>: refuse to select a
+negative-R² model when a positive-R² candidate exists, and record <em>why</em> the CV ranking was
+overridden as a named warning in the selection report.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Selected</td>
+<td>decision_tree</td>
+<td><strong>svr</strong></td>
+</tr>
+<tr>
+<td>Test R²</td>
+<td><strong>−0.1669</strong></td>
+<td><strong>+0.3023</strong></td>
+</tr>
+<tr>
+<td>Test MAE</td>
+<td>0.8673</td>
+<td><strong>0.7815</strong></td>
+</tr>
+<tr>
+<td>CV MAE</td>
+<td>1.1898</td>
+<td>1.3813</td>
+</tr>
+</tbody>
+</table></div>
+<p>The CV MAE is <em>worse</em>, and that is the trade made explicitly.</p>
+<blockquote>
+<p><strong>Likely question: "isn't selecting on the test set exactly the leakage you warned
+about?"</strong> A fair challenge, and the design answers it narrowly. The guard does not
+<em>rank</em> by test R² — it uses it as a single binary veto ("does this model beat the
+mean?"), and among the survivors the original CV ranking still decides. A test asserts
+this: given a broken CV winner, a positive-R² model with better CV MAE, and another with
+far better test R², it must pick the first of those two. There is real tension here —
+any use of the holdout costs some independence — but a <em>fully</em> independent selection that
+ships a model known to be worse than the mean is not the safer option. The honest framing
+is that CV and holdout disagreeing this badly is itself the finding, and the right fix is
+more races (Appendix B.6), not a cleverer rule.</p>
+</blockquote>
+<h2 id="b6-a-methodological-note-what-your-holdout-is-actually-asking">B.6 A methodological note: what your holdout is actually asking</h2>
+<p>This is the thread running through all of Phase 2, and the most transferable idea in it.</p>
+<p><code>chronological_holdout</code> reserves the last 20% of <strong>laps within one race</strong>. That is a
+legitimate split, but it answers a specific question: <em>can the model extrapolate to the
+end of a race it has already seen most of?</em></p>
+<p>The question that matters for deployment is different: <em>can it predict a race it has never
+seen?</em> A lap-level split cannot answer that, because track, weather and tyre allocation are
+constant across the boundary — the model has seen those conditions, just at earlier laps.</p>
+<p>This one distinction explains three separate symptoms we spent the phase chasing:
+- the negative test R² (late-race fuel/tyre regime is under-represented in training);
+- the 1-positive holdout that makes classification metrics uninterpretable (pit events
+  cluster early-to-mid race, so the tail has almost none);
+- CV and holdout disagreeing on which model is best.</p>
+<p>They are not three bugs. They are one evaluation design, seen from three angles.</p>
+<p>We wrote a race-level holdout during that phase and later removed it again: with a
+single committed session there is nothing to hold out at race level, so the function could
+only raise, and unused code that nobody can demonstrate is a liability in a small project.
+The distinction above is the part worth keeping. Re-add the split at the point the dataset
+actually has several races — it is a dozen lines, and <code>chronological_holdout</code> shows the
+shape.</p>
+<blockquote>
+<p><strong>Likely question: "what would you do first with more time?"</strong> Fetch five to ten more
+2023 sessions and re-run with the race-level holdout. It addresses the negative R², the
+uninterpretable classification metrics, and the CV/holdout disagreement simultaneously —
+because all three are the same problem.</p>
+</blockquote>
+</main>
+</body>
+</html>

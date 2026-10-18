@@ -11,9 +11,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from app.intelligence.charts import Axis, Chart, Series, write as write_chart
-
 import matplotlib
+
+from app.intelligence.charts import Axis, Chart, Series
+from app.intelligence.charts import write as write_chart
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402

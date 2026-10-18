@@ -5,48 +5,59 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-const LINKS: { href: string; label: string }[] = [
+// `short` is shown between lg and xl, where the full label would not fit the bar.
+const LINKS: { href: string; label: string; short?: string }[] = [
   { href: "/", label: "Overview" },
   { href: "/strategy", label: "Strategy" },
   { href: "/reasoning", label: "Reasoning" },
   { href: "/models", label: "Models" },
   { href: "/explainability", label: "Explainability" },
   { href: "/data", label: "Data" },
+  { href: "/model-comparison", label: "Model Comparison" },
+  { href: "/rai", label: "Responsible AI (RAI)", short: "RAI" },
 ];
 
 export default function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  // Idle links are paper-700, not paper-500: over the translucent surface with
-  // page content behind it, paper-500 measures 4.1:1 and fails AA.
-  const linkClass = (href: string) =>
-    `rounded-sm px-3 py-2 transition-colors duration-[120ms] ${
-      pathname === href ? "bg-track-200 text-paper-900" : "text-paper-700 hover:text-paper-900"
-    }`;
 
   return (
     /* The one glass surface in the app (DESIGN.md, Constraints): translucent
        over the page ground with a modest blur, so content reads as passing
        underneath rather than vanishing at a hard edge. */
     <header className="nav-glass sticky top-0 z-20">
+      <div className="f1-topline" aria-hidden />
       <div className="mx-auto flex h-[52px] max-w-[1320px] items-center gap-7 px-5 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5 whitespace-nowrap">
-          <span aria-hidden className="block h-[17px] w-[3px] bg-accent" />
-          <span className="font-display text-[17px] font-bold leading-none tracking-[0.01em] text-paper-900">
+          <span aria-hidden className="f1-logo-mark">
+            <span className="bg-[var(--ferrari)]" />
+            <span className="bg-[var(--papaya-fill)]" />
+          </span>
+          <span className="font-display text-[19px] font-black italic leading-none tracking-[0.02em] text-paper-900">
             PIT WALL
           </span>
         </Link>
 
-        <nav aria-label="Main" className="ml-auto hidden items-center gap-0.5 text-[13px] font-medium lg:flex">
+        {/* Idle links are paper-700, not paper-500: over the translucent surface
+            with page content behind it, paper-500 fails AA. */}
+        <nav aria-label="Main" className="ml-auto hidden h-[52px] items-stretch lg:flex">
           {LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               aria-current={pathname === link.href ? "page" : undefined}
-              className={linkClass(link.href)}
+              className="f1-navlink flex items-center whitespace-nowrap"
+              title={link.short ? link.label : undefined}
             >
-              {link.label}
+              {link.short ? (
+                <>
+                  <span className="xl:hidden" aria-hidden>{link.short}</span>
+                  <span className="sr-only xl:not-sr-only">{link.label}</span>
+                </>
+              ) : (
+                link.label
+              )}
             </Link>
           ))}
         </nav>
@@ -92,8 +103,8 @@ export default function Nav() {
               href={link.href}
               onClick={() => setOpen(false)}
               aria-current={pathname === link.href ? "page" : undefined}
-              className={`block border-b border-track-300 py-3 text-[15px] ${
-                pathname === link.href ? "text-paper-900" : "text-paper-700"
+              className={`block border-b border-track-300 py-3 font-display text-[15px] font-bold uppercase tracking-[0.05em] ${
+                pathname === link.href ? "border-l-[3px] border-l-[var(--ferrari)] pl-3 text-paper-900" : "text-paper-700"
               }`}
             >
               {link.label}

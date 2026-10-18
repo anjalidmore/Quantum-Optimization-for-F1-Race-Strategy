@@ -40,6 +40,7 @@ from app.core.paths import (
     ArtifactPaths,
     ensure_dirs,
 )
+from app.intelligence.charts import follows_output_root
 from app.intelligence.ml import evaluation
 from app.intelligence.ml import threshold as threshold_mod
 from app.intelligence.qml import baselines, kernel_svm, reports, visualize, vqc, vqr
@@ -327,6 +328,7 @@ def run_regression(models_dir: Path) -> dict:
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+@follows_output_root
 def run_all(output_root: Path | None = None) -> dict:
     """Run both targets, write every artifact, and return the results dict."""
     out = ArtifactPaths.default() if output_root is None else ArtifactPaths(root=Path(output_root))

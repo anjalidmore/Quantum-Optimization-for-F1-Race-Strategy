@@ -33,20 +33,35 @@ export function ThemeToggle() {
     setTheme(next);
   }
 
-  // Render nothing until the theme is known, so the button never flashes the
-  // wrong label on hydration.
-  if (!theme) return <span className="h-[30px] w-[62px]" aria-hidden />;
+  // Render a same-size placeholder until the theme is known, so the button
+  // never flashes the wrong state on hydration and the nav does not shift.
+  if (!theme) return <span className="inline-block h-[28px] w-[58px]" aria-hidden />;
 
   const next: Theme = theme === "dark" ? "light" : "dark";
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={theme === "light"}
       onClick={() => choose(next)}
-      aria-label={`Switch to ${next} theme`}
+      aria-label="Light theme"
       title={`Switch to ${next} theme`}
-      className="rounded-sm border border-track-300 px-2.5 py-1.5 text-[12px] font-medium text-paper-700 transition-colors duration-[120ms] hover:border-edge hover:text-paper-900"
+      data-mode={theme}
+      className="theme-switch"
     >
-      {theme === "dark" ? "Light" : "Dark"}
+      <span className="theme-switch__knob" aria-hidden />
+      <svg className="theme-switch__moon" width="12" height="12" viewBox="0 0 12 12" aria-hidden focusable="false">
+        <path d="M8.6 7.9A4.2 4.2 0 0 1 4.1 3.4a4.2 4.2 0 0 1 .7-2.3A4.6 4.6 0 1 0 10.9 7.2a4.2 4.2 0 0 1-2.3.7Z" fill="currentColor" />
+      </svg>
+      <svg className="theme-switch__sun" width="12" height="12" viewBox="0 0 12 12" aria-hidden focusable="false">
+        <circle cx="6" cy="6" r="2.4" fill="currentColor" />
+        <path
+          d="M6 .6v1.5M6 9.9v1.5M.6 6h1.5M9.9 6h1.5M2.2 2.2l1 1M8.8 8.8l1 1M2.2 9.8l1-1M8.8 3.2l1-1"
+          stroke="currentColor"
+          strokeWidth="1.1"
+          strokeLinecap="round"
+        />
+      </svg>
     </button>
   );
 }

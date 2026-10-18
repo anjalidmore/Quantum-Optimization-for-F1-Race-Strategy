@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing report</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<nav class="doc-bar" aria-label="Documentation"><span class="mark" aria-hidden="true"></span>
+<strong>F1 Race Strategy Intelligence</strong>
+<a href="study_guide.html">Study guide (all documents)</a>
+<a href="../README.md">README</a></nav>
+<main class="doc-page prose">
+<h1 id="testing-report">Testing report</h1>
+<p><strong>Run date:</strong> 2026-09-27 · <strong>Machine:</strong> macOS (Darwin 25.6.0), Apple silicon, Python 3.14.6 ·
+<strong>Commands:</strong> <code>python scripts/build_all.py --force</code>, then <code>pytest</code>, <code>ruff check .</code>,
+<code>npm run lint</code>, <code>npx tsc --noEmit</code>, <code>npm run build</code>.</p>
+<p>Every figure below is copied from that run's output. Nothing here is a summary of an earlier run.</p>
+<hr />
+<h2 id="1-summary">1. Summary</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Clean rebuild from raw data (<code>build_all.py --force</code>)</td>
+<td><strong>passed</strong> — all 10 stages, exit 0</td>
+</tr>
+<tr>
+<td>Python test suite (<code>pytest</code>)</td>
+<td><strong>284 passed, 0 failed, 0 skipped</strong> in 57.67 s</td>
+</tr>
+<tr>
+<td>Python lint (<code>ruff check .</code>)</td>
+<td><strong>All checks passed</strong></td>
+</tr>
+<tr>
+<td>Frontend lint (<code>npm run lint</code>)</td>
+<td><strong>No ESLint warnings or errors</strong></td>
+</tr>
+<tr>
+<td>Frontend types (<code>npx tsc --noEmit</code>)</td>
+<td><strong>clean</strong></td>
+</tr>
+<tr>
+<td>Frontend production build (<code>npm run build</code>)</td>
+<td><strong>passed</strong> — 6 routes</td>
+</tr>
+<tr>
+<td>Metric drift after the clean rebuild</td>
+<td><strong>none</strong> (see §4)</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="2-the-clean-build">2. The clean build</h2>
+<p><code>python scripts/build_all.py --force</code> rebuilt every artifact from the raw session data. Stage
+timings as reported by the build:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Environment validation</td>
+<td>1.1 s</td>
+</tr>
+<tr>
+<td>Task 1 — Knowledge representation</td>
+<td>0.6 s</td>
+</tr>
+<tr>
+<td>Task 2 — Expert system</td>
+<td>0.0 s</td>
+</tr>
+<tr>
+<td>Task 3 — State-space search</td>
+<td>0.4 s</td>
+</tr>
+<tr>
+<td>Task 4 — Data engineering &amp; EDA</td>
+<td>1.2 s</td>
+</tr>
+<tr>
+<td>Task 5 — Feature engineering</td>
+<td>9.4 s</td>
+</tr>
+<tr>
+<td>Task 6 — Machine learning</td>
+<td>25.4 s</td>
+</tr>
+<tr>
+<td>Task 7 — Deep learning</td>
+<td>723.8 s</td>
+</tr>
+<tr>
+<td>Task 8 — Explainable AI</td>
+<td>103.2 s</td>
+</tr>
+<tr>
+<td>Quantum machine learning</td>
+<td>36.6 s</td>
+</tr>
+<tr>
+<td>Artifact consistency validation</td>
+<td>0.0 s</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>≈ 15 minutes</strong>, of which Task 7's hyperparameter search is 80%</td>
+</tr>
+</tbody>
+</table></div>
+<p>The build then validated artifact consistency and exited 0.</p>
+<h2 id="3-the-test-suite">3. The test suite</h2>
+<p>284 tests across 16 files. Counts are from <code>pytest --collect-only</code>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Test file</th>
+<th style="text-align: right;">Tests</th>
+<th>What it guards</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/test_xai.py</code></td>
+<td style="text-align: right;">38</td>
+<td>SHAP/LIME/counterfactual correctness, trust-score algebra, stratification, committed Task 8 artifacts</td>
+</tr>
+<tr>
+<td><code>tests/test_api.py</code></td>
+<td style="text-align: right;">34</td>
+<td>every endpoint, race-state validation, CORS configurability, path traversal, the Task 9 reasoning endpoints and report generator</td>
+</tr>
+<tr>
+<td><code>tests/test_dl_xai_api.py</code></td>
+<td style="text-align: right;">31</td>
+<td>Task 7/8 API surface, the live explainer's reduced budget, the lap inspector's SHAP additivity</td>
+</tr>
+<tr>
+<td><code>tests/test_dl_training.py</code></td>
+<td style="text-align: right;">27</td>
+<td>leakage, time-aware splits, class weighting inside the loss, <code>.h5</code> reload verification, hyperparameter coverage</td>
+</tr>
+<tr>
+<td><code>tests/test_expert_system.py</code></td>
+<td style="text-align: right;">21</td>
+<td>forward and backward chaining, conflict resolution, rule validation</td>
+</tr>
+<tr>
+<td><code>tests/test_search.py</code></td>
+<td style="text-align: right;">18</td>
+<td>BFS/DFS/UCS/Greedy/A*, admissibility, the A*-equals-UCS optimality invariant</td>
+</tr>
+<tr>
+<td><code>tests/test_ml_threshold.py</code></td>
+<td style="text-align: right;">17</td>
+<td>threshold tuning on out-of-fold predictions</td>
+</tr>
+<tr>
+<td><code>tests/test_data_engineering.py</code></td>
+<td style="text-align: right;">17</td>
+<td>cleaning, imputation, outlier capping, data-quality scoring</td>
+</tr>
+<tr>
+<td><code>tests/test_qml.py</code></td>
+<td style="text-align: right;">15</td>
+<td>encoder fitted on training rows only, angle clipping, circuit shapes, seed determinism, kernel validity, weight reload</td>
+</tr>
+<tr>
+<td><code>tests/test_knowledge_representation.py</code></td>
+<td style="text-align: right;">15</td>
+<td>ontology and graph integrity</td>
+</tr>
+<tr>
+<td><code>tests/test_ml_data_contract.py</code></td>
+<td style="text-align: right;">13</td>
+<td>the Task 5 → Task 6 contract, leakage exclusions, lap-forward splits</td>
+</tr>
+<tr>
+<td><code>tests/test_artifact_contract.py</code></td>
+<td style="text-align: right;">10</td>
+<td>every artifact path the API serves exists; no absolute paths in the manifest</td>
+</tr>
+<tr>
+<td><code>tests/test_ml_training.py</code></td>
+<td style="text-align: right;">8</td>
+<td>the Task 6 pipeline end to end, best-model selection and saving</td>
+</tr>
+<tr>
+<td><code>tests/test_strategy_service.py</code></td>
+<td style="text-align: right;">7</td>
+<td>the ML + expert system + search chain</td>
+</tr>
+<tr>
+<td><code>tests/test_ml_splits.py</code></td>
+<td style="text-align: right;">7</td>
+<td>chronological holdout and expanding-window folds</td>
+</tr>
+<tr>
+<td><code>tests/test_openmp_runtime.py</code></td>
+<td style="text-align: right;">6</td>
+<td>the XGBoost/PyTorch OpenMP import-order guard (reproduces the real segfault)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Raw result line:</p>
+<div class="hl"><pre><span></span><code>284 passed in 57.67s
+</code></pre></div>
+
+<p>Slowest five, from <code>pytest --durations=5</code>:</p>
+<div class="hl"><pre><span></span><code>24.89s setup    tests/test_ml_training.py::test_pipeline_selects_a_best_model_for_each_task
+12.99s call     tests/test_openmp_runtime.py::test_every_dl_entry_point_goes_through_the_guard
+3.76s call     tests/test_dl_training.py::test_class_weighting_inside_the_loss_moves_the_predictions
+2.15s call     tests/test_openmp_runtime.py::test_guarded_import_order_lets_xgboost_and_keras_coexist
+1.81s call     tests/test_openmp_runtime.py::test_kmp_duplicate_lib_ok_does_not_fix_it
+</code></pre></div>
+
+<p>The first entry is setup, not a single assertion: that test retrains Task 6 into a temporary
+directory. The OpenMP tests are slow because each one launches a subprocess to check whether a
+specific import order segfaults.</p>
+<h3 id="test-hermeticity">Test hermeticity</h3>
+<p><code>git status</code> was clean before and after the suite: the tests write to <code>tmp_path</code>, so running them
+never modifies a committed artifact. This is asserted rather than assumed — <code>ArtifactPaths</code> exists
+precisely so every pipeline's output can be redirected.</p>
+<h2 id="4-reproducibility--does-a-rebuild-change-the-results">4. Reproducibility — does a rebuild change the results?</h2>
+<p>The clean <code>--force</code> rebuild regenerated every artifact. Comparing the regenerated JSON against the
+committed copies, field by field and ignoring timestamps and wall-clock timings:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>artifacts/deep_learning/evaluation_report.json</code></td>
+<td><strong>identical</strong></td>
+</tr>
+<tr>
+<td><code>artifacts/metrics/qml_metrics.json</code></td>
+<td><strong>identical</strong></td>
+</tr>
+<tr>
+<td><code>artifacts/xai/xai_metadata.json</code></td>
+<td><strong>identical</strong></td>
+</tr>
+<tr>
+<td><code>data/processed/feature_metadata.json</code></td>
+<td><strong>identical</strong></td>
+</tr>
+<tr>
+<td><code>artifacts/metrics/regression_metrics.json</code></td>
+<td>identical except 5 <code>fit_seconds</code> values</td>
+</tr>
+<tr>
+<td><code>artifacts/metrics/classification_metrics.json</code></td>
+<td>identical except 5 <code>fit_seconds</code> values</td>
+</tr>
+</tbody>
+</table></div>
+<p>The only differences anywhere are wall-clock measurements (<code>fit_seconds</code>), report timestamps, and
+PNG bytes (matplotlib embeds a creation date). <strong>No metric moved.</strong> Every stochastic step is
+seeded, and the model libraries are pinned to exact versions in <code>requirements.txt</code> so a new release
+cannot silently shift the numbers.</p>
+<h2 id="5-live-checks-against-a-running-system">5. Live checks against a running system</h2>
+<p>Performed against <code>uvicorn</code> on a local port with the dashboard pointed at it:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Expected</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /api/health</code></td>
+<td>200</td>
+<td>pass</td>
+</tr>
+<tr>
+<td><code>GET /api/ml/{models,comparison,artifacts,feature-importance}</code></td>
+<td>200</td>
+<td>pass</td>
+</tr>
+<tr>
+<td><code>GET /api/dl/{models,metrics,comparison,history,artifacts}</code></td>
+<td>200</td>
+<td>pass</td>
+</tr>
+<tr>
+<td><code>GET /api/xai/{summary,shap,lime,counterfactual,trust-score,fairness,explanation,stratification,laps,lap}</code></td>
+<td>200</td>
+<td>pass</td>
+</tr>
+<tr>
+<td><code>GET /api/qml/{summary,training,search}</code></td>
+<td>200</td>
+<td>pass</td>
+</tr>
+<tr>
+<td><code>GET /api/reasoning/{knowledge,expert-system,search}</code></td>
+<td>200</td>
+<td>pass</td>
+</tr>
+<tr>
+<td><code>POST /api/strategy/predict</code></td>
+<td>200 with a recommendation</td>
+<td>pass</td>
+</tr>
+<tr>
+<td><code>POST /api/strategy/report</code></td>
+<td>200, <code>text/markdown</code>, attachment</td>
+<td>pass</td>
+</tr>
+<tr>
+<td><code>GET /artifacts/figures/qml_circuit.png</code></td>
+<td>200</td>
+<td>pass</td>
+</tr>
+<tr>
+<td><code>GET /artifacts/models/qml/vqc_weights.npy</code></td>
+<td><strong>404</strong> (weights must not be served)</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Dashboard pages <code>/</code>, <code>/strategy</code>, <code>/reasoning</code>, <code>/models</code>, <code>/explainability</code>, <code>/data</code></td>
+<td>200, real values rendered</td>
+<td>pass</td>
+</tr>
+<tr>
+<td><code>POST /api/strategy/predict</code> with an unknown driver</td>
+<td>422</td>
+<td>pass</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="6-what-the-tests-do-not-cover">6. What the tests do not cover</h2>
+<p>Stated plainly, because a green suite is not the same as a verified system:</p>
+<ul>
+<li><strong>No test asserts that a prediction is correct</strong>, only that it is produced honestly from the
+  committed model. Accuracy is reported in the metrics artifacts, not enforced by a test.</li>
+<li><strong>The frontend has no automated tests.</strong> Lint, type-check and build pass, and the pages were
+  checked by hand against a live API; there are no component or end-to-end tests.</li>
+<li><strong>The pit classifier's holdout contains one labelled pit event</strong>, so no test can meaningfully
+  assert its precision or recall.</li>
+<li><strong>Quantum results are simulated only.</strong> The tests verify determinism, shapes and kernel validity,
+  not anything about real quantum hardware.</li>
+<li><strong>Single session.</strong> Every test runs against one Grand Prix, so nothing here demonstrates
+  generalisation to other races.</li>
+</ul>
+<h2 id="7-how-to-reproduce-this-report">7. How to reproduce this report</h2>
+<div class="hl"><pre><span></span><code>python<span class="w"> </span>scripts/build_all.py<span class="w"> </span>--force<span class="w">          </span><span class="c1"># ~15 min</span>
+pytest<span class="w">                                        </span><span class="c1"># ~1 min</span>
+ruff<span class="w"> </span>check<span class="w"> </span>.
+<span class="nb">cd</span><span class="w"> </span>frontend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>lint<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npx<span class="w"> </span>tsc<span class="w"> </span>--noEmit<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>build
+</code></pre></div>
+
+<h2 id="8-addendum--2026-10-01-task-910-work">8. Addendum — 2026-10-01 (Task 9/10 work)</h2>
+<p>This addendum records what changed <strong>without</strong> a full <code>build_all.py --force</code> retrain — the
+original 2026-09-27 run above remains the last full clean-rebuild report, and the model artifacts
+it certifies are untouched by this addendum.</p>
+<p>Task 9's strategy pipeline was extended with a Task 7 DL prediction stage and a recommendation
+engine, <code>GET /api/health</code> with a per-model breakdown, an HTML report format, and Docker deployment;
+17 tests were added for this (negative/unknown-input validation, the full 8-stage response shape,
+the DL stage's tuned threshold, and the "not available" paths for a missing ML or DL model
+artifact — see <code>tests/test_api.py</code>). Re-running the live suite:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pytest</code></td>
+<td>see <code>artifacts/evaluation/test_results.json</code>, generated by <code>scripts/evaluate_system.py</code></td>
+</tr>
+<tr>
+<td><code>ruff check .</code></td>
+<td>all checks passed (one pre-existing, unrelated unused-import lint in <code>tests/test_chart_data.py</code>, not touched by this work)</td>
+</tr>
+<tr>
+<td><code>npx tsc --noEmit</code> (frontend)</td>
+<td>clean</td>
+</tr>
+<tr>
+<td><code>npm run lint</code> (frontend)</td>
+<td>no ESLint warnings or errors</td>
+</tr>
+<tr>
+<td><code>npm run build</code> (frontend)</td>
+<td>passed</td>
+</tr>
+</tbody>
+</table></div>
+<p>Task 10's full evaluation (functional, performance, domain validation, explainability validation,
+responsible AI, deployment readiness) is <code>scripts/evaluate_system.py</code>'s own job from here on — its
+output under <code>artifacts/evaluation/*.json</code> is the live source of truth for those figures, not a
+number copied into this file, which would drift the next time the suite runs.</p>
+</main>
+</body>
+</html>

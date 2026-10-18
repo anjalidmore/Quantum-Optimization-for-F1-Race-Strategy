@@ -221,6 +221,11 @@ export type DlModel = {
   format_note: string;
   training_rows: number;
   test_rows: number;
+  // Present in /api/dl/models responses; optional so older payloads still type-check.
+  artifact?: string;
+  framework?: string;
+  features?: string[];
+  trained_at?: string;
 };
 export type DlComparison = {
   generated_at: string;
@@ -438,6 +443,50 @@ export type SearchSummary = {
   final_cost_seconds: number | null;
 };
 
+// --- Responsible AI (RAI tab) ------------------------------------------------
+export type RaiModelKey = "simple" | "ml" | "dnn";
+export type RaiGap = { value: number; max_group: string; max: number; min_group: string; min: number; n_groups: number } | null;
+export type RaiGroupRow = Record<string, any> & { model: RaiModelKey; group_type: string; group: string; n_laps: number; sample_note: string };
+export type RaiFlag = {
+  model: RaiModelKey; group_type: string; group: string; metric: string; value: number; overall: number;
+  ratio?: number; difference?: number; n_laps: number; adequate_sample: boolean;
+};
+export type RaiHistBin = { lo: number; hi: number; count: number; correct?: number; incorrect?: number };
+export type RaiReviewLap = {
+  row: number; driver: string | null; team: string | null; compound: string | null; lap: number | null;
+  actual: number | null; scores: Record<string, number | null>; calls: Record<string, number> | null;
+  reasons: string[]; std?: number; abs_error?: number;
+};
+export type RaiConfidenceModel = Record<string, any> & { available: boolean; reason?: string; mechanism?: string };
+export type RaiSummary = {
+  target: string;
+  task: "regression" | "classification";
+  n_test: number;
+  n_positive: number | null;
+  models: Record<RaiModelKey, { name: string | null; available: boolean; threshold: number | null }>;
+  check: Record<string, Record<string, number | null>>;
+  fairness: {
+    groups: string[];
+    rows: RaiGroupRow[];
+    summary: Record<string, Record<string, Record<string, any>>>;
+    flags: RaiFlag[];
+    rules: { min_rows_per_group: number; min_pit_laps_per_group: number; disparity_ratio: number; disparity_abs_rate: number };
+    protected_attributes_available: boolean;
+    note: string;
+  };
+  confidence: {
+    kind: "probability" | "interval";
+    n_test: number;
+    n_positive?: number;
+    near_threshold?: number;
+    mc_passes?: number | null;
+    models: Record<RaiModelKey, RaiConfidenceModel>;
+    review: RaiReviewLap[];
+    n_review: number;
+  };
+  source_dataset: string;
+};
+
 export const api = {
   health: () => getJson<HealthResponse>("/api/health"),
   models: () => getJson<Registry>("/api/ml/models"),
@@ -485,6 +534,9 @@ export const api = {
   xaiLaps: (target: string) => getJson<XaiLaps>(`/api/xai/laps?target=${target}`),
   xaiLap: (target: string, rowIndex: number) =>
     getJson<XaiLap>(`/api/xai/lap?target=${target}&row_index=${rowIndex}`),
+
+  // Responsible AI
+  raiSummary: (target: string) => getJson<RaiSummary>(`/api/rai/summary?target=${target}`),
 
   // Quantum ML
   qmlSummary: () => getJson<QmlSummary>("/api/qml/summary"),

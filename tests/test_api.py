@@ -337,7 +337,7 @@ def test_top_features_endpoint_returns_exactly_n_with_descriptions(client):
 
 
 # ---------------------------------------------------------------------------
-# Security: static artifact serving (TODO.md — "The whole artifacts tree is
+# Security: static artifact serving (docs/TODO.html — "The whole artifacts tree is
 # served unauthenticated as static files")
 # ---------------------------------------------------------------------------
 def test_trained_model_weights_are_not_served_statically(client):
@@ -384,7 +384,7 @@ def test_private_dirs_are_excluded_structurally_not_by_a_filter(client):
 
 
 # ---------------------------------------------------------------------------
-# Security: CORS (TODO.md — "API allows every origin, method and header")
+# Security: CORS (docs/TODO.html — "API allows every origin, method and header")
 # ---------------------------------------------------------------------------
 def test_cors_rejects_an_unlisted_origin(client):
     r = client.get("/api/health", headers={"Origin": "https://evil.example.com"})

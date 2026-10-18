@@ -13,10 +13,9 @@ import { fmt } from "@/lib/format";
  * then the dense evidence (driver error table) below on a plain surface.
  *
  * The focal figure is still the A* optimal strategy cost — that has not
- * changed, only its stage has. The hero photo and the cutout car are real,
- * licensed photography (credited in the footer), not decoration standing in
- * for data: every number layered over them is still read live from the API,
- * exactly as before.
+ * changed, only its stage has. The hero photo is real, licensed photography
+ * (credited below it), not decoration standing in for data: every number
+ * layered over it is still read live from the API, exactly as before.
  */
 export default async function OverviewPage() {
   let health = null;
@@ -77,14 +76,6 @@ export default async function OverviewPage() {
         <div className="hero-stage__content flex min-h-[560px] flex-col justify-between p-7 md:p-12">
           <div className="flex flex-wrap items-start justify-between gap-6">
             {manifest && <DatasetBadge source={manifest.dataset_source} />}
-            <Image
-              src="/images/sticker-car-redbull.png"
-              alt="A Formula 1 car mid-corner, photographed at Circuit Paul Ricard"
-              width={520}
-              height={375}
-              className="sticker hidden w-[clamp(260px,32vw,520px)] md:block"
-              priority
-            />
           </div>
 
           <div className="max-w-2xl">

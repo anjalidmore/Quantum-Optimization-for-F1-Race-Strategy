@@ -1,0 +1,138 @@
+/* Shared documentation styles: docs/*.html link this file, and
+   scripts/build_study_guide.py inlines it into docs/study_guide.html. Tokens follow DESIGN.md (the dashboard's design
+   system): near-black "track" surfaces, warm "paper" text, one racing accent.
+   Reading defaults to a light paper theme; dark follows the system or the toggle. */
+:root {
+  --bg: #f6f3ec;
+  --surface: #fffdf8;
+  --surface-2: #efebe2;
+  --ink: #16181c;
+  --ink-2: #3b3f46;
+  --ink-3: #5f636b;
+  --line: #ddd8cc;
+  --line-strong: #b9b3a6;
+  --accent: #d62612;
+  --accent-ink: #ffffff;
+  --accent-soft: #fbe3de;
+  --link: #b31d0c;
+  --ok: #1f7a3a;
+  --warn: #9a5b00;
+  --code-bg: #f1ede4;
+  --code-ink: #23262b;
+  --tk-k: #a3261a; --tk-s: #2c6e2f; --tk-c: #7a776f; --tk-n: #23262b;
+  --tk-f: #1e4f8c; --tk-m: #8a4b00; --tk-o: #5f636b; --tk-b: #6b3fa0;
+  --deck-bg: #08090b;
+  --deck-surface: #15181c;
+  --deck-line: #2a2f36;
+  --deck-ink: #f4f1ea;
+  --deck-ink-2: #a9a59b;
+  --deck-accent: #ff2d16;
+  --font-display: "Saira Condensed", "Arial Narrow", ui-sans-serif, sans-serif;
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r-sm: 2px; --r-md: 4px; --r-lg: 6px;
+  --topbar: 56px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1013; --surface: #15181c; --surface-2: #1d2126; --ink: #f4f1ea; --ink-2: #d8d4ca;
+    --ink-3: #a9a59b; --line: #2a2f36; --line-strong: #3a414a; --accent: #ff3b2f; --accent-ink: #0a0b0d;
+    --accent-soft: #3a1612; --link: #ff7a6b; --ok: #4ec98a; --warn: #f2b13c; --code-bg: #0b0c0f;
+    --code-ink: #e6e2d9; --tk-k: #ff8a7a; --tk-s: #9fd88f; --tk-c: #8b8780; --tk-n: #e6e2d9;
+    --tk-f: #7cc0f5; --tk-m: #f2c66b; --tk-o: #b6b1a6; --tk-b: #c9a6f5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1013; --surface: #15181c; --surface-2: #1d2126; --ink: #f4f1ea; --ink-2: #d8d4ca;
+  --ink-3: #a9a59b; --line: #2a2f36; --line-strong: #3a414a; --accent: #ff3b2f; --accent-ink: #0a0b0d;
+  --accent-soft: #3a1612; --link: #ff7a6b; --ok: #4ec98a; --warn: #f2b13c; --code-bg: #0b0c0f;
+  --code-ink: #e6e2d9; --tk-k: #ff8a7a; --tk-s: #9fd88f; --tk-c: #8b8780; --tk-n: #e6e2d9;
+  --tk-f: #7cc0f5; --tk-m: #f2c66b; --tk-o: #b6b1a6; --tk-b: #c9a6f5;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-padding-top: calc(var(--topbar) + 16px); -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.6 var(--font-body);
+  overflow-x: hidden;
+}
+a { color: var(--link); text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+a[data-broken] { color: var(--ink-3); text-decoration: underline dotted; cursor: help; }
+code, pre, kbd { font-family: var(--font-mono); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip { position: absolute; left: -999px; top: 8px; z-index: 100; background: var(--accent); color: var(--accent-ink); padding: 8px 12px; border-radius: var(--r-md); }
+.skip:focus { left: 8px; }
+.muted { color: var(--ink-3); }
+
+.prose { font-size: 16px; line-height: 1.68; color: var(--ink); overflow-wrap: break-word; }
+.prose h1, .practical-head h1 { font: 700 clamp(34px, 4.4vw, 50px)/1.02 var(--font-display); letter-spacing: -.01em; margin: 8px 0 20px; }
+.prose h2 { font: 700 30px/1.15 var(--font-display); margin: 44px 0 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.prose h3 { font: 600 20px/1.3 var(--font-body); margin: 32px 0 8px; }
+.prose h4 { font: 600 17px/1.35 var(--font-body); margin: 24px 0 6px; }
+.prose h2 a.headerlink, .prose h3 a.headerlink { display: none; }
+.prose p, .prose ul, .prose ol { margin: 0 0 14px; }
+.prose li { margin: 4px 0; }
+.prose blockquote { margin: 18px 0; padding: 10px 16px; border-left: 3px solid var(--accent); background: var(--surface-2); color: var(--ink-2); }
+.prose hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
+.prose img { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--r-md); background: #fff; }
+.prose :not(pre) > code, .practical :not(pre) > code, .lead code, td code {
+  font-size: .88em; background: var(--code-bg); color: var(--code-ink); padding: .1em .35em; border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+}
+.table-wrap { overflow-x: auto; margin: 16px 0 20px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 1.45; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--surface-2); font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+table.num td:not(:first-child) { font-variant-numeric: tabular-nums; }
+
+/* ---------- Code ---------- */
+.code { position: relative; margin: 14px 0 20px; }
+pre.hl {
+  margin: 0; padding: 14px 16px; overflow-x: auto; background: var(--code-bg); color: var(--code-ink);
+  border: 1px solid var(--line); border-radius: var(--r-md); font-size: 13.5px; line-height: 1.55; tab-size: 4;
+}
+pre.hl code { background: none; border: 0; padding: 0; font-size: inherit; }
+.linenos { color: var(--ink-3); opacity: .7; user-select: none; -webkit-user-select: none; padding-right: 14px; display: inline-block; min-width: 3.2em; text-align: right; }
+.copy {
+  position: absolute; top: 8px; right: 8px; z-index: 1; appearance: none; border: 1px solid var(--line-strong);
+  background: var(--surface); color: var(--ink-2); font: 500 12px var(--font-body); padding: 4px 9px;
+  border-radius: var(--r-md); cursor: pointer; opacity: 0; transition: opacity .15s;
+}
+.code:hover .copy, .copy:focus-visible, .copy.done { opacity: 1; }
+@media (hover: none) { .copy { opacity: 1; } }
+.hl .k, .hl .kn, .hl .kd, .hl .kr, .hl .kc, .hl .ow, .hl .kt { color: var(--tk-k); font-weight: 500; }
+.hl .s, .hl .s1, .hl .s2, .hl .sd, .hl .sa, .hl .si, .hl .se, .hl .sb, .hl .dl, .hl .sr { color: var(--tk-s); }
+.hl .sd { font-style: italic; }
+.hl .c, .hl .c1, .hl .cm, .hl .ch, .hl .cs, .hl .cp { color: var(--tk-c); font-style: italic; }
+.hl .nf, .hl .fm, .hl .nc, .hl .nn, .hl .nd { color: var(--tk-f); }
+.hl .mi, .hl .mf, .hl .m, .hl .mh, .hl .il { color: var(--tk-m); }
+.hl .o, .hl .p { color: var(--tk-o); }
+.hl .nb, .hl .bp, .hl .vm { color: var(--tk-b); }
+.hl .nt, .hl .na { color: var(--tk-f); }
+.hl .gh, .hl .gu { color: var(--tk-k); font-weight: 600; }
+.hl .err { color: inherit; border: 0; }
+
+/* ---------- Standalone document pages (docs/*.html) ---------- */
+.doc-page { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+.doc-bar { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; padding: 10px 16px;
+  background: var(--deck-bg); color: var(--deck-ink); font-size: 14px; }
+.doc-bar a { color: var(--deck-ink); }
+.doc-bar .mark { width: 8px; height: 18px; background: var(--deck-accent); transform: skewX(-14deg); }
+.doc-page .table-wrap table { min-width: 100%; }
+@media print { .doc-bar { display: none; } }
+/* Standalone pages keep the highlighter's own wrapper (div.hl > pre), so code
+   blocks scroll inside themselves instead of widening the page. */
+div.hl { margin: 14px 0 20px; }
+div.hl > pre {
+  margin: 0; padding: 14px 16px; overflow-x: auto; background: var(--code-bg); color: var(--code-ink);
+  border: 1px solid var(--line); border-radius: var(--r-md); font-size: 13.5px; line-height: 1.55; tab-size: 4;
+}
+.doc-page { min-width: 0; overflow-wrap: break-word; }
+.doc-page :not(pre) > code { overflow-wrap: anywhere; }

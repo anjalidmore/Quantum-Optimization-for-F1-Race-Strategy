@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Software Requirements Specification</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<nav class="doc-bar" aria-label="Documentation"><span class="mark" aria-hidden="true"></span>
+<strong>F1 Race Strategy Intelligence</strong>
+<a href="study_guide.html">Study guide (all documents)</a>
+<a href="../README.md">README</a></nav>
+<main class="doc-page prose">
+<h1 id="software-requirements-specification">Software Requirements Specification</h1>
+<p>F1 Race Strategy Intelligence — a computational-intelligence platform built around one real
+Formula 1 session, attacking two prediction problems (lap time, pit-stop decision) three ways:
+symbolic reasoning, machine learning, and explainable AI, served behind a FastAPI backend and shown
+on a six-page Next.js dashboard.</p>
+<p>This document derives every requirement below from what is actually implemented — the API routers
+under <code>app/api/routers/</code>, their Pydantic schemas in <code>app/api/schemas.py</code>, the six dashboard pages
+under <code>frontend/app/</code>, and the project's own stated rules in <code>README.md</code>.</p>
+<h2 id="1-purpose-and-scope">1. Purpose and scope</h2>
+<h3 id="11-purpose">1.1 Purpose</h3>
+<p>To specify the functional and non-functional requirements of the F1 Race Strategy Intelligence
+system: what it computes, what it exposes over HTTP, what a user sees on the dashboard, and the
+constraints (data, reproducibility, leakage) the project holds itself to.</p>
+<h3 id="12-scope">1.2 Scope</h3>
+<p>The system is a <strong>decision-support tool</strong>, not an autonomous strategy system. It:</p>
+<ul>
+<li>represents Formula 1 domain knowledge as an ontology and knowledge graph (Task 1);</li>
+<li>reasons over race state with a forward/backward-chaining rule base (Task 2);</li>
+<li>plans a pit strategy with state-space search (Task 3);</li>
+<li>cleans and analyses one real race session (Task 4);</li>
+<li>engineers and selects a feature set from that session (Task 5);</li>
+<li>trains and compares classical ML models for lap time and pit decision (Task 6);</li>
+<li>trains and compares deep neural networks on the same problems and the same holdout (Task 7);</li>
+<li>explains those models' predictions with SHAP, LIME, counterfactuals, a trust score and
+  performance stratification (Task 8);</li>
+<li>integrates all of the above into one API and dashboard, including a downloadable strategy report
+  (Task 9);</li>
+<li>documents itself for evaluation (Task 10, this document among others);</li>
+<li>as an extension beyond the lab specification, trains simulated quantum models on the same split
+  for comparison (Quantum ML).</li>
+</ul>
+<p>It is explicitly out of scope for the system to control a vehicle, communicate with live timing
+systems, or generalize beyond the single race session it is trained on (see §4, Constraints).</p>
+<h2 id="2-intended-audience">2. Intended audience</h2>
+<ul>
+<li><strong>Race engineers / dashboard users</strong> — read <a href="user_manual.html"><code>user_manual.md</code></a> instead; this
+  document is not written for that audience.</li>
+<li><strong>Developers extending the system</strong> — the primary audience of this document, together with
+  <a href="sdd.html"><code>sdd.md</code></a> and <a href="architecture.html"><code>architecture.md</code></a>.</li>
+<li><strong>Evaluators / auditors</strong> — verifying that what was built matches what was specified; cross-check
+  against <a href="DELIVERABLES_CHECKLIST.html"><code>DELIVERABLES_CHECKLIST.md</code></a>, which is the authoritative,
+  audited list of what artifact exists at what path.</li>
+</ul>
+<h2 id="3-functional-requirements">3. Functional requirements</h2>
+<p>Each requirement is grounded in a specific module, router or dashboard page. Numbering follows the
+project's own ten-task structure.</p>
+<h3 id="fr-1--knowledge-representation-task-1">FR-1 — Knowledge representation (Task 1)</h3>
+<ul>
+<li><strong>FR-1.1</strong> The system shall represent the F1 domain as a set of typed entities, attributes and
+  relationships, implemented in <code>app/intelligence/knowledge_representation/schema.py</code>.</li>
+<li><strong>FR-1.2</strong> The system shall encode this schema as an OWL 2 ontology
+  (<code>artifacts/knowledge_representation/ontology/formula1.owl</code>) and a populated instance knowledge
+  graph (<code>.ttl</code> / <code>.graphml</code>).</li>
+<li><strong>FR-1.3</strong> The system shall expose the entity, relationship and attribute counts, grouped by
+  category, through <code>GET /api/reasoning/knowledge</code>.</li>
+<li><strong>FR-1.4</strong> The system shall validate the knowledge base against a fixed set of static checks and
+  record the result in <code>artifacts/knowledge_representation/reports/validation_report.md</code>.</li>
+</ul>
+<h3 id="fr-2--rule-based-expert-system-task-2">FR-2 — Rule-based expert system (Task 2)</h3>
+<ul>
+<li><strong>FR-2.1</strong> The system shall maintain a rule base of production rules with conditions, actions,
+  category and salience, defined in <code>app/intelligence/expert_system/rule_base.py</code> and persisted at
+  <code>artifacts/expert_system/rules/rule_base.json</code>.</li>
+<li><strong>FR-2.2</strong> The system shall provide a forward-chaining inference engine
+  (<code>app/intelligence/expert_system/inference.py</code>, class <code>InferenceEngine</code>) that accepts a race-state
+  input dict and returns which rules fired, in what order, with which conditions matched, and what
+  was concluded.</li>
+<li><strong>FR-2.3</strong> The system shall expose the full rule base — id, name, category, salience, condition
+  count and asserted actions — through <code>GET /api/reasoning/expert-system</code>.</li>
+<li><strong>FR-2.4</strong> The system shall run the expert system live as part of every strategy prediction (see
+  FR-9.2), not only as a static, pre-generated report.</li>
+</ul>
+<h3 id="fr-3--state-space-search-task-3">FR-3 — State-space search (Task 3)</h3>
+<ul>
+<li><strong>FR-3.1</strong> The system shall formulate the remaining-race pit strategy as a state-space search
+  problem (<code>app/intelligence/search/problem.py</code>, class <code>RaceProblem</code>) with defined states, actions,
+  transition costs and a goal test.</li>
+<li><strong>FR-3.2</strong> The system shall implement and compare at least five search algorithms — BFS, DFS, UCS,
+  Greedy Best-First and A* — over the same problem instance, in <code>app/intelligence/search/algorithms.py</code>.</li>
+<li><strong>FR-3.3</strong> The system shall run A* live, from the caller's actual race state (current lap, tyre
+  compound, track temperature, wet/dry), as part of every strategy prediction, returning the found
+  plan, its total expected cost in seconds, and the next recommended action.</li>
+<li><strong>FR-3.4</strong> The system shall expose the five-algorithm comparison (cost, nodes expanded, frontier
+  size, wall-clock time) through <code>GET /api/reasoning/search</code>.</li>
+</ul>
+<h3 id="fr-4--data-preparation--eda-task-4">FR-4 — Data preparation &amp; EDA (Task 4)</h3>
+<ul>
+<li><strong>FR-4.1</strong> The system shall clean raw per-lap session data (dedupe, dtype coercion, time-format
+  normalisation, categorical normalisation, missing-value imputation, IQR-based outlier capping)
+  with every step recorded in an audit trail
+  (<code>artifacts/data_engineering/reports/cleaning_audit.md</code>).</li>
+<li><strong>FR-4.2</strong> The system shall record and expose the provenance of the session data — real vs.
+  synthetic, year, event, session type — as a first-class fact
+  (<code>data/processed/data_source.json</code>), never assumed, and surface it as <code>dataset_source</code> in every
+  API response that depends on it.</li>
+<li><strong>FR-4.3</strong> The system shall generate domain-specific exploratory analyses (driver, constructor,
+  circuit, pit, tyre, lap time, weather, season, safety car) and a data-quality report, both served
+  to the dashboard's Data page.</li>
+</ul>
+<h3 id="fr-5--feature-engineering--selection-task-5">FR-5 — Feature engineering &amp; selection (Task 5)</h3>
+<ul>
+<li><strong>FR-5.1</strong> The system shall derive features from the cleaned lap data in six blocks (tyre, stint,
+  pace, field, environment, interaction), implemented in <code>app/intelligence/features/build.py</code>.</li>
+<li><strong>FR-5.2</strong> The system shall exclude same-lap and post-lap fields that would leak the prediction
+  target — <code>Sector1Time</code>, <code>Sector2Time</code>, <code>Sector3Time</code>, <code>SpeedFL</code>, <code>SpeedST</code>, <code>IsPersonalBest</code> —
+  from every feature set, and record this exclusion and its reason in
+  <code>data/processed/feature_metadata.json</code> (<code>excluded_as_leakage</code>).</li>
+<li><strong>FR-5.3</strong> The system shall run a four-stage feature-selection funnel — near-zero-variance,
+  correlation, VIF, then importance-with-fold-stability — and record what each stage dropped.</li>
+<li><strong>FR-5.4</strong> The system shall persist the selected feature set as a versioned contract
+  (<code>data/processed/feature_metadata.json</code>), read by every downstream training and serving module
+  through <code>app/intelligence/features/contract.py</code>, and shall never allow a duplicate, independently
+  maintained feature list to exist elsewhere in the codebase.</li>
+</ul>
+<h3 id="fr-6--machine-learning-task-6">FR-6 — Machine learning (Task 6)</h3>
+<ul>
+<li><strong>FR-6.1</strong> The system shall train at least five regression models (for <code>target_laptime</code>) and at
+  least four classification models (for <code>target_pit_next_lap</code>) from the Task 5 feature contract,
+  including at minimum linear/logistic regression, a decision tree, a random forest and an
+  SVM/SVR, with XGBoost included when its native dependency is available.</li>
+<li><strong>FR-6.2</strong> The system shall validate every model with expanding-window, lap-forward
+  cross-validation and a chronologically later, untouched holdout — never a random shuffle-split —
+  implemented in <code>app/intelligence/ml/splits.py</code>.</li>
+<li><strong>FR-6.3</strong> The system shall select the best model per task by a stated primary metric (MAE for
+  regression, PR-AUC for classification) and record the selection rule, not just the winner, in
+  <code>artifacts/reports/model_selection_report.md</code>.</li>
+<li><strong>FR-6.4</strong> The system shall persist every trained pipeline (<code>.joblib</code>) together with its full
+  reproducibility metadata (seed, dataset version, hyperparameters, feature list, metrics, software
+  versions) in <code>artifacts/metadata/model_registry.json</code>.</li>
+<li><strong>FR-6.5</strong> The system shall serve model listings, metrics, comparisons, feature importance and
+  single-row predictions through <code>GET/POST /api/ml/*</code>, returning HTTP 404/503 with an actionable
+  message — never a fabricated number — when no trained model is available.</li>
+</ul>
+<h3 id="fr-7--deep-learning-task-7">FR-7 — Deep learning (Task 7)</h3>
+<ul>
+<li><strong>FR-7.1</strong> The system shall train a Keras neural network for each of the two prediction targets,
+  on the identical folds and holdout Task 6 uses (imported directly from <code>app.intelligence.ml.splits</code>
+  and <code>.evaluation</code>, not reimplemented), so any comparison between the two model families is
+  attributable to the model rather than the evaluation harness.</li>
+<li><strong>FR-7.2</strong> The system shall select hyperparameters (architecture, learning rate, batch size,
+  dropout, optimizer, L2, loss, class weighting) using only the cross-validation folds, leaving the
+  held-out test laps untouched until final evaluation.</li>
+<li><strong>FR-7.3</strong> The system shall apply overfitting-prevention measures (dropout, L2 regularisation,
+  early stopping with best-weights restoration) and report a computed, evidence-based overfitting
+  verdict per target rather than an asserted one.</li>
+<li><strong>FR-7.4</strong> The system shall persist each trained network in HDF5 format with its scaler(s) and
+  a <code>model_spec.json</code>, and verify that the reloaded model reproduces its trained predictions exactly
+  (<code>reload_verified</code>) before treating training as complete.</li>
+<li><strong>FR-7.5</strong> The system shall serve Task 7 model listings, metrics, training history, artifact
+  listings and single-row predictions through <code>GET/POST /api/dl/*</code>, mirroring the Task 6 router's
+  shape and using the tuned decision threshold (not a hard-coded 0.5) for the pit-decision class.</li>
+<li><strong>FR-7.6</strong> The system shall never serve trained model weights (<code>.h5</code>, <code>.joblib</code>, <code>.npy</code>) over
+  HTTP; only metrics, reports and figures derived from them are exposed.</li>
+</ul>
+<h3 id="fr-8--explainable-ai-task-8">FR-8 — Explainable AI (Task 8)</h3>
+<ul>
+<li><strong>FR-8.1</strong> The system shall compute permutation feature importance, SHAP attributions and LIME
+  local surrogates for the trained Task 7 network (and, as a second opinion, the Task 6
+  selected-best model) on a fixed, rule-selected set of representative test laps plus the one lap
+  where a real pit stop occurred.</li>
+<li><strong>FR-8.2</strong> The system shall compute a tyre-age counterfactual scan for each explained lap, holding
+  compound and derived interaction features physically consistent with the swept tyre age, and
+  report whether any age in the observed training range flips the decision.</li>
+<li><strong>FR-8.3</strong> The system shall compute a project-defined trust score per prediction, from a documented,
+  weighted combination of confidence, cross-model agreement, explanation stability and input
+  validity, and report the score's own empirical correlation with actual prediction error rather
+  than asserting the score is reliable.</li>
+<li><strong>FR-8.4</strong> The system shall compute F1-specific performance stratification (error by driver, team
+  and tyre compound — the only groupings this single-circuit, no-demographic-data project has) and
+  flag any group below a stated sample-size threshold as descriptive-only.</li>
+<li><strong>FR-8.5</strong> The system shall serve every Task 8 result — importance, SHAP, LIME, counterfactual,
+  trust score, fairness/stratification, and a plain-English narrative per prediction — through
+  <code>GET /api/xai/*</code>, and shall compute a live, reduced-budget explanation for an arbitrary caller-
+  supplied race state (not only the fixed committed set) through <code>app/intelligence/xai/live.py</code>.</li>
+<li><strong>FR-8.6</strong> The system shall raise a explicit, typed error (<code>ExplainerUnavailableError</code>) rather
+  than substitute a stand-in model whenever the model it is asked to explain is missing, so that
+  every explanation served is provably an explanation of the deployed model.</li>
+</ul>
+<h3 id="fr-9--system-integration-task-9">FR-9 — System integration (Task 9)</h3>
+<ul>
+<li><strong>FR-9.1</strong> The system shall validate every incoming race-state request (<code>RaceStateRequest</code>,
+  <code>app/api/schemas.py</code>) both at the schema level (lap/tyre-age consistency, numeric bounds) and
+  against the real dataset's known values (driver, team, tyre compound must be one of
+  <code>GET /api/data/options</code>'s real, dataset-derived choices — never accepted as free text).</li>
+<li><strong>FR-9.2</strong> The system shall combine, for a single submitted race state, the Task 6 ML prediction,
+  the Task 2 expert-system inference and the Task 3 search plan into one response through
+  <code>POST /api/strategy/predict</code>, with each component's output separately attributable in the
+  response body (as implemented in <code>app/services/strategy_service.run_strategy_analysis</code>).</li>
+<li><strong>FR-9.3</strong> The system shall, when a Task 6 model needs an engineered feature that a single
+  race-state snapshot cannot supply (a feature requiring multi-lap history), fill it from a
+  training-data median and report explicitly, per feature, that it did so
+  (<code>approximated_features</code> in the response) — never silently substituting a value.</li>
+<li><strong>FR-9.4</strong> The system shall flag, per feature, when a value derived from the caller's input falls
+  outside the range the underlying model was trained on (<code>out_of_range</code>), with the training range
+  included, so a caller can tell interpolation from extrapolation.</li>
+<li><strong>FR-9.5</strong> The system shall generate a self-contained, downloadable strategy report
+  (<code>POST /api/strategy/report</code>, Markdown by default or <code>?format=html</code> for a self-contained HTML
+  page — <code>app/services/strategy_report.render_markdown</code> / <code>render_html</code>) containing the race state,
+  the recommendation (including the ML/DL agreement or disagreement), triggered rules and their
+  conclusions, the search plan, a Task 8 explanation of the Task 7 network's prediction on the same
+  state, and a provenance table naming which module produced each section.</li>
+<li><strong>FR-9.6</strong> The system shall present six dashboard pages — Overview, Strategy, Reasoning, Models,
+  Explainability, Data — each of which renders exclusively from live API responses, and shall show
+  "Not generated yet" / "Not available" with the exact command to remedy it, never a placeholder
+  value, whenever a requested artifact does not exist.</li>
+<li><strong>FR-9.7</strong> The system shall run a Task 7 DL prediction alongside the Task 6 ML prediction on every
+  <code>/api/strategy/predict</code> call (<code>strategy_service._run_dl</code>, response field <code>dl_prediction</code>), using
+  the tuned decision threshold Task 7's own endpoints use — never a hard-coded 0.5 — and shall
+  combine the expert system, ML and DL evidence with the A* search plan into one <code>recommendation</code>
+  object (<code>action</code> — <code>"PIT NOW"</code> / <code>"STAY OUT"</code> / <code>"PIT IN N LAPS"</code>, <code>confidence</code>, <code>source</code>,
+  <code>disagreement</code>, <code>ml_pit_probability</code>, <code>dl_pit_probability</code>, <code>reason</code>) via
+  <code>strategy_service._combine_recommendation</code>, stating explicitly when ML and DL disagree rather than
+  silently preferring one.</li>
+<li><strong>FR-9.8</strong> The system shall report which models are actually trained and loadable, per target and
+  per model family, through <code>GET /api/health</code>'s <code>models: {ml, dl, xai_available}</code> breakdown, distinct
+  from the task-level "was Task N ever built" ledger (<code>GET /api/tasks/evidence</code>).</li>
+</ul>
+<h3 id="fr-10--evaluation--documentation-task-10">FR-10 — Evaluation &amp; documentation (Task 10)</h3>
+<ul>
+<li><strong>FR-10.1</strong> The system shall maintain a traceability matrix (<code>DELIVERABLES_CHECKLIST.md</code>) mapping
+  every lab-specified deliverable to the file that satisfies it, its build status, and — for
+  anything not yet built — where the material for it already exists.</li>
+<li><strong>FR-10.2</strong> The system shall maintain this SRS, a corresponding SDD, a user manual and a
+  deployment guide (this document and its siblings in <code>docs/</code>), each traceable to the source code
+  and generated artifacts they describe.</li>
+<li><strong>FR-10.3</strong> The system shall maintain a testing report recording an actual, dated <code>pytest</code> run
+  (not a paraphrase) with per-file test counts and the slowest test durations.</li>
+</ul>
+<h3 id="quantum-ml-extension-beyond-the-lab-specification">Quantum ML extension (beyond the lab specification)</h3>
+<ul>
+<li><strong>FR-EXT.1</strong> The system shall train at least three quantum machine-learning models (a variational
+  classifier, a variational regressor and a fidelity-kernel SVM) on a PennyLane noiseless simulator,
+  using the same cross-validation folds and holdout as Task 6, with inputs PCA-reduced (fit on
+  training rows only) to fit a small number of qubits.</li>
+<li><strong>FR-EXT.2</strong> The system shall compare every quantum model against a parameter-matched classical
+  baseline on the same reduced inputs, and shall not claim quantum advantage — the generated report
+  and every dashboard surface state explicitly that this is a noiseless simulation of small circuits
+  on one race.</li>
+</ul>
+<h2 id="4-non-functional-requirements">4. Non-functional requirements</h2>
+<h3 id="41-performance">4.1 Performance</h3>
+<p>Approximate, machine-measured build timings on a laptop CPU, as recorded in
+<a href="DEPLOYMENT.html"><code>DEPLOYMENT.md</code></a> §3:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tasks 1–4 (knowledge, rules, search, cleaning)</td>
+<td>seconds</td>
+</tr>
+<tr>
+<td>Task 5 feature engineering</td>
+<td>~40 s</td>
+</tr>
+<tr>
+<td>Task 6 machine learning</td>
+<td>~25 s</td>
+</tr>
+<tr>
+<td>Task 7 deep learning</td>
+<td>~12 min (the hyperparameter search dominates)</td>
+</tr>
+<tr>
+<td>Task 8 explainable AI</td>
+<td>~2 min</td>
+</tr>
+<tr>
+<td>Quantum ML</td>
+<td>~30 s</td>
+</tr>
+</tbody>
+</table></div>
+<p>A full <code>--force</code> rebuild of every stage is therefore approximately 15 minutes. At serving time, the
+API is read-only per request — trained models are loaded once and cached in-process
+(<code>app/services/model_cache.py</code>), so a prediction request does not retrain or re-read a pipeline from
+disk. <code>uvicorn</code> may be run with multiple workers safely for the same reason.</p>
+<h3 id="42-correctness--no-fabricated-results">4.2 Correctness / no fabricated results</h3>
+<p>Quoted directly from the project's own stated rules (<code>README.md</code>, "The rules we held ourselves to"):</p>
+<blockquote>
+<ul>
+<li><strong>No leakage.</strong> Sector times sum to the lap time, so they are excluded along with speed traps
+  and <code>IsPersonalBest</code>. A test fails the build if any of them reaches a training matrix.</li>
+<li><strong>No random splits.</strong> This is a time-ordered panel, so a shuffled K-fold would train on lap 50
+  and validate on lap 10. Every model uses expanding-window, lap-forward folds with a
+  chronological holdout.</li>
+<li><strong>Scalers are fit inside each fold</strong>, never on the whole dataset.</li>
+<li><strong>No made-up numbers.</strong> Every value on the dashboard is read from a generated artifact. When
+  something cannot be computed, the UI and the reports say "undefined" and why.</li>
+</ul>
+</blockquote>
+<p>These are enforced by the test suite, not only stated: leakage columns are asserted never to reach
+a training matrix, no fold is asserted to train on a later lap than it validates on, a saved model
+is asserted to reload and predict identically, and the committed trust scores are asserted to
+recompute from their own recorded inputs (<code>docs/architecture.md</code>, "Testing").</p>
+<h3 id="43-reproducibility">4.3 Reproducibility</h3>
+<p>Every trained model records its random seed, dataset version, feature metadata, hyperparameters,
+training timestamp, validation strategy, feature list, target, metrics and software versions
+(<code>artifacts/metadata/model_registry.json</code>). Stochastic steps in feature selection and model
+training are seeded (<code>random_state=42</code>) so a rebuild from the same raw data reproduces the committed
+contract and metrics; the last full verification of this is recorded in
+<a href="TESTING_REPORT.html"><code>TESTING_REPORT.md</code></a>, which reports metrics reproducing to roughly <code>1e-14</code>
+after a clean <code>--force</code> rebuild.</p>
+<h3 id="44-testing">4.4 Testing</h3>
+<p>As of the audit dated 2026-09-27 (<code>docs/TESTING_REPORT.md</code>): <strong>284 tests passed, 0 failed, 0
+skipped</strong>, in 57.67 s, across 16 test files, together with a clean <code>ruff check .</code> and a passing
+frontend production build (<code>npm run build</code>, 6 routes). The test suite writes to a temporary
+directory (<code>app.core.paths.ArtifactPaths</code> redirected root) so running it never modifies the
+committed artifacts. (<code>docs/architecture.md</code>'s own "120 tests" figure and the top-level
+<code>README.md</code>'s prose reference to "261 tests" predate this audit and are superseded by the dated,
+<code>pytest --collect-only</code>-verified count in <code>TESTING_REPORT.md</code>.)</p>
+<h3 id="45-security--data-exposure">4.5 Security / data exposure</h3>
+<p>CORS is not a wildcard: allowed origins are read from <code>F1_ALLOWED_ORIGINS</code> (default
+<code>http://localhost:3000,http://127.0.0.1:3000</code>), and only <code>GET</code>/<code>POST</code> with a <code>Content-Type</code> header
+are permitted (<code>app/api/main.py</code>). Only specific artifact subdirectories — figures, reports,
+data_engineering, knowledge_representation, expert_system, search, deep_learning, xai — are mounted
+read-only under <code>/artifacts/</code>; <code>models/</code> and <code>metadata/</code> are never mounted, so trained weights
+(<code>.joblib</code>, <code>.h5</code>, <code>.npy</code>) are not downloadable over HTTP by construction (a route that doesn't
+exist cannot be bypassed by a filtering rule).</p>
+<h2 id="5-constraints">5. Constraints</h2>
+<ul>
+<li><strong>Single-race data.</strong> All Task 5–8 training, evaluation, explanation and dashboard numbers are
+  derived from one session: the 2023 Bahrain Grand Prix (Race), 1,055 raw laps / 995 usable rows
+  after the warm-up trim (<code>data/processed/feature_metadata.json</code>). No claim on the dashboard should
+  be read as generalising beyond that race.</li>
+<li><strong>Python 3.12+</strong> is required; the system was developed and its committed artifacts generated on
+  Python 3.14.6 (<code>docs/DEPLOYMENT.md</code> §1).</li>
+<li><strong>Node.js 20+</strong> is required for the frontend.</li>
+<li><strong>No database, no message queue, no cloud service.</strong> The system reads and writes plain files under
+  <code>data/</code> and <code>artifacts/</code> only (<code>docs/DEPLOYMENT.md</code> §1).</li>
+<li><strong>XGBoost is optional</strong>, gated on the native <code>libomp</code> runtime; its absence is detected and reported
+  ("XGBoost unavailable — skipped") rather than failing the build or fabricating a result.</li>
+<li><strong>TensorFlow has no wheel for Python 3.14</strong>; Task 7 runs Keras 3 on the PyTorch backend instead
+  (<code>app/core/runtime.py</code>), and an import-order guard exists because PyTorch and XGBoost's OpenMP
+  runtimes can otherwise segfault on macOS.</li>
+<li><strong>Containerization is optional, additive to the process-based path.</strong> <code>Dockerfile</code>,
+  <code>frontend/Dockerfile</code> and <code>docker-compose.yml</code> exist at the repository root; <code>./run.sh</code> remains the
+  primary local workflow and is unaffected — see <a href="sdd.html"><code>sdd.md</code></a> §6 and
+  <a href="deployment_guide.html"><code>deployment_guide.md</code></a>'s Docker section.</li>
+</ul>
+<h2 id="6-external-interfaces">6. External interfaces</h2>
+<p>The system's only external interface is a REST API served by FastAPI (<code>app/api/main.py</code>), consumed
+by the Next.js dashboard through a typed client (<code>frontend/lib/api.ts</code>) and by
+<code>scripts/demo_predict.py</code>. Every endpoint below is read directly from the router source under
+<code>app/api/routers/</code>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Router</th>
+<th>Method &amp; path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>health</td>
+<td><code>GET /api/health</code></td>
+<td>Liveness/status: model registry presence, model count, XGBoost availability, and a per-target/per-family <code>models: {ml, dl, xai_available}</code> breakdown</td>
+</tr>
+<tr>
+<td>ml</td>
+<td><code>GET /api/ml/models</code></td>
+<td>Task 6 model registry (classical models only)</td>
+</tr>
+<tr>
+<td>ml</td>
+<td><code>GET /api/ml/metrics</code></td>
+<td>Regression + classification metrics</td>
+</tr>
+<tr>
+<td>ml</td>
+<td><code>GET /api/ml/comparison</code></td>
+<td>All Task 6 models ranked on the primary CV metric</td>
+</tr>
+<tr>
+<td>ml</td>
+<td><code>GET /api/ml/artifacts</code></td>
+<td>The generated-artifact manifest</td>
+</tr>
+<tr>
+<td>ml</td>
+<td><code>GET /api/ml/feature-importance</code></td>
+<td>Native feature importance of each task's selected-best model</td>
+</tr>
+<tr>
+<td>ml</td>
+<td><code>GET /api/ml/top-features</code></td>
+<td>Top-N features for a target, human-readable, ranking method stated</td>
+</tr>
+<tr>
+<td>ml</td>
+<td><code>POST /api/ml/predict/laptime</code></td>
+<td>Lap-time prediction from a full Task 5 feature row</td>
+</tr>
+<tr>
+<td>ml</td>
+<td><code>POST /api/ml/predict/pit</code></td>
+<td>Pit-probability prediction from a full Task 5 feature row</td>
+</tr>
+<tr>
+<td>strategy</td>
+<td><code>POST /api/strategy/predict</code></td>
+<td>Combined ML + DL + expert-system + search recommendation from a race state, eight pipeline stages in one response</td>
+</tr>
+<tr>
+<td>strategy</td>
+<td><code>POST /api/strategy/report</code></td>
+<td>Downloadable strategy briefing, <code>?format=markdown</code> (default) or <code>?format=html</code> (always includes explanations)</td>
+</tr>
+<tr>
+<td>data</td>
+<td><code>GET /api/data/options</code></td>
+<td>Real driver/team/compound dropdown values and the trained track-temperature range</td>
+</tr>
+<tr>
+<td>dl</td>
+<td><code>GET /api/dl/models</code></td>
+<td>Task 7 entries in the shared model registry</td>
+</tr>
+<tr>
+<td>dl</td>
+<td><code>GET /api/dl/metrics</code></td>
+<td>Task 7 evaluation report</td>
+</tr>
+<tr>
+<td>dl</td>
+<td><code>GET /api/dl/comparison</code></td>
+<td>Task 7 vs. Task 6 on the identical holdout</td>
+</tr>
+<tr>
+<td>dl</td>
+<td><code>GET /api/dl/history</code></td>
+<td>Per-epoch training curves</td>
+</tr>
+<tr>
+<td>dl</td>
+<td><code>GET /api/dl/artifacts</code></td>
+<td>Which Task 7 deliverables exist on disk</td>
+</tr>
+<tr>
+<td>dl</td>
+<td><code>POST /api/dl/predict/laptime</code></td>
+<td>Task 7 network lap-time prediction</td>
+</tr>
+<tr>
+<td>dl</td>
+<td><code>POST /api/dl/predict/pit</code></td>
+<td>Task 7 network pit prediction, at the tuned threshold</td>
+</tr>
+<tr>
+<td>xai</td>
+<td><code>GET /api/xai/summary</code></td>
+<td>Headline Task 8 status per target</td>
+</tr>
+<tr>
+<td>xai</td>
+<td><code>GET /api/xai/feature-importance</code></td>
+<td>Permutation importance, DNN vs. classical</td>
+</tr>
+<tr>
+<td>xai</td>
+<td><code>GET /api/xai/shap</code></td>
+<td>Global SHAP ranking and per-row attributions</td>
+</tr>
+<tr>
+<td>xai</td>
+<td><code>GET /api/xai/lime</code></td>
+<td>LIME local surrogates and their local R²</td>
+</tr>
+<tr>
+<td>xai</td>
+<td><code>GET /api/xai/counterfactual</code></td>
+<td>Tyre-age counterfactual scan and DiCE alternatives</td>
+</tr>
+<tr>
+<td>xai</td>
+<td><code>GET /api/xai/trust-score</code></td>
+<td>Trust score, components, formula and weights</td>
+</tr>
+<tr>
+<td>xai</td>
+<td><code>GET /api/xai/fairness</code></td>
+<td>Identity-attribution share vs. an even spread</td>
+</tr>
+<tr>
+<td>xai</td>
+<td><code>GET /api/xai/explanation</code></td>
+<td>The plain-English, per-prediction race-engineer view</td>
+</tr>
+<tr>
+<td>xai</td>
+<td><code>GET /api/xai/stratification</code></td>
+<td>Error by driver, team and tyre compound</td>
+</tr>
+<tr>
+<td>xai</td>
+<td><code>GET /api/xai/laps</code></td>
+<td>Every scored test lap, for the lap inspector</td>
+</tr>
+<tr>
+<td>xai</td>
+<td><code>GET /api/xai/lap</code></td>
+<td>One lap's full explanation, with a live-computed counterfactual</td>
+</tr>
+<tr>
+<td>qml</td>
+<td><code>GET /api/qml/summary</code></td>
+<td>Quantum vs. parameter-matched classical results</td>
+</tr>
+<tr>
+<td>qml</td>
+<td><code>GET /api/qml/training</code></td>
+<td>Per-epoch loss for the variational quantum models</td>
+</tr>
+<tr>
+<td>qml</td>
+<td><code>GET /api/qml/search</code></td>
+<td>Every quantum hyperparameter trial and its CV score</td>
+</tr>
+<tr>
+<td>reasoning</td>
+<td><code>GET /api/reasoning/knowledge</code></td>
+<td>Task 1 ontology/graph counts</td>
+</tr>
+<tr>
+<td>reasoning</td>
+<td><code>GET /api/reasoning/expert-system</code></td>
+<td>Task 2 rule base</td>
+</tr>
+<tr>
+<td>reasoning</td>
+<td><code>GET /api/reasoning/search</code></td>
+<td>Task 3 five-algorithm comparison</td>
+</tr>
+<tr>
+<td>tasks</td>
+<td><code>GET /api/tasks/evidence</code></td>
+<td>Live scan of every task's real generated artifacts</td>
+</tr>
+<tr>
+<td>charts</td>
+<td><code>GET /api/charts</code></td>
+<td>Index of available chart-data JSON files</td>
+</tr>
+<tr>
+<td>charts</td>
+<td><code>GET /api/charts/{name}</code></td>
+<td>One chart's underlying numbers (browser-drawn, not a served PNG)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Static files: <code>/artifacts/{figures,reports,data_engineering,knowledge_representation,
+expert_system,search,deep_learning,xai}/**</code> are mounted read-only. <code>artifacts/models/</code> and
+<code>artifacts/metadata/</code> are never mounted.</p>
+<p>Every endpoint above returns HTTP 404 (missing artifact) or 503 (no trained model) with an
+actionable detail message — never a 200 with a fabricated body — when the underlying pipeline stage
+has not been run.</p>
+<h2 id="7-assumptions-and-dependencies">7. Assumptions and dependencies</h2>
+<ul>
+<li>The committed <code>artifacts/</code> and <code>data/processed/</code> directories (approximately 15 MB, committed to
+  the repository) already contain a complete build, so a fresh clone has a working system before
+  anything is rebuilt.</li>
+<li>The pinned library versions in <code>requirements.txt</code> (scikit-learn 1.9.0, xgboost 3.4.1, keras
+  3.15.1, torch 2.14.0, shap 0.52.0, lime 0.2.0.1) are assumed to reproduce the committed metrics; an
+  unpinned upgrade is not guaranteed to.</li>
+<li><code>scripts/fetch_real_session.py</code> assumes network access to FastF1's data source when retraining on
+  a different race; there is no offline cache shipped for a session other than the committed one.</li>
+</ul>
+</main>
+</body>
+</html>

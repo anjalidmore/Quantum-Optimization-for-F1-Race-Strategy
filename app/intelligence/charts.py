@@ -16,12 +16,43 @@ picture without the picture changing too.
 """
 from __future__ import annotations
 
+import functools
+import inspect
 import json
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 from app.core.paths import CHART_DATA_DIR, REPO_ROOT
+
+# Where ``write`` puts chart JSON while a pipeline runs with a redirected
+# ``output_root``. None means the committed location, ``CHART_DATA_DIR``.
+_OUTPUT_DIR: ContextVar[Path | None] = ContextVar("chart_output_dir", default=None)
+
+
+def follows_output_root(fn):
+    """Send the charts a pipeline writes to ``<output_root>/chart_data``.
+
+    The ML, DL and QML pipelines take ``output_root`` so the tests can write
+    every model, metric and figure under a tmp directory. Chart JSON used to
+    ignore it and always land in ``artifacts/chart_data/``, so a "hermetic"
+    test run still rewrote tracked files there (with ~1e-14 float noise from
+    re-fitting). With no ``output_root`` nothing changes.
+    """
+    sig = inspect.signature(fn)
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        root = sig.bind_partial(*args, **kwargs).arguments.get("output_root")
+        if root is None:
+            return fn(*args, **kwargs)
+        token = _OUTPUT_DIR.set(Path(root) / "chart_data")
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            _OUTPUT_DIR.reset(token)
+    return wrapper
 
 
 def _plain(v: Any) -> Any:
@@ -112,9 +143,12 @@ def _dataset_source() -> str:
 
 
 def write(name: str, chart: Chart, figure: Path | None = None) -> Path:
-    """Write ``artifacts/chart_data/<name>.json``. Returns the path."""
-    CHART_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    out = CHART_DATA_DIR / f"{name}.json"
+    """Write ``artifacts/chart_data/<name>.json`` — or, inside a pipeline run
+    with a redirected ``output_root``, ``<output_root>/chart_data/<name>.json``.
+    Returns the path."""
+    out_dir = _OUTPUT_DIR.get() or CHART_DATA_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / f"{name}.json"
     out.write_text(json.dumps(chart.as_dict(name, figure), indent=2) + "\n", encoding="utf-8")
     return out
 

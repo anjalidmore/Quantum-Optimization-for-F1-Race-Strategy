@@ -28,6 +28,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 from app.core.paths import (
     ARTIFACTS_DIR,
+    CHART_DATA_DIR,
     DATA_ENGINEERING_ARTIFACTS_DIR,
     DATA_RAW_DIR,
     DL_METRICS_JSON,
@@ -37,7 +38,6 @@ from app.core.paths import (
     ML_MODEL_REGISTRY_JSON,
     QML_METRICS_JSON,
     SEARCH_ARTIFACTS_DIR,
-    CHART_DATA_DIR,
     TASK5_FEATURE_METADATA_JSON,
     TASK5_FEATURES_CSV,
     XAI_RESULTS_JSON,

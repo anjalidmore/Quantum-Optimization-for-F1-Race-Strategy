@@ -35,6 +35,20 @@ def training_summary(training_output):
     return train_all(output_root=training_output.root)
 
 
+def test_chart_data_follows_the_redirected_output_root(training_summary, training_output):
+    """Chart JSON used to ignore ``output_root`` and rewrite the tracked
+    ``artifacts/chart_data/`` with float noise on every test run."""
+    from app.core.paths import CHART_DATA_DIR
+
+    redirected = training_output.root / "chart_data"
+    written = {p.stem for p in redirected.glob("*.json")}
+    assert {"probability_distribution", "regression_model_comparison"} <= written
+    for name in written:
+        committed = CHART_DATA_DIR / f"{name}.json"
+        if committed.exists():
+            assert committed.stat().st_mtime < (redirected / f"{name}.json").stat().st_mtime
+
+
 def test_pipeline_selects_a_best_model_for_each_task(training_summary):
     assert training_summary["best_regression_model"] is not None
     assert training_summary["best_classification_model"] is not None

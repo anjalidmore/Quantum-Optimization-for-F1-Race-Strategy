@@ -179,7 +179,7 @@ def _task9() -> dict:
     doesn't silently go stale (as it did while this function only returned a
     fixed 'upcoming')."""
     deliverables = {
-        "deployment_guide": REPO_ROOT / "docs" / "DEPLOYMENT.md",
+        "deployment_guide": REPO_ROOT / "docs" / "DEPLOYMENT.html",
         "dockerfile_backend": REPO_ROOT / "Dockerfile",
         "dockerfile_frontend": REPO_ROOT / "frontend" / "Dockerfile",
         "docker_compose": REPO_ROOT / "docker-compose.yml",
@@ -199,15 +199,15 @@ def _task9() -> dict:
 
 
 def _task10() -> dict:
-    """Task 10's remaining deliverables (per docs/DELIVERABLES_CHECKLIST.md)
+    """Task 10's remaining deliverables (per docs/DELIVERABLES_CHECKLIST.html)
     are documents under docs/ and artifacts/evaluation/ + artifacts/reports/ —
     scanned for real, same reasoning as _task9."""
     docs = {
-        "testing_report": REPO_ROOT / "docs" / "TESTING_REPORT.md",
-        "deployment_guide": REPO_ROOT / "docs" / "deployment_guide.md",
-        "user_manual": REPO_ROOT / "docs" / "user_manual.md",
-        "srs": REPO_ROOT / "docs" / "srs.md",
-        "sdd": REPO_ROOT / "docs" / "sdd.md",
+        "testing_report": REPO_ROOT / "docs" / "TESTING_REPORT.html",
+        "deployment_guide": REPO_ROOT / "docs" / "deployment_guide.html",
+        "user_manual": REPO_ROOT / "docs" / "user_manual.html",
+        "srs": REPO_ROOT / "docs" / "srs.html",
+        "sdd": REPO_ROOT / "docs" / "sdd.html",
         "final_report": REPO_ROOT / "artifacts" / "reports" / "Task9_Task10_Report.docx",
     }
     present = [k for k, v in docs.items() if v.exists()]

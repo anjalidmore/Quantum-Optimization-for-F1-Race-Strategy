@@ -24,7 +24,8 @@ from sklearn.metrics import (
     roc_curve,
 )
 
-from app.intelligence.charts import Axis, Chart, Series, histogram, write as write_chart
+from app.intelligence.charts import Axis, Chart, Series, histogram
+from app.intelligence.charts import write as write_chart
 
 plt.rcParams.update({"figure.dpi": 110, "font.size": 10})
 

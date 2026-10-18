@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 1 · Task 2 — Rule-Based Expert System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="assets/docs.css">
+</head>
+<body>
+<nav class="doc-bar" aria-label="Documentation"><span class="mark" aria-hidden="true"></span>
+<strong>F1 Race Strategy Intelligence</strong>
+<a href="study_guide.html">Study guide (all documents)</a>
+<a href="../README.md">README</a></nav>
+<main class="doc-page prose">
+<h1 id="phase-1--task-2--rule-based-expert-system">Phase 1 · Task 2 — Rule-Based Expert System</h1>
+<p>Part of <strong>Quantum Optimization for Formula 1 Race Strategy</strong>.</p>
+<blockquote>
+<p><strong>Scope of this module:</strong> a classical, symbolic production-rule expert system.
+No machine learning, no quantum computing. It reasons over the vocabulary
+established by Task 1 (Knowledge Representation) to recommend race-strategy
+decisions with full, auditable explanations.</p>
+</blockquote>
+<hr />
+<h2 id="1-what-this-module-does">1. What this module does</h2>
+<p>Given a snapshot of the race state (weather, tyres, position, track status,
+fuel, …), the expert system infers strategy recommendations — which tyre to
+fit, whether and when to pit, how many stops to plan, how to manage fuel/energy,
+and how to race the cars around you — and <strong>explains every conclusion</strong>.</p>
+<p>It is a complete production-rule system:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>File</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rule schema</td>
+<td><code>rules_schema.py</code></td>
+<td>Typed <code>Condition</code> / <code>Action</code> / <code>Rule</code> objects with operators, salience, connectives</td>
+</tr>
+<tr>
+<td>Working memory</td>
+<td><code>working_memory.py</code></td>
+<td>Instrumented fact base with provenance + a canonical fact-key registry</td>
+</tr>
+<tr>
+<td>Rule base</td>
+<td><code>rule_base.py</code></td>
+<td>Curated, non-redundant expert rules across 10 strategic domains</td>
+</tr>
+<tr>
+<td>Inference engine</td>
+<td><code>inference.py</code></td>
+<td>Forward chaining, backward chaining, conflict resolution</td>
+</tr>
+<tr>
+<td>Rule validator</td>
+<td><code>rule_validation.py</code></td>
+<td>Static integrity checks (typos, contradictions, bounds)</td>
+</tr>
+<tr>
+<td>Explanation</td>
+<td><code>explanation.py</code></td>
+<td>HOW / WHY justifications and audit trails</td>
+</tr>
+<tr>
+<td>Reports</td>
+<td><code>reports.py</code></td>
+<td>Markdown deliverable generators</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="2-why-a-curated-rule-set">2. Why a curated rule set</h2>
+<p>A large count of near-duplicate rules inflates a number without adding
+knowledge, and it actively <em>harms</em> a production system: overlapping rules create
+order-dependent conflicts and make the knowledge base unmaintainable. This
+module instead provides a <strong>substantial, well-organised, non-redundant core</strong>
+that is:</p>
+<ul>
+<li><strong>Structured</strong> — each rule is a typed object, serialisable to/from JSON
+  (<code>outputs/rules/rule_base.json</code>), not an opaque string.</li>
+<li><strong>Validated</strong> — a static validator proves the base is internally consistent
+  (unique ids, registered keys, no order-dependent contradictions, sane
+  operators and confidences).</li>
+<li><strong>Explainable</strong> — every rule carries a human rationale surfaced in
+  explanations.</li>
+<li><strong>Extensible</strong> — the schema and fact registry make adding rules safe; the
+  validator catches mistakes immediately.</li>
+</ul>
+<p>The rule base spans ten categories: <code>weather</code>, <code>safety_car</code>, <code>pit</code>,
+<code>degradation</code>, <code>tyre</code>, <code>strategy</code>, <code>fuel</code>, <code>energy</code>, <code>tactics</code>, <code>risk</code>. It is
+designed to <em>grow</em> — the architecture, not the raw count, is the deliverable.</p>
+<hr />
+<h2 id="3-architecture">3. Architecture</h2>
+<div class="hl"><pre><span></span><code>race-state inputs
+        │
+        ▼
+ WorkingMemory (GIVEN facts)
+        │
+        ▼
+ InferenceEngine ──► forward_chain()  ─┐   conflict resolution:
+        │                              │   salience → specificity → id
+        │                              ▼
+        │                     ForwardResult (firings + derived facts)
+        │                              │
+        │                              ▼
+        │                        Explainer ──► HOW / WHY / audit trail
+        │
+        └──► backward_chain(goal) ──► ProofNode tree
+</code></pre></div>
+
+<ul>
+<li><strong>Forward chaining</strong> is data-driven: it repeatedly evaluates the conflict set,
+  fires rules in resolved order, and iterates to a fixed point. A firing
+  signature guard prevents a rule re-asserting an identical conclusion, so the
+  loop provably terminates.</li>
+<li><strong>Backward chaining</strong> is goal-driven: given a target <code>(key, value)</code>, it finds
+  supporting rules and recursively proves their conditions, returning a proof
+  tree.</li>
+<li><strong>Conflict resolution</strong> is pluggable (<code>SALIENCE</code>, <code>SPECIFICITY</code>, <code>FIFO</code>); the
+  default is salience → specificity → rule-id, which is deterministic.</li>
+</ul>
+<hr />
+<h2 id="4-installation">4. Installation</h2>
+<p>Requires <strong>Python 3.10+</strong>. The runtime has <strong>no third-party dependencies</strong>.</p>
+<div class="hl"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>phase1_task2_expert_system
+pip3<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt<span class="w">   </span><span class="c1"># only pytest, for the tests</span>
+</code></pre></div>
+
+<hr />
+<h2 id="5-execution--one-command">5. Execution — one command</h2>
+<div class="hl"><pre><span></span><code>python3<span class="w"> </span>run_expert_system.py
+</code></pre></div>
+
+<p>This validates the rule base, serialises it to JSON, runs five representative
+scenarios through forward chaining, demonstrates backward chaining, and writes
+every report to <code>outputs/</code>. It exits non-zero if validation fails (CI gate).</p>
+<p>Expected tail:</p>
+<div class="hl"><pre><span></span><code>Built rule base: 32 rules across 10 categories.
+[PASS] unique_rule_ids ... [PASS] no_order_dependent_contradictions
+Scenario 'Wet weather changeover': ... recommended_tyre='INTERMEDIATE'
+Scenario 'Safety car opportunity': ... pit_decision='PIT_NOW'
+Backward-chaining 'pit_decision == PIT_NOW': proven=True
+All Task-2 deliverables generated successfully in .../outputs
+</code></pre></div>
+
+<h3 id="using-the-engine-programmatically">Using the engine programmatically</h3>
+<div class="hl"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">f1es.rule_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_rule_base</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">f1es.inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceEngine</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">f1es.explanation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Explainer</span>
+
+<span class="n">engine</span> <span class="o">=</span> <span class="n">InferenceEngine</span><span class="p">(</span><span class="n">build_rule_base</span><span class="p">())</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">forward_chain</span><span class="p">({</span><span class="s2">"track_status"</span><span class="p">:</span> <span class="s2">"SC"</span><span class="p">,</span> <span class="s2">"tyre_wear"</span><span class="p">:</span> <span class="mi">60</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">conclusions</span><span class="p">)</span>                      <span class="c1"># {'pit_decision': 'PIT_NOW', ...}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Explainer</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">build_rule_base</span><span class="p">())</span><span class="o">.</span><span class="n">narrative</span><span class="p">())</span>
+</code></pre></div>
+
+<hr />
+<h2 id="6-tests">6. Tests</h2>
+<div class="hl"><pre><span></span><code>pytest<span class="w"> </span>-q
+</code></pre></div>
+
+<p>21 tests cover the operator semantics, working-memory provenance, rule-base
+validation (including negative tests that the validator <em>catches</em> unregistered
+keys and contradictions), forward-chaining correctness and termination, salience
+ordering, backward-chaining success/failure, and explanation generation.</p>
+<hr />
+<h2 id="7-deliverables-written-to-outputs">7. Deliverables (written to <code>outputs/</code>)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Deliverable</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Serialised rule base (JSON)</td>
+<td><code>outputs/rules/rule_base.json</code></td>
+</tr>
+<tr>
+<td>Rule catalogue (all rules, grouped)</td>
+<td><code>outputs/reports/rule_catalogue.md</code></td>
+</tr>
+<tr>
+<td>Rule-base validation report</td>
+<td><code>outputs/reports/rule_validation_report.md</code></td>
+</tr>
+<tr>
+<td>Per-scenario inference reports (×5, with HOW/WHY)</td>
+<td><code>outputs/reports/inference_0*.md</code></td>
+</tr>
+<tr>
+<td>Backward-chaining proof demonstration</td>
+<td><code>outputs/reports/backward_chaining_demo.md</code></td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="8-folder-structure">8. Folder structure</h2>
+<div class="hl"><pre><span></span><code>phase1_task2_expert_system/
+├── run_expert_system.py        # end-to-end driver / CI gate
+├── requirements.txt
+├── pytest.ini
+├── README.md
+├── src/f1es/
+│   ├── __init__.py
+│   ├── rules_schema.py         # typed Condition/Action/Rule
+│   ├── working_memory.py       # fact base + fact-key registry
+│   ├── rule_base.py            # curated expert rules
+│   ├── inference.py            # forward/backward chaining + conflict resolution
+│   ├── rule_validation.py      # static integrity checks
+│   ├── explanation.py          # HOW/WHY explanations
+│   └── reports.py              # Markdown generators
+├── tests/
+│   └── test_expert_system.py
+└── outputs/                    # generated on run
+    ├── rules/rule_base.json
+    └── reports/*.md
+</code></pre></div>
+
+<hr />
+<h2 id="9-relationship-to-other-tasks">9. Relationship to other tasks</h2>
+<ul>
+<li><strong>Consumes Task 1.</strong> The fact keys and decision variables are drawn from the
+  entities and relationships formalised in the knowledge representation.</li>
+<li><strong>Feeds later phases.</strong> These symbolic rules provide interpretable baselines
+  and guardrails that the machine-learning (Phase 2) and quantum-optimisation
+  (Phase 3) components are compared against and constrained by.</li>
+</ul>
+<h2 id="10-next-task">10. Next task</h2>
+<p><strong>Task 3 — State-Space Search</strong> models race strategy as a search problem
+(BFS, DFS, UCS, Greedy, A*) over strategy states, reusing this task's state
+vocabulary and the expert rules as heuristic guidance.</p>
+</main>
+</body>
+</html>

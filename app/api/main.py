@@ -19,7 +19,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routers import charts, data, dl, health, ml, qml, reasoning, strategy, tasks, xai
+from app.api.routers import charts, data, dl, health, ml, qml, rai, reasoning, strategy, tasks, xai
 from app.core.paths import ARTIFACTS_DIR
 
 app = FastAPI(
@@ -65,6 +65,7 @@ app.include_router(xai.router)
 app.include_router(qml.router)
 app.include_router(reasoning.router)
 app.include_router(charts.router)
+app.include_router(rai.router)
 
 # ---------------------------------------------------------------------------
 # Static artifacts

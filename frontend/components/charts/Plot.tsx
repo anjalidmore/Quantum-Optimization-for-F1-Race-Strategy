@@ -10,12 +10,12 @@ import { seriesColor } from "./types";
 /* One place for the look of every axis, grid and tooltip, so a chart cannot
    drift from the design system by being written later than the others.
    Colours are var() strings: the theme repaints them with no JS. */
-const AXIS = {
+export const AXIS = {
   stroke: "var(--edge)",
   tick: { fill: "var(--paper-500)", fontSize: 11, fontVariantNumeric: "tabular-nums" as const },
   label: { fill: "var(--paper-500)", fontSize: 11 },
 };
-const GRID = { stroke: "var(--grid)", strokeDasharray: "2 4" } as const;
+export const GRID = { stroke: "var(--grid)", strokeDasharray: "2 4" } as const;
 const MARGIN = { top: 6, right: 12, bottom: 22, left: 4 };
 
 function axisLabel(text: string, unit: string | null) {
@@ -23,7 +23,7 @@ function axisLabel(text: string, unit: string | null) {
 }
 
 /** Recharts' default tooltip is a white box. This one is a card. */
-function ChartTooltip({ active, payload, label }: any) {
+export function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-sm border border-edge bg-track-100 px-2.5 py-2 text-[12px] shadow-none">
@@ -38,7 +38,7 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-const LEGEND = { wrapperStyle: { fontSize: 11, color: "var(--paper-500)" } };
+export const LEGEND = { wrapperStyle: { fontSize: 11, color: "var(--paper-500)" } };
 
 /** Series shaped as rows keyed by x, which is what Recharts wants.
     A per-point error (the QML fold spread) rides along on its own row key. */

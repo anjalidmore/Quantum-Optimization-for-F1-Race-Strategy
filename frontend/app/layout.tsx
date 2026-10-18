@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, Saira_Condensed } from "next/font/google";
+import { IBM_Plex_Sans, Titillium_Web } from "next/font/google";
 import Nav from "@/components/Nav";
 import "./globals.css";
 
 /* Two families, self-hosted at build by next/font — no runtime CDN request.
-   Saira Condensed carries headlines and figures (timing-screen vernacular);
-   IBM Plex Sans carries everything else and has real tabular figures. */
-const display = Saira_Condensed({
+   Titillium Web carries headlines, nav and hero figures (Formula 1's own
+   long-standing web face); IBM Plex Sans carries everything else and has
+   real tabular figures, which tables and stat columns need to align. */
+const display = Titillium_Web({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["400", "600", "700", "900"],
   variable: "--font-display",
   display: "swap",
 });
