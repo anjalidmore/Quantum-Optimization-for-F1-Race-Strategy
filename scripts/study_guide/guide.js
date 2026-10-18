@@ -31,7 +31,7 @@
   var panels = {};
   $$("[data-tab]").forEach(function (p) { panels[p.getAttribute("data-tab")] = p; });
   var tabButtons = $$(".tabs [role=tab]");
-  var lastHash = { guide: "home", diagrams: "diagrams", code: "p-home", reports: "reports-home", showcase: "slide-1" };
+  var lastHash = { guide: "home", diagrams: "diagrams", code: "p-home", reports: "reports-home", showcase: "slide-1", extras: "extras-home" };
   var current = null, currentView = null;
   var backBtn = $("#back-btn"), crumbs = $("#breadcrumb");
 
@@ -56,7 +56,13 @@
     $$("[data-doc-link], [data-practical-link]").forEach(function (a) {
       var key = a.getAttribute("data-doc-link") || a.getAttribute("data-practical-link");
       var id = a.hasAttribute("data-doc-link") ? key : "p-" + key;
-      if (id === view.id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+      if (id === view.id) {
+        a.setAttribute("aria-current", "page");
+        // Keep the active sub-tab visible in a horizontally scrolling strip
+        // (phones) without scrolling the page itself.
+        var strip = a.classList.contains("subtab") && a.closest(".subtabs");
+        if (strip && strip.scrollWidth > strip.clientWidth) strip.scrollLeft = a.offsetLeft - strip.clientWidth / 3;
+      } else a.removeAttribute("aria-current");
     });
   }
 
@@ -249,6 +255,27 @@
     try { document.execCommand("copy"); } catch (err) { /* nothing more to try */ }
     ta.remove();
   }
+
+  /* ---------------- Image viewer ----------------
+     Images are embedded in the page, so "open full size" is an overlay
+     rather than a link to a file the reader does not have. */
+  var lb = $("#lightbox"), lbImg = lb && lb.querySelector("img"), lbReturn = null;
+  function closeLightbox() {
+    if (!lb || lb.hidden) return;
+    lb.hidden = true; lbImg.removeAttribute("src");
+    if (lbReturn) lbReturn.focus();
+  }
+  document.addEventListener("click", function (e) {
+    var img = e.target.closest(".prose img, .figure img, .summary-sheet img");
+    if (img && lb) {
+      e.preventDefault();
+      lbReturn = img; lbImg.src = img.src; lbImg.alt = img.alt || "";
+      lb.hidden = false; lb.querySelector(".lb-close").focus();
+      return;
+    }
+    if (lb && !lb.hidden && (e.target === lb || e.target.closest(".lb-close"))) closeLightbox();
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeLightbox(); });
 
   /* ---------------- Showcase deck ---------------- */
   var deck = (function () {

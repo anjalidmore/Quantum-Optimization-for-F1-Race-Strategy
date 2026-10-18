@@ -13,7 +13,7 @@ We take a real Grand Prix session, clean it, engineer features from it, and then
 
 ## What we built
 
-The lab specification is ten tasks, plus a quantum-ML extension. All ten are implemented; they are one application rather than ten folders. The full traceability matrix, with every deliverable opened and checked against its content, is in [`docs/DELIVERABLES_CHECKLIST.html`](docs/DELIVERABLES_CHECKLIST.html):
+The lab specification is ten tasks, plus a quantum-ML extension. All ten are implemented; they are one application rather than ten folders. The full traceability matrix, with every deliverable opened and checked against its content, is in [`docs/source/DELIVERABLES_CHECKLIST.html`](docs/source/DELIVERABLES_CHECKLIST.html):
 
 | Task | What it does | Where it lives |
 |---|---|---|
@@ -54,7 +54,7 @@ quantum stage, `--force-ports` to take :8000 and :3000 without asking. Set
 `BACKEND_PORT` / `FRONTEND_PORT` to move it out of the way instead.
 
 Or containerized — `docker compose up` after a `docker compose build` (see
-[`docs/deployment_guide.html`](docs/deployment_guide.html) §9), which builds a
+[`docs/source/deployment_guide.html`](docs/source/deployment_guide.html) §9), which builds a
 code-only backend and frontend image and bind-mounts `data/`/`artifacts/`
 from the host, so `./run.sh`'s (or `scripts/build_all.py`'s) output is what
 the containers actually serve.
@@ -104,7 +104,9 @@ tests/              261 tests
 artifacts/          every generated model, metric, figure and report
 data/               raw session data and the Task 5 feature contract
 docs/               architecture, per-task notes, the Task 5 notebook walkthrough, and
-                    study_guide.html — study hub, diagrams & workflow, code walkthrough, reports and a showcase deck
+                    study_guide.html — ONE self-contained, shareable file: study hub, diagrams & workflow,
+                    code walkthrough, reports, showcase deck, and every other doc under Extras
+                    (sources it is built from: docs/source/)
                     (rebuild: python scripts/build_study_guide.py)
 ```
 
@@ -135,7 +137,7 @@ The VQC edges out both parameter-matched classical models on the pit decision; t
 model on lap time; neither comes near Task 6 with all features. **This is a noiseless simulation of tiny
 circuits on one race and demonstrates nothing about quantum advantage** — and the fold spreads overlap, so it
 does not cleanly separate these models either. Quantum computing explained from zero, for this
-circuit: [`docs/QML_README.html`](docs/QML_README.html). Results discussion:
+circuit: [`docs/source/QML_README.html`](docs/source/QML_README.html). Results discussion:
 [`artifacts/reports/classical_vs_quantum_report.md`](artifacts/reports/classical_vs_quantum_report.md).
 
 The lap-time network is the best model in the project. The pit-decision result is genuinely inconclusive, and the reason matters more than the number: **the test laps contain exactly one labelled pit stop.** Precision, recall and F1 on one event are noise, so we lean on the cross-validated figures and say so everywhere the number appears.
@@ -341,16 +343,16 @@ The suite writes to a temporary directory, so running it never modifies the comm
 
 | Document | What it answers |
 |---|---|
-| [`docs/architecture.html`](docs/architecture.html) | Module layout, the feature contract, leakage prevention, end-to-end flow |
-| [`docs/task7_task8.html`](docs/task7_task8.html) | Tasks 7–8: what we built, and the concepts behind deep learning and XAI |
-| [`docs/QML_README.html`](docs/QML_README.html) | Quantum ML from zero: qubits, our circuit, how it trains, our results, viva prep |
-| [`docs/DELIVERABLES_CHECKLIST.html`](docs/DELIVERABLES_CHECKLIST.html) | Every lab deliverable, its file path, and whether it is complete |
-| [`docs/TESTING_REPORT.html`](docs/TESTING_REPORT.html) | The last clean build and test run, with the actual output |
-| [`docs/DEPLOYMENT.html`](docs/DEPLOYMENT.html) / [`docs/deployment_guide.html`](docs/deployment_guide.html) | Install, build, run, serve, retrain, troubleshoot, Docker |
-| [`docs/user_manual.html`](docs/user_manual.html) | How to use the dashboard, as a race engineer, not a developer |
-| [`docs/srs.html`](docs/srs.html) | Software Requirements Specification — every functional/non-functional requirement, traced to code |
-| [`docs/sdd.html`](docs/sdd.html) | Software Design Document — architecture, component design, the strategy pipeline's stage sequence |
-| [`docs/task1_knowledge_representation.html`](docs/task1_knowledge_representation.html) … [`task4_data_engineering.html`](docs/task4_data_engineering.html) | One note per early task |
+| [`docs/source/architecture.html`](docs/source/architecture.html) | Module layout, the feature contract, leakage prevention, end-to-end flow |
+| [`docs/source/task7_task8.html`](docs/source/task7_task8.html) | Tasks 7–8: what we built, and the concepts behind deep learning and XAI |
+| [`docs/source/QML_README.html`](docs/source/QML_README.html) | Quantum ML from zero: qubits, our circuit, how it trains, our results, viva prep |
+| [`docs/source/DELIVERABLES_CHECKLIST.html`](docs/source/DELIVERABLES_CHECKLIST.html) | Every lab deliverable, its file path, and whether it is complete |
+| [`docs/source/TESTING_REPORT.html`](docs/source/TESTING_REPORT.html) | The last clean build and test run, with the actual output |
+| [`docs/source/DEPLOYMENT.html`](docs/source/DEPLOYMENT.html) / [`docs/source/deployment_guide.html`](docs/source/deployment_guide.html) | Install, build, run, serve, retrain, troubleshoot, Docker |
+| [`docs/source/user_manual.html`](docs/source/user_manual.html) | How to use the dashboard, as a race engineer, not a developer |
+| [`docs/source/srs.html`](docs/source/srs.html) | Software Requirements Specification — every functional/non-functional requirement, traced to code |
+| [`docs/source/sdd.html`](docs/source/sdd.html) | Software Design Document — architecture, component design, the strategy pipeline's stage sequence |
+| [`docs/source/task1_knowledge_representation.html`](docs/source/task1_knowledge_representation.html) … [`task4_data_engineering.html`](docs/source/task4_data_engineering.html) | One note per early task |
 | [`docs/notebooks/task5_feature_engineering.ipynb`](docs/notebooks/task5_feature_engineering.ipynb) | Task 5 walkthrough over the functions in `app/intelligence/features/build.py` |
 | `artifacts/**/*.md`, `artifacts/evaluation/*.json` | The generated reports and Task 10 evaluation results — every table in them was computed, not written |
 | [`artifacts/reports/Task9_Task10_Report.docx`](artifacts/reports/Task9_Task10_Report.docx) | The Task 9/10 report: architecture, dashboard screenshots, testing, performance, domain validation, responsible AI |

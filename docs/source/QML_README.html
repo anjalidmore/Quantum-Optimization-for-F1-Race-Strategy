@@ -10,16 +10,16 @@
 <body>
 <nav class="doc-bar" aria-label="Documentation"><span class="mark" aria-hidden="true"></span>
 <strong>F1 Race Strategy Intelligence</strong>
-<a href="study_guide.html">Study guide (all documents)</a>
-<a href="../README.md">README</a></nav>
+<a href="../study_guide.html">Study guide (all documents)</a>
+<a href="../../README.md">README</a></nav>
 <main class="doc-page prose">
 <h1 id="quantum-machine-learning--the-part-of-this-project-you-have-to-explain">Quantum Machine Learning — the part of this project you have to explain</h1>
 <p>This document assumes you know Python and classical machine learning, and that you have never
 studied quantum computing. It builds from the qubit upwards, then explains exactly what our
 circuits do, how they are trained, and what our results were.</p>
-<p>Everything here matches the code in <a href="../app/intelligence/qml/"><code>app/intelligence/qml/</code></a> and the
+<p>Everything here matches the code in <a href="../../app/intelligence/qml/"><code>app/intelligence/qml/</code></a> and the
 artifacts in <code>artifacts/</code>. Every number is taken from the committed run
-(<a href="../artifacts/metrics/qml_metrics.json"><code>artifacts/metrics/qml_metrics.json</code></a>); none are invented.
+(<a href="../../artifacts/metrics/qml_metrics.json"><code>artifacts/metrics/qml_metrics.json</code></a>); none are invented.
 Reading time is about 45 minutes.</p>
 <p><strong>Contents</strong></p>
 <ol>
@@ -190,7 +190,7 @@ how the Bell state in §2.6 was made.</p>
 <h2 id="4-from-f1-data-to-qubits">4. From F1 data to qubits</h2>
 <p>Our feature matrix has 8 columns for the pit decision and 45 for lap time. Our circuit has 4 qubits
 and one angle per qubit. Three steps close that gap. All three are implemented in
-<a href="../app/intelligence/qml/data.py"><code>app/intelligence/qml/data.py</code></a>, in the <code>AngleEncoder</code> class.</p>
+<a href="../../app/intelligence/qml/data.py"><code>app/intelligence/qml/data.py</code></a>, in the <code>AngleEncoder</code> class.</p>
 <h3 id="41-step-1--standardise-on-training-rows-only">4.1 Step 1 — standardise (on training rows only)</h3>
 <p>Subtract the mean and divide by the standard deviation of each column, using <strong>training rows only</strong>.
 Fitting on all rows would leak information about the test laps into training through the transform.</p>
@@ -302,7 +302,7 @@ qubit 3. That is <code>AngleEmbedding</code>: one feature, one qubit, one rotati
 <hr />
 <h2 id="5-the-variational-circuit">5. The variational circuit</h2>
 <h3 id="51-the-picture">5.1 The picture</h3>
-<p><img alt="Our variational circuit" src="../artifacts/figures/qml_circuit.png" /></p>
+<p><img alt="Our variational circuit" src="../../artifacts/figures/qml_circuit.png" /></p>
 <p><em>(<code>artifacts/figures/qml_circuit.png</code>, drawn by <code>qml.draw_mpl</code> from the same function that trains —
 so it cannot drift from the code.)</em></p>
 <p>Read it left to right; each horizontal line is a qubit:</p>
@@ -449,7 +449,7 @@ loss from our committed run (<code>artifacts/models/qml/*_config.json</code>):</
 </tr>
 </tbody>
 </table></div>
-<p><img alt="Training loss" src="../artifacts/figures/qml_training_loss.png" /></p>
+<p><img alt="Training loss" src="../../artifacts/figures/qml_training_loss.png" /></p>
 <p><em>(<code>artifacts/figures/qml_training_loss.png</code>.)</em> Both curves fall and flatten — the optimiser is
 working, and more epochs would not obviously help. The VQR's MSE of 0.84 on a standardised target is
 worth reading carefully: predicting the mean every time would give an MSE of about 1.0, so the
@@ -536,7 +536,7 @@ overlap between the two states:</p>
 <p>$$K(a, b) = \big|\langle \phi(b) | \phi(a) \rangle\big|^2$$</p>
 <p>This is called <strong>fidelity</strong>. It is 1 when the two states are identical and 0 when they are
 perfectly distinguishable.</p>
-<p><strong>How we compute it</strong> (<a href="../app/intelligence/qml/kernel_svm.py"><code>kernel_svm.py</code></a>): apply the feature
+<p><strong>How we compute it</strong> (<a href="../../app/intelligence/qml/kernel_svm.py"><code>kernel_svm.py</code></a>): apply the feature
 map for $a$, then the <em>inverse</em> feature map for $b$, and measure the probability of getting all
 zeros:</p>
 <p>$$K(a,b) = P(\text{measure } 0000)$$</p>
@@ -598,7 +598,7 @@ plus intercept). That number is <em>not</em> comparable to the circuit's 14 trai
 kind of parameter entirely, and the report says so.</p>
 <hr />
 <h2 id="8-classical-vs-quantum-reading-our-results">8. Classical vs quantum: reading our results</h2>
-<p>Full report: <a href="../artifacts/reports/classical_vs_quantum_report.md"><code>artifacts/reports/classical_vs_quantum_report.md</code></a>.</p>
+<p>Full report: <a href="../../artifacts/reports/classical_vs_quantum_report.md"><code>artifacts/reports/classical_vs_quantum_report.md</code></a>.</p>
 <h3 id="81-why-there-are-two-classical-baselines">8.1 Why there are two classical baselines</h3>
 <p>"Quantum beats classical" is meaningless without saying <em>which</em> classical. We give two, and they
 answer different questions.</p>
@@ -755,27 +755,27 @@ here have one, on the same laps, so this is a hard split rather than a broken ci
 </thead>
 <tbody>
 <tr>
-<td><a href="../artifacts/figures/qml_circuit.png"><code>qml_circuit.png</code></a></td>
+<td><a href="../../artifacts/figures/qml_circuit.png"><code>qml_circuit.png</code></a></td>
 <td>The actual gates: 4 RX encodings, 4 trainable <code>Rot</code>s, the CNOT ring, one measurement.</td>
 </tr>
 <tr>
-<td><a href="../artifacts/figures/qml_training_loss.png"><code>qml_training_loss.png</code></a></td>
+<td><a href="../../artifacts/figures/qml_training_loss.png"><code>qml_training_loss.png</code></a></td>
 <td>Both losses fall and flatten. Flat ≠ good — check the metrics too.</td>
 </tr>
 <tr>
-<td><a href="../artifacts/figures/qml_metric_comparison.png"><code>qml_metric_comparison.png</code></a></td>
+<td><a href="../../artifacts/figures/qml_metric_comparison.png"><code>qml_metric_comparison.png</code></a></td>
 <td>Cross-validated scores with fold spread. Purple = quantum, blue = matched classical, amber = Task 6. <strong>The error bars overlap</strong> — that is the main message.</td>
 </tr>
 <tr>
-<td><a href="../artifacts/figures/qml_training_time.png"><code>qml_training_time.png</code></a></td>
+<td><a href="../../artifacts/figures/qml_training_time.png"><code>qml_training_time.png</code></a></td>
 <td>Log scale. The circuits take ~0.4 s, classical models ~0.01 s. This compares simulation cost against fitting cost — it says nothing about hardware.</td>
 </tr>
 <tr>
-<td><a href="../artifacts/figures/qml_roc_pr_vs_classical.png"><code>qml_roc_pr_vs_classical.png</code></a></td>
+<td><a href="../../artifacts/figures/qml_roc_pr_vs_classical.png"><code>qml_roc_pr_vs_classical.png</code></a></td>
 <td>ROC and PR curves on the test laps. With one positive lap these are step functions; treat them as illustrations.</td>
 </tr>
 <tr>
-<td><a href="../artifacts/figures/qml_predicted_vs_actual.png"><code>qml_predicted_vs_actual.png</code></a></td>
+<td><a href="../../artifacts/figures/qml_predicted_vs_actual.png"><code>qml_predicted_vs_actual.png</code></a></td>
 <td>Lap-time predictions against truth. Points cluster in a narrow horizontal band — the bounded output head of §5.3, visible.</td>
 </tr>
 </tbody>

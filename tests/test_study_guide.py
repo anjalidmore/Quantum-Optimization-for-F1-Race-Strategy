@@ -16,7 +16,6 @@ import html
 import os
 import re
 from pathlib import Path
-from urllib.parse import unquote, urlparse
 
 import pytest
 
@@ -39,12 +38,14 @@ def built(tmp_path_factory):
     return out, out.read_text(encoding="utf-8"), report
 
 
-def test_docs_folder_holds_no_markdown():
-    # docs/ is HTML only. At the root, README.md and DESIGN.md stay Markdown:
-    # DESIGN.md is read there by the design tooling in the DESIGN.md format.
+def test_docs_holds_one_html_and_no_markdown():
+    # docs/ has a single page to share; the pages it is built from live in
+    # docs/source/. README.md and DESIGN.md stay Markdown at the root (DESIGN.md
+    # is read there by the design tooling).
+    assert [p.name for p in (REPO_ROOT / "docs").glob("*.html")] == ["study_guide.html"]
     assert list((REPO_ROOT / "docs").rglob("*.md")) == []
+    assert list((REPO_ROOT / "docs" / "source").glob("*.html"))
     assert sorted(p.name for p in REPO_ROOT.glob("*.md")) == ["DESIGN.md", "README.md"]
-
 
 def test_every_artifact_report_is_in_the_reports_tab(built):
     _, page, report = built
@@ -63,12 +64,20 @@ def test_removed_sections_are_gone_from_the_study_guide(built):
     for heading in ("Start here", "Requirements &amp; design", "Practical notes", "Running &amp; deployment",
                     "Testing &amp; status", "Reports · Practical"):
         assert heading not in page, heading
-    # No hand-written docs page is rendered anywhere, and the hub holds no reports.
-    for doc in (REPO_ROOT / "docs").glob("*.html"):
-        if doc.name != "study_guide.html":
-            assert f'id="doc-{doc.stem.lower()}' not in page and f"<code>docs/{doc.name}</code></a></p>" not in page
-    assert 'data-doc="r-' not in hub and "doc-nav" not in hub
+    assert 'data-doc="' not in hub and "doc-nav" not in hub
 
+
+def test_every_other_document_is_an_extras_subtab(built):
+    _, page, report = built
+    extras = page[page.index('id="tab-extras"'):]
+    sources = [p.relative_to(REPO_ROOT).as_posix() for p in (REPO_ROOT / "docs" / "source").glob("*.html")]
+    sources.append("DESIGN.md")
+    assert report.extras == len(sources)
+    for rel in sources:
+        slug = guide.doc_slug(rel)
+        assert f'id="{slug}"' in extras and f'class="subtab" href="#{slug}"' in extras, rel
+        assert f'id="{slug}"' not in page[:page.index('id="tab-extras"')], rel
+    assert "<del>" in extras and "~~" not in extras  # GitHub strikethrough rendered
 
 def test_report_listing_is_discovered_not_hard_coded(tmp_path, monkeypatch):
     """A report folder the categories table has never heard of still appears."""
@@ -132,14 +141,16 @@ def test_in_page_anchors_all_resolve(built):
     assert {h for h in re.findall(r'href="#([^"]+)"', page)} <= ids
 
 
-def test_relative_links_and_images_point_at_real_files(built):
-    out, page, _ = built
-    urls = re.findall(r'<(?:a|img)\b[^>]*?\s(?:href|src)="([^"#][^"]*)"', page)
-    relative = [u for u in urls if not re.match(r"^[a-z][a-z0-9+.-]*:", u)]
-    assert relative
-    missing = [u for u in relative if not (out.parent / unquote(urlparse(u).path)).exists()]
-    assert missing == []
-
+def test_page_is_self_contained(built):
+    """One file to share: no URL may point at anything but itself or the web."""
+    _, page, report = built
+    urls = re.findall(r'<(?:a|img|link|script)\b[^>]*?\s(?:href|src)="([^"]*)"', page)
+    relative = [u for u in urls if not re.match(r"^(#|data:|https?:|mailto:)", u)]
+    assert relative == []
+    imgs = re.findall(r'<img\b[^>]*?\ssrc="([^"]*)"', page)
+    assert imgs and all(u.startswith("data:image/") for u in imgs)
+    assert report.embedded_images == len(imgs)
+    assert not re.search(r'<script\b[^>]*\ssrc=', page)  # all script inline
 
 def test_broken_source_links_are_reported_not_emitted(built):
     _, page, report = built

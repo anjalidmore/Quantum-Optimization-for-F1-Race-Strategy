@@ -562,3 +562,47 @@ body.no-sidebar .menu { visibility: hidden; }
 }
 .dg-endpoint { flex-wrap: wrap; max-width: 100%; }
 .dg-endpoint code { overflow-wrap: anywhere; }
+
+/* ---------- Extras: documents as sub-tabs ---------- */
+.tab-panel.extras-tab { display: block; }
+.subtabs { position: sticky; top: var(--chrome); z-index: 20; display: flex; flex-wrap: wrap; gap: 6px 18px;
+  padding: 10px 40px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.subtab-group { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.subtab-label { display: inline-flex; align-items: center; gap: 4px; font: 600 11px var(--font-body); text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-3); margin-right: 4px; }
+.subtab-label .ic { color: var(--accent); }
+.subtab { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2);
+  text-decoration: none; background: var(--bg); white-space: nowrap; }
+.subtab:hover { border-color: var(--accent); color: var(--ink); }
+.subtab[aria-current="page"] { background: var(--deck-bg); color: var(--deck-ink); border-color: var(--deck-bg); }
+.extras-main .doc-home, .extras-main .practical-head { max-width: 1180px; margin: 0 auto; }
+.extras-tab .doc-toc { top: calc(var(--chrome) + 76px); }
+.tabs .sm { display: none; }
+
+/* Repository files the reader does not have: shown as labels, not dead links. */
+.repo-ref { border-bottom: 1px dotted var(--line-strong); cursor: help; }
+
+/* ---------- Image viewer ---------- */
+.prose img, .figure img, .summary-sheet img { cursor: zoom-in; }
+.lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(8, 9, 11, .88); display: grid; place-items: center; padding: 48px 16px 16px; }
+.lightbox[hidden] { display: none; }
+.lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; background: #fff; border-radius: var(--r-md); cursor: zoom-out; }
+.lb-close { position: absolute; top: 10px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: 0;
+  background: var(--deck-surface); color: var(--deck-ink); font-size: 16px; cursor: pointer; }
+
+@media (max-width: 900px) {
+  .subtabs { flex-wrap: nowrap; overflow-x: auto; padding: 8px 16px; scrollbar-width: none; }
+  .subtabs::-webkit-scrollbar { display: none; }
+  .subtab-group { flex-wrap: nowrap; }
+}
+@media (max-width: 520px) {
+  .tabs .sm { display: inline; }
+  .tabs button { padding: 0 4px; font-size: 12.5px; }
+}
+.extras-tab [id] { scroll-margin-top: calc(var(--subtabs-h, 96px) + 16px); }
+@media (max-width: 900px) { .extras-tab [id] { scroll-margin-top: 64px; } }
+.hub-extras { margin: 14px 0 0; font-size: 14px; color: var(--ink-3); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.share-note { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; margin: 0; }
+.share-note .ic { color: var(--accent); }
+@media (max-width: 520px) { .share-note { border-radius: var(--r-md); align-items: flex-start; } }

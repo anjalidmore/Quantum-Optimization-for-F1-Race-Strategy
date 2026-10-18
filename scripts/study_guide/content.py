@@ -893,7 +893,7 @@ PRACTICALS: list[dict] = [
             ("app/api/main.py", "FastAPI application."),
             ("frontend/app/strategy/page.tsx", "Race Strategy page."),
             ("docker-compose.yml", "Two-service deployment."),
-            ("docs/deployment_guide.html", "Install, run, Docker, troubleshooting."),
+            ("docs/source/deployment_guide.html", "Install, run, Docker, troubleshooting (also in Extras)."),
         ],
         "example": ("strategy_example",),
         "applications": [

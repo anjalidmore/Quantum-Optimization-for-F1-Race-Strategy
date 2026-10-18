@@ -94,6 +94,24 @@ REPORT_CATEGORIES: dict[str, tuple[str, int | None, str, str]] = {
             "SHAP, LIME, counterfactuals, the trust score, fairness and the explainability dashboard."),
 }
 
+# Extras: reference and project-tracking documents, as sub-tabs. The learning
+# material lives in the main tabs; these are for looking things up.
+SOURCE_DOCS_DIR = REPO_ROOT / "docs" / "source"
+# Each entry: (file, short sub-tab label). The page itself keeps its full title.
+EXTRAS_GROUPS: list[tuple[str, str, list[tuple[str, str]]]] = [
+    ("Deep dives", "atom", [("QML_README.html", "Quantum ML"), ("task7_task8.html", "DL & XAI concepts"),
+                            ("architecture.html", "Architecture"),
+                            ("task1_knowledge_representation.html", "Task 1 notes"),
+                            ("task2_expert_system.html", "Task 2 notes"),
+                            ("task3_state_space_search.html", "Task 3 notes"),
+                            ("task4_data_engineering.html", "Task 4 notes")]),
+    ("Specs & manuals", "doc", [("srs.html", "SRS"), ("sdd.html", "SDD"), ("user_manual.html", "User manual"),
+                                ("deployment_guide.html", "Deployment guide"), ("DEPLOYMENT.html", "Deployment (short)")]),
+    ("Project tracking", "calendar", [("TODO.html", "To-do"), ("TESTING_REPORT.html", "Testing report"),
+                                      ("DELIVERABLES_CHECKLIST.html", "Deliverables"), ("DESIGN.md", "Design system")]),
+]
+
+
 # ---------------------------------------------------------------------------
 # Small helpers
 # ---------------------------------------------------------------------------
@@ -125,6 +143,9 @@ def md_inline(text: str) -> str:
 @dataclass
 class BuildReport:
     docs: int = 0
+    extras: int = 0
+    embedded_images: int = 0
+    repo_links_flattened: int = 0
     broken_links: list[str] = field(default_factory=list)
     broken_anchors: list[str] = field(default_factory=list)
     missing_outputs: list[str] = field(default_factory=list)
@@ -338,9 +359,12 @@ class Doc:
     toc: list = field(default_factory=list)
     summary: str = ""
     generated: str = ""
+    short: str = ""
 
 
 def doc_slug(rel: str) -> str:
+    if not rel.startswith("artifacts/"):                     # Extras: docs/source/*.html, DESIGN.md
+        return "x-" + re.sub(r"[^a-z0-9]+", "-", Path(rel).stem.lower()).strip("-")
     s = re.sub(r"^artifacts/", "r-", rel).replace("/reports/", "/")
     s = re.sub(r"\.md$", "", s)
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
@@ -369,6 +393,33 @@ def _markdown_doc_body(d: Doc) -> str:
     )
     body = md.convert(d.path.read_text(encoding="utf-8"))
     return body.replace("<table>", '<div class="table-wrap"><table>').replace("</table>", "</table></div>")
+
+
+def _html_doc_body(d: Doc) -> str:
+    """The ``<main>`` of a docs/source/*.html page, with its heading ids
+    prefixed by the document slug so they are unique inside the guide."""
+    text = d.path.read_text(encoding="utf-8")
+    m = re.search(r"<main\b[^>]*>(.*)</main>", text, flags=re.S)
+    if not m:
+        raise ValueError(f"{d.rel} has no <main> element")
+    return re.sub(r'\sid="([^"]+)"', lambda i: f' id="{d.slug}--{i.group(1)}"', m.group(1))
+
+
+def discover_extras() -> list[Doc]:
+    """The reference documents (docs/source/*.html and DESIGN.md), grouped by
+    EXTRAS_GROUPS; a page not listed there lands in "Other", never dropped."""
+    found = [p.relative_to(REPO_ROOT).as_posix() for p in sorted(SOURCE_DOCS_DIR.glob("*.html"))]
+    if (REPO_ROOT / "DESIGN.md").exists():
+        found.append("DESIGN.md")
+    out: list[Doc] = []
+    for group, _icon, names in EXTRAS_GROUPS:
+        for name, short in names:
+            rel = name if name == "DESIGN.md" else f"{SOURCE_DOCS_DIR.relative_to(REPO_ROOT).as_posix()}/{name}"
+            if rel in found:
+                out.append(Doc(REPO_ROOT / rel, rel, doc_slug(rel), group, short=short))
+    listed = {d.rel for d in out}
+    out += [Doc(REPO_ROOT / r, r, doc_slug(r), "Other") for r in found if r not in listed]
+    return out
 
 
 def _summary_and_date(text: str) -> tuple[str, str]:
@@ -431,19 +482,29 @@ def _rewrite_links(doc: Doc, body: str, by_rel: dict[str, Doc], out_dir: Path, r
     return _ATTR.sub(sub, body)
 
 
-def render_reports(out_dir: Path, report: BuildReport) -> list[Doc]:
-    docs = discover_reports()
-    by_rel = {d.rel: d for d in docs}
-    for d in docs:
+def render_reports(out_dir: Path, report: BuildReport) -> tuple[list[Doc], list[Doc]]:
+    """Render the reports and the extras together, so a link from one to the
+    other becomes an in-page link."""
+    docs, extras = discover_reports(), discover_extras()
+    by_rel = {d.rel: d for d in docs + extras}
+    for d in docs + extras:
         d.summary, d.generated = _summary_and_date(d.path.read_text(encoding="utf-8"))
-        d.body = _rewrite_links(d, _wrap_code(_markdown_doc_body(d)), by_rel, out_dir, report)
+        body = _html_doc_body(d) if d.path.suffix == ".html" else _markdown_doc_body(d)
+        body = re.sub(r"~~(.+?)~~", r"<del>\1</del>", body)  # GitHub strikethrough; Markdown core lacks it
+        d.body = _rewrite_links(d, _wrap_code(body), by_rel, out_dir, report)
         heads = [(int(lvl), hid, html.unescape(re.sub(r"<[^>]+>", "", inner)).strip())
                  for lvl, hid, inner in re.findall(r'<h([1-3]) id="([^"]+)">(.*?)</h\1>', d.body, flags=re.S)]
         h1 = next((h for h in heads if h[0] == 1), None)
         d.title = h1[2] if h1 else d.path.stem.replace("_", " ")
         d.toc = [h for h in heads if h[0] in (2, 3)]
+    seen: dict[str, int] = {}
+    for d in extras:
+        seen[d.title] = seen.get(d.title, 0) + 1
+    for d in extras:  # DEPLOYMENT and deployment_guide are both "Deployment guide"
+        if seen[d.title] > 1:
+            d.title = f"{d.title} ({d.path.stem})"
     report.docs = len(docs)
-    return docs
+    return docs, extras
 
 
 def _category_meta(key: str) -> tuple[str, int | None, str, str]:
@@ -520,6 +581,115 @@ def render_reports_tab(docs: list[Doc], out_dir: Path) -> str:
 </section>"""
 
 
+def render_extras_tab(extras: list[Doc]) -> str:
+    """Reference documents as sub-tabs: a grouped tab strip, then one document
+    at a time."""
+    icons = {g: ic for g, ic, _ in EXTRAS_GROUPS}
+    groups: dict[str, list[Doc]] = {}
+    for d in extras:
+        groups.setdefault(d.group, []).append(d)
+    strip = "".join(
+        f'<div class="subtab-group"><span class="subtab-label">{svg(icons.get(g, "doc"), 14)} {esc(g)}</span>'
+        + "".join(f'<a class="subtab" href="#{d.slug}" data-doc-link="{d.slug}" title="{esc(d.title)}">'
+                  f'{esc(d.short or d.title)}</a>' for d in items)
+        + "</div>" for g, items in groups.items())
+    cards = "".join(
+        f'<section class="rcat"><header><span class="rcat-icon">{svg(icons.get(g, "doc"), 24)}</span>'
+        f'<div><h2>{esc(g)}</h2></div><span class="count">{len(items)}</span></header><div class="rcards">'
+        + "".join(f'<a class="rcard" href="#{d.slug}"><strong>{esc(d.title)}</strong>'
+                  f'<span>{esc(d.summary) or "&nbsp;"}</span></a>' for d in items)
+        + "</div></section>" for g, items in groups.items())
+    articles = []
+    for d in extras:
+        toc = "".join(f'<li class="lvl{lvl}"><a href="#{hid}">{esc(name)}</a></li>' for lvl, hid, name in d.toc)
+        toc_html = (f'<nav class="doc-toc" aria-label="On this page"><p class="toc-title">On this page</p>'
+                    f'<ul>{toc}</ul></nav>') if toc else ""
+        articles.append(
+            f'<article class="doc" id="{d.slug}" data-doc="{d.slug}" data-view data-crumb="{esc(d.title)}" '
+            f'data-parent="extras-home" data-crumb-mid="{esc(d.group)}" hidden>'
+            f'<header class="doc-head"><p class="crumbs">{svg(icons.get(d.group, "doc"), 14)} {esc(d.group)}</p>'
+            f'<p class="src">Source: <code>{esc(d.rel)}</code></p></header>'
+            f'<div class="doc-layout"><div class="prose">{d.body}</div>{toc_html}</div></article>')
+    return f"""
+<section class="tab-panel extras-tab" id="tab-extras" data-tab="extras" role="tabpanel" aria-labelledby="tabbtn-extras" hidden>
+  <nav class="subtabs" aria-label="Extras documents">{strip}</nav>
+  <div class="guide-main extras-main">
+    <article class="doc doc-home" id="extras-home" data-doc="extras-home" data-view data-crumb="Extras" data-parent="home">
+      <header class="practical-head"><p class="crumbs">Extras</p><h1>Reference &amp; project tracking</h1>
+        <p class="lead">Not needed to learn the project — here for looking things up: deeper explainers,
+        the specifications and manuals, and the to-do list, test report and deliverables checklist.</p></header>
+      {cards}
+    </article>
+    {''.join(articles)}
+  </div>
+</section>"""
+
+
+# ---------------------------------------------------------------------------
+# Self-contained output: one file that works when sent on its own
+# ---------------------------------------------------------------------------
+_IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif",
+                ".svg": "image/svg+xml", ".webp": "image/webp"}
+
+
+def _image_data_uri(path: Path, cache: dict) -> str:
+    """The image as a data: URI — re-encoded as WebP (at most 1600 px wide)
+    when that is smaller, since most figures are large matplotlib PNGs."""
+    if path in cache:
+        return cache[path]
+    raw = path.read_bytes()
+    mime, data = _IMAGE_TYPES.get(path.suffix.lower(), "application/octet-stream"), raw
+    if path.suffix.lower() in (".png", ".jpg", ".jpeg"):
+        try:
+            import io
+
+            from PIL import Image
+            img = Image.open(io.BytesIO(raw))
+            if img.width > 1600:
+                img = img.resize((1600, round(img.height * 1600 / img.width)), Image.LANCZOS)
+            buf = io.BytesIO()
+            img.convert("RGBA" if img.mode in ("RGBA", "LA", "P") else "RGB").save(buf, "WEBP", quality=82, method=6)
+            if buf.tell() < len(raw):
+                mime, data = "image/webp", buf.getvalue()
+        except Exception:  # Pillow missing or an unusual file: embed it as it is
+            pass
+    import base64
+    cache[path] = f"data:{mime};base64,{base64.b64encode(data).decode('ascii')}"
+    return cache[path]
+
+
+def make_self_contained(page: str, out_dir: Path, report: BuildReport) -> str:
+    """Embed every image and turn links to repository files into plain labels,
+    so the page needs nothing but itself (fonts fall back to system fonts
+    offline). Run last, on the finished page."""
+    cache: dict = {}
+
+    def img(m):
+        url = html.unescape(m.group(2))
+        if re.match(r"^(data|https?):", url):
+            return m.group(0)
+        target = (out_dir / url.split("#")[0]).resolve()
+        if not target.exists():
+            report.broken_links.append(f"image not found: {url}")
+            return m.group(0)
+        report.embedded_images += 1
+        return f'{m.group(1)}src="{_image_data_uri(target, cache)}"'
+
+    page = re.sub(r'(<img\b[^>]*?\s)src="([^"]*)"', img, page)
+
+    def link(m):
+        url = html.unescape(m.group(1))
+        if url.startswith("#") or re.match(r"^[a-z][a-z0-9+.-]*:", url):
+            return m.group(0)
+        report.repo_links_flattened += 1
+        path = url.split("#")[0].lstrip("./")
+        return (f'<span class="repo-ref" title="In the project repository: {esc(path)}">'
+                f'{m.group(2)}</span>')
+
+    page = re.sub(r'<a\b[^>]*?\shref="([^"]*)"[^>]*>(.*?)</a>', link, page, flags=re.S)
+    return page
+
+
 # ---------------------------------------------------------------------------
 # Study Guide: the hub
 # ---------------------------------------------------------------------------
@@ -556,9 +726,13 @@ def render_guide_tab(facts: dict, n_reports: int, out_dir: Path) -> str:
       <h1>F1 Race Strategy Intelligence</h1>
       <p class="lead">When should a Formula 1 driver pit, and what will the next lap cost? One real race, attacked
       with symbolic reasoning, machine learning and explainability — built as one application.</p>
+      <p class="share-note">{svg("doc", 15)} This page is one self-contained file: everything, images included, is
+      inside it. Share it as it is — it opens in any browser, no project checkout needed.</p>
       <div class="tiles">{tiles_html}</div>
       <h2>Study path</h2>
       <div class="step-cards">{path_html}</div>
+      <p class="hub-extras">{svg("calendar", 16)} Looking for the specifications, manuals, test report or to-do list?
+      They are in <a href="#extras-home">Extras</a>.</p>
       <h2>The ten tasks on one page</h2>
       {_summary_figure(out_dir)}
     </article>
@@ -961,14 +1135,16 @@ def build(output: Path = DEFAULT_OUTPUT, live: bool = True) -> BuildReport:
     report = BuildReport()
     facts = collect_facts()
 
-    reports = render_reports(out_dir, report)
+    reports, extras = render_reports(out_dir, report)
+    report.extras = len(extras)
     guide = render_guide_tab(facts, len(reports), out_dir)
     diagrams = render_diagrams_tab(lambda t: fill(t, facts), report.missing_outputs)
     code = render_code_tab(facts, out_dir, report, live)
     reports_tab = render_reports_tab(reports, out_dir)
+    extras_tab = render_extras_tab(extras)
     showcase = render_showcase_tab(facts)
 
-    css = (REPO_ROOT / "docs" / "assets" / "docs.css").read_text() + (ASSET_DIR / "guide.css").read_text()
+    css = (SOURCE_DOCS_DIR / "assets" / "docs.css").read_text() + (ASSET_DIR / "guide.css").read_text()
     js = (ASSET_DIR / "guide.js").read_text()
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     page = f"""<!doctype html>
@@ -995,7 +1171,8 @@ def build(output: Path = DEFAULT_OUTPUT, live: bool = True) -> BuildReport:
     <button type="button" role="tab" id="tabbtn-diagrams" aria-controls="tab-diagrams" data-target="diagrams" aria-selected="false" aria-label="Diagrams and Workflow">Diagrams<span class="lg"> &amp; Workflow</span></button>
     <button type="button" role="tab" id="tabbtn-code" aria-controls="tab-code" data-target="code" aria-selected="false" aria-label="Understand the Code"><span class="lg">Understand the </span>Code</button>
     <button type="button" role="tab" id="tabbtn-reports" aria-controls="tab-reports" data-target="reports" aria-selected="false">Reports</button>
-    <button type="button" role="tab" id="tabbtn-showcase" aria-controls="tab-showcase" data-target="showcase" aria-selected="false">Showcase</button>
+    <button type="button" role="tab" id="tabbtn-showcase" aria-controls="tab-showcase" data-target="showcase" aria-selected="false" aria-label="Showcase"><span class="lg">Show</span><span class="sm">Slides</span><span class="lg">case</span></button>
+    <button type="button" role="tab" id="tabbtn-extras" aria-controls="tab-extras" data-target="extras" aria-selected="false">Extras</button>
   </nav>
 </header>
 <nav class="pagebar" aria-label="Page navigation">
@@ -1009,15 +1186,18 @@ def build(output: Path = DEFAULT_OUTPUT, live: bool = True) -> BuildReport:
 {code}
 {reports_tab}
 {showcase}
+{extras_tab}
 </main>
-<footer class="foot">Generated {built} by <code>scripts/build_study_guide.py</code> from the source code,
-{report.docs} generated reports and the committed artifacts. Edit the sources, not this file.</footer>
+<div class="lightbox" id="lightbox" hidden><button type="button" class="lb-close" aria-label="Close image">✕</button><img alt=""></div>
+<footer class="foot">One self-contained file — share it as it is. Generated {built} from the project's source
+code, {report.docs} generated reports and {report.extras} reference documents.</footer>
 <script>
 {js}
 </script>
 </body>
 </html>
 """
+    page = make_self_contained(page, out_dir, report)
     check_anchors(page, report)
     output.write_text(page, encoding="utf-8")
     return report
@@ -1031,7 +1211,8 @@ def main() -> int:
     args = parser.parse_args()
     report = build(args.output, live=not args.no_live)
     print(f"Wrote {args.output} ({args.output.stat().st_size / 1024:.0f} KB): "
-          f"{report.docs} reports, {len(PRACTICALS)} practicals, {len(SLIDES)} slides.")
+          f"{report.docs} reports, {report.extras} extras, {len(PRACTICALS)} practicals, {len(SLIDES)} slides; "
+          f"{report.embedded_images} images embedded, {report.repo_links_flattened} repository links shown as labels.")
     for label, items in (("Broken links in reports (rendered inert)", report.broken_links),
                          ("Broken in-page anchors", report.broken_anchors),
                          ("Outputs not generated yet", report.missing_outputs)):
