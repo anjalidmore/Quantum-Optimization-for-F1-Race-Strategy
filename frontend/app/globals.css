@@ -790,3 +790,242 @@ table tbody tr.is-marked td:first-child {
   flex: none;
   color: var(--paper-400);
 }
+
+/* ==========================================================================
+   Overview page. The asphalt is dark in both themes because a road is, so the
+   strip re-declares the dark compound colours for what sits on it.
+   ========================================================================== */
+:root {
+  --asphalt: #2b2e36;
+  --asphalt-lane: #3a3e48;
+}
+
+.home-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 56px);
+  margin-bottom: -80px; /* main's pb-20: the track is the page's last edge. */
+}
+/* The hero takes whatever height the track and tiles leave. */
+.home-hero {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 32px 0;
+}
+.home-title {
+  margin-top: 18px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-style: italic;
+  font-size: clamp(54px, 8vw, 112px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--paper-900);
+}
+/* The car runs at the flag, side by side so neither muddies the other. */
+.home-hero__art {
+  position: absolute;
+  inset: 0 0 0 40%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3%;
+  pointer-events: none;
+}
+.home-hero__car {
+  flex: 0 1 66%;
+  min-width: 0;
+}
+.home-hero__flag {
+  flex: 0 1 31%;
+  min-width: 0;
+}
+
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-block: 1px solid var(--track-300);
+}
+.home-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 16px 16px 0;
+}
+
+.home-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  color: var(--paper-500);
+  background-color: var(--track-100);
+  border: 1px solid var(--track-300);
+  border-radius: var(--r-md);
+  transition: border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.home-tile:hover {
+  color: var(--paper-900);
+  border-color: var(--papaya);
+}
+.home-tile__label {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.15;
+  color: var(--paper-900);
+}
+
+/* Full bleed from inside the page measure. 100vw counts a classic scrollbar,
+   so the root clips the few pixels that would otherwise scroll sideways. */
+.home-bleed {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+}
+html:has(.home-bleed) {
+  overflow-x: clip;
+}
+
+.race-strip {
+  --compound-soft: #e8382b;
+  --compound-medium: #f2d13c;
+  --compound-hard: #edeae3;
+  --compound-inter: #3fb950;
+  --compound-wet: #3b8eea;
+  --compound-ink: #08090b;
+  --car-w: clamp(66px, 8vw, 108px);
+  margin-top: auto;
+  background-color: var(--asphalt);
+}
+.race-strip::before {
+  content: "";
+  display: block;
+  height: 36px;
+  background-color: var(--track-050);
+}
+.race-strip__kerb {
+  height: 8px;
+  background: repeating-linear-gradient(90deg, var(--ferrari) 0 26px, #f7f4f1 26px 52px);
+}
+.race-strip__road {
+  height: 124px;
+}
+/* Top half of the road, its ends cut as the entry and exit slip roads. */
+.race-strip__pitlane {
+  position: absolute;
+  top: 6px;
+  height: 50px;
+  left: calc(var(--pit) - 13%);
+  width: 26%;
+  background-color: var(--asphalt-lane);
+  clip-path: polygon(0 100%, 14% 0, 86% 0, 100% 100%);
+}
+.race-strip__box {
+  position: absolute;
+  top: 8px;
+  height: 46px;
+  left: var(--pit);
+  width: calc(var(--car-w) + 16px);
+  transform: translateX(-50%);
+  border: 2px solid #f7f4f1;
+  border-radius: var(--r-sm);
+}
+.race-strip__grid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background-color: #f7f4f1;
+}
+.race-strip__finish {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: 18px;
+  background: repeating-conic-gradient(#15151e 0 25%, #f7f4f1 0 50%) 0 0 / 18px 18px;
+}
+/* The stint band: compound colour, as data. */
+.race-strip__stint {
+  position: absolute;
+  top: 84px;
+  height: 4px;
+}
+.race-strip__mark {
+  position: absolute;
+  top: 95px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 8px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 18px;
+  color: #f7f4f1;
+  white-space: nowrap;
+}
+.race-strip__mark--pit {
+  transform: translateX(-50%);
+  padding-left: 0;
+}
+.race-strip__mark--end {
+  transform: translateX(-100%);
+  padding: 0 8px 0 0;
+}
+.race-strip__car {
+  position: absolute;
+  top: 58px;
+  left: 0;
+  width: var(--car-w);
+  height: auto;
+  transform: translate(-50%, -50%);
+}
+.race-strip__car--pit {
+  top: 31px;
+  left: var(--pit);
+  animation: race-to-box 2.4s var(--ease) both;
+}
+.race-strip__car--end {
+  left: 100%;
+}
+/* One run from the grid into the box, then still. The only movement on the
+   page; the global reduced-motion guard lands it in the box at once. */
+@keyframes race-to-box {
+  0% {
+    left: 0;
+    top: 58px;
+  }
+  80% {
+    left: calc(var(--pit) - 13%);
+    top: 58px;
+  }
+  100% {
+    left: var(--pit);
+    top: 31px;
+  }
+}
+
+@media (max-width: 639px) {
+  /* No room beside the title: the art moves below it. */
+  .home-hero {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 24px 0;
+  }
+  .home-hero__art {
+    position: static;
+    margin-top: 20px;
+  }
+  .home-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-stat {
+    gap: 10px;
+    padding-right: 8px;
+  }
+}

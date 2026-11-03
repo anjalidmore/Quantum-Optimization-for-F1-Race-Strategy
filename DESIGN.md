@@ -236,14 +236,18 @@ Low, and always interruptible.
   (`--t-base`), and a single 180ms fade for content that has just arrived.
 - Banned: entrance animations, staggered reveals, **number count-ups** (they make real data look
   fake), parallax, anything driven by scroll.
+- One exception: on the Overview the car makes a single 2.4s run from the grid into its pit box, then
+  stays still. It shows the plan's stop, and reduced motion lands it in the box at once.
 - Every transition sits inside a `prefers-reduced-motion: reduce` guard that collapses duration to
   0.01ms. There are currently zero such guards against five `transition` utilities.
 
 ## Page Patterns
 
-**Overview — dominant figure left, stacked detail right.** Two columns ≈62/38. Left: the single most
-consequential figure with its provenance. Right: dense per-task rows, not ten cards. Below: the real
-per-driver error table as a leaderboard. The workflow chip strip is removed — it carries no data.
+**Overview — illustrated, minimal text.** The question as the one display element, the car running at a
+chequered flag beside it, one row of figures with icons, icon tiles into each page, and a full-bleed
+track at the foot. The car and flag are illustration; the track is the A* plan to scale (lap ruler,
+pit box, stint bands), so it is data and not a circuit outline (see Constraints). Tasks and pipeline
+health are no longer shown here.
 
 **Strategy Simulator — grouped form left, result right.** The result column is the focal element and
 sticks as the form beside it changes. It is a solid panel: nothing scrolls beneath it, so glass

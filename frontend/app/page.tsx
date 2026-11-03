@@ -1,29 +1,23 @@
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { DatasetBadge } from "@/components/DatasetBadge";
-import { TyreBadge } from "@/components/TyreBadge";
 import { DemoPath } from "@/components/overview/DemoPath";
-import { TaskLedger } from "@/components/overview/TaskLedger";
-import { PipelineHealth } from "@/components/overview/PipelineHealth";
+import { RaceStrip } from "@/components/overview/RaceStrip";
+import { ChequeredFlag, F1Car, Icons } from "@/components/overview/F1Art";
 import { fmt } from "@/lib/format";
 
 /**
- * Overview: what the project is, its headline results, a route through the
- * dashboard for a demonstration, and which tasks and models are live. Every
- * figure is read from the API; a missing artifact shows "—", never a zero.
+ * Overview: the question, the headline results and a way into each page, with
+ * the best plan drawn on the track below. Every figure is read from the API; a
+ * missing artifact shows "—", never a zero.
  */
 export default async function OverviewPage() {
   let health = null;
   let manifest = null;
-  let evidence = null;
   let error: string | null = null;
 
   try {
-    [health, manifest, evidence] = await Promise.all([
-      api.health(),
-      api.artifacts().catch(() => null),
-      api.taskEvidence(),
-    ]);
+    [health, manifest] = await Promise.all([api.health(), api.artifacts().catch(() => null)]);
   } catch (e) {
     error = e instanceof ApiError ? e.message : "Could not reach the backend API.";
   }
@@ -34,7 +28,7 @@ export default async function OverviewPage() {
     api.dlMetrics().catch(() => null),
   ]);
 
-  if (error || !evidence) {
+  if (error || !health) {
     return (
       <div className="card mt-14 border-accent">
         <span className="badge badge-danger">Backend unreachable</span>
@@ -48,65 +42,52 @@ export default async function OverviewPage() {
   }
 
   const plan = search?.available ? search : null;
-  const stop = plan?.pit_stops?.[0] ?? null;
   const laptimeDnn = dlMetrics?.models?.target_laptime?.test_metrics?.mae;
 
   const stats = [
-    { label: "Optimal strategy cost (A*)", value: plan ? `${fmt(plan.final_cost_seconds, 2)} s` : "—" },
-    { label: "Lap-time error (DNN, MAE)", value: laptimeDnn !== undefined ? `${fmt(laptimeDnn, 3)} s` : "—" },
-    { label: "Expert rules", value: expert?.available ? String(expert.n_rules) : "—" },
-    { label: "Models trained (ML + DL)", value: health?.model_count !== undefined ? String(health.model_count) : "—" },
-    { label: "Tasks built", value: `${evidence.completed_count} / ${evidence.total_count}` },
+    { label: "Optimal plan (A*)", value: plan ? fmt(plan.final_cost_seconds, 2) : "—", unit: plan ? "s" : null, icon: Icons.flag },
+    { label: "Lap-time MAE (DNN)", value: laptimeDnn !== undefined ? fmt(laptimeDnn, 3) : "—", unit: laptimeDnn !== undefined ? "s" : null, icon: Icons.stopwatch },
+    { label: "Expert rules", value: expert?.available ? String(expert.n_rules) : "—", unit: null, icon: Icons.rules },
+    { label: "Models trained", value: health.model_count !== undefined ? String(health.model_count) : "—", unit: null, icon: Icons.chip },
   ];
 
   return (
-    <div>
-      <section className="pt-10">
-        {manifest && <DatasetBadge source={manifest.dataset_source} />}
-        <h1 className="t-page-title mt-4 !text-[clamp(28px,3.4vw,40px)]">When should a Formula 1 driver pit, and what will the next lap cost?</h1>
-        <p className="t-body mt-3 max-w-measure">
-          One real Grand Prix, answered three ways: an ontology, a rule base and a search that reason symbolically,
-          models that learn from its laps, and explainability tools that say why each call was made and where it stops
-          being trustworthy. Every figure on every page is read from a generated artifact.
-        </p>
-        <div className="mt-5">
-          <Link href="/strategy" className="btn-primary inline-block">
-            Try the strategy simulator
+    <div className="home-page">
+      <section className="home-hero">
+        <div className="relative z-10">
+          {manifest && <DatasetBadge source={manifest.dataset_source} />}
+          <h1 className="home-title">
+            When to <br />
+            pit?
+          </h1>
+          <Link href="/strategy" className="btn-primary mt-6 inline-block">
+            Strategy simulator
           </Link>
+        </div>
+        <div className="home-hero__art">
+          <F1Car className="home-hero__car" />
+          <ChequeredFlag className="home-hero__flag" />
         </div>
       </section>
 
-      <dl className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-5">
+      <dl className="home-stats">
         {stats.map((s) => (
-          <div key={s.label} className="card">
-            <dt className="stat-label">{s.label}</dt>
-            <dd className="stat-value mt-1">{s.value}</dd>
+          <div key={s.label} className="home-stat">
+            <span className="text-[var(--papaya)]">{s.icon("h-8 w-8")}</span>
+            <div>
+              <dd className="stat-value !mt-0">
+                {s.value}
+                {s.unit && <span className="unit"> {s.unit}</span>}
+              </dd>
+              <dt className="stat-label mt-0.5">{s.label}</dt>
+            </div>
           </div>
         ))}
       </dl>
 
-      {plan && (
-        <p className="t-body mt-4 max-w-measure text-paper-500">
-          {stop ? (
-            <>
-              Best plan: one stop, lap {stop.lap}, onto <TyreBadge compound={stop.compound} />.{" "}
-            </>
-          ) : (
-            <>Best plan: no stop on this instance. </>
-          )}
-          A* and uniform-cost search agree, which is the admissibility check; A* got there expanding{" "}
-          <span className="tabular-nums">{plan.algorithms.find((a) => a.algorithm === "A*")?.nodes_expanded}</span> nodes
-          against UCS&rsquo;s{" "}
-          <span className="tabular-nums">{plan.algorithms.find((a) => a.algorithm === "UCS")?.nodes_expanded}</span>.
-        </p>
-      )}
-
       <DemoPath />
 
-      <div className="mt-10 grid gap-x-14 gap-y-10 lg:grid-cols-2">
-        <TaskLedger evidence={evidence} />
-        {health && <PipelineHealth health={health} />}
-      </div>
+      <RaceStrip plan={plan} />
     </div>
   );
 }
