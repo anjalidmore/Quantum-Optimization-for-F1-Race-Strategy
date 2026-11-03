@@ -31,7 +31,7 @@ sequence one strategy request goes through.</p>
 <h2 id="1-architecture-overview">1. Architecture overview</h2>
 <p>The system is four layers, each with one job, wired together by a single shared data/artifact
 contract rather than by direct imports between intelligence packages:</p>
-<div class="hl"><pre><span></span><code>frontend/            Next.js 15 dashboard — six pages, one typed fetch client, no local data
+<div class="hl"><pre><span></span><code>frontend/            Next.js 15 dashboard — eight pages, one typed fetch client, no local data
         │  HTTP (JSON, fetched at request/render time)
         ▼
 app/api/              FastAPI routers + Pydantic schemas — the only externally reachable surface
@@ -354,7 +354,7 @@ inspected for this document, its top-level structure is:</p>
 <p>The feature matrix itself, <code>data/processed/f1_features_selected.csv</code>, is 995 rows: one row per
 usable driver-lap from the 2023 Bahrain GP (1,055 raw laps minus a 60-row warm-up trim, first usable
 lap 4). Lap-time regression trains on 45 selected features (17 race-state features and 28
-driver/team one-hot dummies, per the README's Task 7 section); pit-decision classification trains
+driver/team one-hot dummies, per <code>docs/source/task7_task8.html</code>); pit-decision classification trains
 on 8.</p>
 <h3 id="32-artifact-layout">3.2 Artifact layout</h3>
 <p><code>app/core/paths.py</code> defines every path as either a module-level constant or, for the pipelines'

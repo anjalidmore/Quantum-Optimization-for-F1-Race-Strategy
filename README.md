@@ -9,7 +9,42 @@ We take a real Grand Prix session, clean it, engineer features from it, and then
 ![Python](https://img.shields.io/badge/Python-3.14-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black)
-![Tests](https://img.shields.io/badge/tests-284%20passing-brightgreen)
+
+![The dashboard's Overview page](docs/screenshots/dashboard.png)
+
+## Quick start
+
+You need Python 3.12+ and Node 20+.
+
+```bash
+./run.sh
+```
+
+It installs what's missing, builds any stage with no artifacts (all of them are committed, so normally none), starts
+both servers, and opens the dashboard. The first run takes a few minutes for dependencies.
+
+| Flag or variable | What it does |
+|---|---|
+| `--force-retrain` | Rebuilds every stage from the raw data (about 15 minutes) |
+| `--skip-qml` | Leaves out the quantum stage |
+| `BACKEND_PORT`, `FRONTEND_PORT` | Choose the ports (default 8000 and 3000). If a default is taken, the script uses the next free one |
+
+Or with Docker, serving the `data/` and `artifacts/` on your machine: `docker compose build && docker compose up`.
+See [`docs/source/deployment_guide.html`](docs/source/deployment_guide.html).
+
+## Demo in five minutes
+
+The Overview page links these same steps.
+
+1. **Strategy.** Pick the *Late-race pit call* scenario and press **Predict**. Models, rules and search combine into one recommendation, with SHAP reasons and a trust score. Try *Safety car*, then download the report.
+2. **Data.** The cleaning and analysis figures from the real session.
+3. **Reasoning.** The ontology, the rule base and five search algorithms. A* and UCS reach the same cost, and A* expands fewer nodes.
+4. **Models.** Open each tab: both Task 6 problems, Task 7 networks, simulated quantum models. All are scored on the same holdout laps.
+5. **Model Comparison.** A simple baseline, the best ML model and the DNN side by side.
+6. **Explainability.** On *Inspect a lap*, pick a test lap to see what moved the prediction and what would flip it.
+7. **Responsible AI.** Gaps between groups, confidence checks and model cards.
+
+The API is browsable at `http://127.0.0.1:8000/docs`.
 
 ## What we built
 
@@ -38,47 +73,40 @@ Two predictions run through everything: **lap time** (regression) and **does thi
 - **Scalers are fit inside each fold**, never on the whole dataset.
 - **No made-up numbers.** Every value on the dashboard is read from a generated artifact. When something cannot be computed, the UI and the reports say "undefined" and why.
 
-## Running it
+## How it fits together
 
-You need Python 3.12+ and Node 20+.
-
-```bash
-./run.sh                    # builds what's missing, starts both servers, opens the dashboard
+```
+data/raw → Task 4 cleaning → Task 5 features ─┬→ Task 6 classical models ─┐
+                                              ├→ Task 7 neural networks ──┼→ artifacts/ → FastAPI → Next.js
+                                              └→ Quantum models ──────────┘                   ↑
+Task 1 ontology, Task 2 rules, Task 3 search ───────── Task 8 explanations ───────────────────┘
 ```
 
-It builds every stage that has no artifacts yet (Tasks 1-8 and the quantum
-models), starts the API, warms it so the first page you open shows real
-numbers instead of a cold error, starts the dashboard and opens it. Useful
-flags: `--force-retrain` to rebuild everything, `--skip-qml` to leave out the
-quantum stage, `--force-ports` to take :8000 and :3000 without asking. Set
-`BACKEND_PORT` / `FRONTEND_PORT` to move it out of the way instead.
+```
+app/
+  intelligence/   tasks 1-8 and quantum, one package per task
+  services/       model cache, feature mapping, the strategy pipeline and its report
+  api/            FastAPI routers
+  core/           paths and runtime setup
+frontend/         Next.js dashboard: eight pages, every value fetched from the API
+scripts/          build_all.py, one script per stage, evaluate_system.py, the study guide builder
+tests/            pytest suite
+artifacts/        every generated model, metric, figure and report
+data/             raw session data and the Task 5 feature contract
+docs/             study_guide.html (one shareable file) and its sources in docs/source/
+```
 
-Or containerized — `docker compose up` after a `docker compose build` (see
-[`docs/source/deployment_guide.html`](docs/source/deployment_guide.html) §9), which builds a
-code-only backend and frontend image and bind-mounts `data/`/`artifacts/`
-from the host, so `./run.sh`'s (or `scripts/build_all.py`'s) output is what
-the containers actually serve.
+**Why Next.js and FastAPI instead of the lab's suggested Streamlit:** we wanted the models served behind a real HTTP API that something other than the UI could call. The same endpoints back the dashboard, the tests and `scripts/demo_predict.py`, and a separate frontend made it obvious when a page was inventing a number instead of fetching one.
 
-Or by hand:
+### Building by hand
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt && pip install -e .
 
-python scripts/build_all.py          # builds Tasks 1-9 (skips stages that already have artifacts)
-python scripts/build_all.py --force  # rebuilds everything from the raw data (~15 min; Task 7 is most of it)
-
-uvicorn app.api.main:app --reload    # backend on :8000
+python scripts/build_all.py                 # builds whatever is missing (--force rebuilds everything)
+uvicorn app.api.main:app --reload           # API on :8000
 cd frontend && npm install && npm run dev   # dashboard on :3000
-```
-
-Single stages, when you only want one:
-
-```bash
-python scripts/build_features.py     # Task 5 only
-python -c "from app.intelligence.dl import pipeline; pipeline.train_all()"      # Task 7
-python -c "from app.intelligence.xai import pipeline; pipeline.run_all()"       # Task 8
-python scripts/run_qml.py            # quantum models (~30 s; skip in build_all with --skip-qml)
 ```
 
 To train on a different race:
@@ -87,30 +115,6 @@ To train on a different race:
 python scripts/fetch_real_session.py --year 2023 --event Monza --session R
 python scripts/build_all.py --force
 ```
-
-**Why Next.js and FastAPI instead of the lab's suggested Streamlit:** we wanted the models served behind a real HTTP API that something other than the UI could call — the same endpoints back the dashboard, the tests and `scripts/demo_predict.py` — and a separate frontend made it obvious when a page was inventing a number instead of fetching one.
-
-## What's in the repo
-
-```
-app/
-  intelligence/     tasks 1-8, one package per task
-  services/         model cache, feature approximation, the strategy service that chains ML + rules + search
-  api/              FastAPI routers (ml, dl, xai, strategy, data, tasks)
-  core/             paths and runtime setup
-frontend/           Next.js dashboard: 5 pages, every value fetched from the API
-scripts/            build_all.py and one script per buildable stage
-tests/              261 tests
-artifacts/          every generated model, metric, figure and report
-data/               raw session data and the Task 5 feature contract
-docs/               architecture, per-task notes, the Task 5 notebook walkthrough, and
-                    study_guide.html — ONE self-contained, shareable file: study hub, diagrams & workflow,
-                    code walkthrough, reports, showcase deck, and every other doc under Extras
-                    (sources it is built from: docs/source/)
-                    (rebuild: python scripts/build_study_guide.py)
-```
-
-`scripts/build_all.py` is the entry point: it runs each task in order, skips a stage whose artifacts already exist, and refuses to run Tasks 7–8 if Task 6 has no results to compare against.
 
 ## Results
 
@@ -142,183 +146,14 @@ circuit: [`docs/source/QML_README.html`](docs/source/QML_README.html). Results d
 
 The lap-time network is the best model in the project. The pit-decision result is genuinely inconclusive, and the reason matters more than the number: **the test laps contain exactly one labelled pit stop.** Precision, recall and F1 on one event are noise, so we lean on the cross-validated figures and say so everywhere the number appears.
 
----
-
-# Task 7 — Deep Learning Model Development
-
-### Objective
-
-Build neural networks for the two existing prediction problems and test — rather than assume — whether they beat Task 6's classical models on the same data.
-
-### F1 Dataset
-
-Task 5's feature matrix, `data/processed/f1_features_selected.csv`: 995 driver-laps from the 2023 Bahrain GP, no synthetic data, no missing values. Task 5's leakage exclusions stay excluded.
-
-### Prediction Target
-
-| Target | Task | Distribution |
-|---|---|---|
-| `target_laptime` | regression, seconds | mean 99.10 s, sd 2.01 s, range 94.00–103.98 s |
-| `target_pit_next_lap` | binary | **48 of 995 laps (4.8%)** — heavily imbalanced |
-
-The top of the lap-time range is Task 4's outlier cap: 79 laps (60 of them in- or out-laps) sit at exactly 103.985 s. One real stop is unlabelled — see [Known limitations](#known-limitations).
-
-### Feature Engineering
-
-None added. Task 7 consumes Task 5's selected features unchanged: 45 inputs for lap time (17 race-state features and 28 driver/team one-hots), 8 for the pit decision. `StandardScaler` is fitted on training laps only; the lap-time target is standardised too and every prediction converted back to seconds before any metric.
-
-### DNN Architecture
-
-| Lap time (45 → 1) | Pit decision (8 → 1) |
-|---|---|
-| Dense 128 → 64 → 32 → 1, ReLU, linear head | Dense 16 → 8 → 1, ReLU, sigmoid head |
-| dropout 0.2, L2 1e-3, RMSprop, MSE | dropout 0.3, L2 1e-4, RMSprop, binary cross-entropy |
-| **16,257 parameters, all trainable** | **289 parameters, all trainable** |
-
-Keras 3 on the PyTorch backend (TensorFlow has no wheel for Python 3.14).
-
-### Hyperparameters
-
-One factor at a time over the cross-validation folds: architecture, learning rate (1e-3 / 5e-4 / 1e-4), batch size (16 / 32 / 64), dropout (0.2–0.5), optimizer (Adam / RMSprop), L2, loss, and class weighting. Selection used **only** the folds; the test laps were untouched until the end. Every experiment is in `artifacts/deep_learning/hyperparameter_report.csv`.
-
-Class weighting was investigated rather than applied by default — and lost, on validation: unweighted CV PR-AUC 0.421 vs 0.361 weighted.
-
-### Training
-
-EarlyStopping on validation loss (patience 20, best weights restored), dropout and L2 together, since both networks have more parameters than training rows.
-
-### Time-Aware Validation
-
-Four expanding-window lap-forward folds for selection, then a final fit that trains on laps 4–38 and early-stops on laps 39–46 — later laps the network has never seen. Test = laps 47–57, used once.
-
-### Overfitting Prevention
-
-Dropout, L2, early stopping, and a verdict computed from the curves rather than asserted. Lap time: **OVERFITTING** (large train/validation gap; validation loss rose 41% after the restored epoch). Pit decision: **REASONABLE FIT**. Curves: `artifacts/deep_learning/*/loss_curve.png`.
-
-### Evaluation
-
-| Split | Lap time MAE / R² | Pit F1 / ROC-AUC / PR-AUC |
-|---|---|---|
-| Train | 0.522 / 0.782 | 0.214 / 0.680 / 0.184 |
-| Validation | 1.500 / 0.248 | 0.286 / 0.968 / 0.606 |
-| **Test** | **0.565 / 0.456** | **0.000 / 0.777 / 0.024** |
-
-Decision threshold 0.1524, tuned on pooled out-of-fold predictions (F1 0 → 0.458 there), not left at 0.5. Confusion matrix on the test laps: `[[179, 0], [1, 0]]` — the model called no pit anywhere, including on the one real stop.
-
-### Comparison with Existing ML Model
-
-On cross-validation the network leads on both targets (MAE 0.953 vs 1.190 for the best classical model; PR-AUC 0.482 vs 0.386). On the test laps it wins clearly for lap time and loses the single pit event to the random forest. Full tables: `artifacts/deep_learning/model_comparison.csv`.
-
-### Results
-
-- **Lap time: the network is the best model in the project**, on both CV and the holdout.
-- **Pit decision: inconclusive.** One event cannot separate two models.
-- Three defects found and fixed while building this, each now pinned by a test: `fit(class_weight=...)` silently did nothing on this Keras build (weights moved into the loss), the final fit was early-stopping on its own training rows, and `/api/dl/predict/pit` decided at 0.5 instead of the tuned threshold.
-
-### Saved Artifacts
-
-`artifacts/models/deep_learning/{laptime,pit_decision}/f1_dnn_model.h5` plus scalers and `model_spec.json` — reloaded after saving and required to reproduce the trained predictions exactly. Public reports, curves and comparisons live in `artifacts/deep_learning/`. Weights are **not** served over HTTP.
-
-### How to Run
-
-```bash
-python -c "from app.intelligence.dl import pipeline; pipeline.train_all()"   # ~10 min on a laptop CPU
-```
-
-Results are served at `GET /api/dl/{models,metrics,comparison,history,artifacts}` and shown on the dashboard's **Models** page.
-
----
-
-# Task 8 — Explainable Artificial Intelligence (XAI)
-
-### Objective
-
-Explain *why* the predictions come out as they do, say how far each explanation can be trusted, and show where the model is weakest — without inventing anything the data does not contain.
-
-### Model Explained
-
-The trained Task 7 network, reloaded from disk and never retrained. Task 6's selected model is a second opinion only, for the trust score's agreement term and an importance comparison.
-
-### Prediction Task
-
-The same two targets on the same 180 test laps. Scenarios are chosen by rule, not by hand: fastest / median / slowest predicted lap, freshest and oldest tyres, the clearest non-pit lap, the lap closest to the decision threshold, and **the one lap where a driver actually pitted**.
-
-### Feature Importance
-
-Permutation importance on the test laps (10 repeats), in `artifacts/xai/feature_importance.png`. Both targets are led by `tyre_life` and its interaction with track temperature. For lap time the network and Task 6's SVR rank the same top three in the same order.
-
-### SHAP Analysis
-
-`KernelExplainer` (model-agnostic; 200 samples over a 25-point k-means background) for all 180 laps — sampled approximations, so ranks and signs are meaningful and magnitudes carry noise. Top features: `field_median_lag1`, `tracktemp_dev_x_tyrelife`, `stint_number` (lap time); `tracktemp_dev_x_tyrelife`, `tyre_life`, `tyrelife_x_soft` (pit). Reports: `artifacts/xai/SHAP_Report.md`.
-
-**Driver and team identity carry 3.8% of lap-time attribution**, against 62.2% if attribution were spread evenly across the 45 inputs — so the model is mostly reading race state, not who is driving. The pit model has no identity inputs at all.
-
-### LIME Analysis
-
-2,000 perturbations per scenario with a local linear surrogate. Mean SHAP–LIME top-3 overlap is 0.30 (lap time) and 0.55 (pit). **LIME ranks `track_status` first on all 180 laps, but that feature is 1 (green flag) on every one of them** — it varies only in training, so LIME is describing a yellow flag that never happened. Its surrogates also fit poorly (local R² 0.19–0.44). SHAP describes what drove the prediction here; LIME describes what *might* move it.
-
-### Counterfactual Analysis
-
-"What tyre age would change this call?", swept over the training range (1–22 laps) in half-lap steps, with the derived features (`tyrelife_x_soft`, `tyrelife_x_medium`, `tracktemp_dev_x_tyrelife`) recomputed so every row is a lap that could exist. Compound and set freshness are held fixed — changing tyre age cannot change the compound.
-
-No tyre age flips any pit call: the closest lap peaks at P = 0.1364 at 16.5 laps, just under the 0.1524 threshold. For lap time the effects are small (< 0.1 s for ±5 laps) except on fresh tyres, where **the model predicts that older tyres are faster** — an out-lap confound, not tyre physics, and exactly the kind of thing this scan exists to surface. Output: `artifacts/xai/counterfactual_analysis.csv`.
-
-### Trust Score
-
-A **project-defined** score, not a validated one:
-
-```
-trust = Σ wₖ·componentₖ / Σ wₖ   over the components that apply
-  0.35 confidence            distance from the tuned threshold (not used for lap time — no decision point)
-  0.25 model_agreement       1 − |DNN − Task 6|
-  0.20 explanation_stability SHAP vs LIME top-3 overlap
-  0.20 input_validity        share of inputs inside the training 1st–99th percentile
-HIGH ≥ 0.75 · MODERATE ≥ 0.50 · LOW ≥ 0.25 · DO NOT ACT < 0.25
-```
-
-Means over the test laps: 0.632 (lap time), 0.712 (pit). All 360 rows are in `artifacts/xai/trust_score_report.csv`.
-
-**We checked it against outcomes, and it does not predict error:** Spearman correlation between trust and lap-time error is −0.09 (p = 0.24). Read the components to see *which* signal is weak; do not read the total as a probability of being right.
-
-### F1-Specific Performance Stratification
-
-Error by **driver, team and tyre compound** — the groupings this dataset actually has. There are no demographic attributes and none were invented, and with one circuit there is no circuit stratum. Groups under 30 laps or 5 pit laps are flagged descriptive-only. Output: `artifacts/xai/fairness_assessment.csv`.
-
-The one adequately-sized split is compound: **HARD 0.388 s MAE (99 laps) vs SOFT 0.782 s (81 laps)**, the soft-tyre laps predicted too fast. Per-driver MAE ranges from 0.235 s to 2.316 s, but the worst drivers are the ones whose laps include a pit stop, so that spread is about pit laps rather than drivers.
-
-### Explainability Dashboard
-
-The **Explainability** page reads only from `artifacts/xai/`: global importance, the stratification table, a card per scenario with its plain-English sentence, SHAP and LIME factors, trust components and counterfactual — plus a **lap inspector** for any of the 180 test laps, whose tyre-age counterfactual is computed live by the saved network.
-
-Generated sentence for the missed stop:
-
-> Recommend STAYING OUT - model confidence 6%. Track temperature acting on tyre age (-27.73) is a major factor pushing against stopping; tyre age (25) is a major factor pushing towards a stop; tyre age on the soft compound (25) is a minor factor pushing towards a stop. Trust in this recommendation: MODERATE.
-
-### Results
-
-- The model runs on race state, not identity (3.8% vs 62.2% expected).
-- **Why the one real stop was missed:** on ZHO's lap 54 the tyres were 25 laps old — beyond the 1–22 laps seen in training — and the cool-track × tyre-age term (SHAP −0.049) cancelled tyre age (+0.046), leaving P = 0.063, below the 0.076 base rate. Task 6's random forest, which does not extrapolate a trend, gave 0.579.
-- One non-physical behaviour found (older tyres predicted faster on out-laps), one unreliable explainer identified (LIME's constant feature), and one honest negative on our own trust score.
-
-### Limitations
-
-One race, 180 test laps, one labelled pit stop. SHAP values are sampled, LIME surrogates fit poorly, the counterfactual varies a single feature within the training range, permutation importance for the pit model is scored on one positive lap, and the trust score is an unvalidated heuristic. Stratification groups are 9–22 laps outside the compound split.
-
-### How to Run
-
-```bash
-python -c "from app.intelligence.xai import pipeline; pipeline.run_all()"   # ~2 min
-```
-
-Everything lands in `artifacts/xai/` (`shap/`, `lime/`, `counterfactual/`, `importance/`, `stratification/`, four CSVs, six Markdown reports, `xai_metadata.json`).
-
----
+The Task 8 results and the trust score are explained in [`docs/source/task7_task8.html`](docs/source/task7_task8.html), and live on the Explainability page.
 
 ## Testing
 
 ```bash
-pytest                     # 261 tests
-ruff check .               # lint
+pip install -r requirements-dev.txt
+pytest
+ruff check .
 cd frontend && npm run lint && npm run build
 ```
 
@@ -341,21 +176,21 @@ The suite writes to a temporary directory, so running it never modifies the comm
 
 ## Documentation
 
+**Start with [`docs/study_guide.html`](docs/study_guide.html):** one self-contained file with the diagrams, a code walkthrough, every report and every document below. Rebuild it with `python scripts/build_study_guide.py` after changing a source.
+
 | Document | What it answers |
 |---|---|
-| [`docs/source/architecture.html`](docs/source/architecture.html) | Module layout, the feature contract, leakage prevention, end-to-end flow |
-| [`docs/source/task7_task8.html`](docs/source/task7_task8.html) | Tasks 7–8: what we built, and the concepts behind deep learning and XAI |
-| [`docs/source/QML_README.html`](docs/source/QML_README.html) | Quantum ML from zero: qubits, our circuit, how it trains, our results, viva prep |
-| [`docs/source/DELIVERABLES_CHECKLIST.html`](docs/source/DELIVERABLES_CHECKLIST.html) | Every lab deliverable, its file path, and whether it is complete |
-| [`docs/source/TESTING_REPORT.html`](docs/source/TESTING_REPORT.html) | The last clean build and test run, with the actual output |
-| [`docs/source/DEPLOYMENT.html`](docs/source/DEPLOYMENT.html) / [`docs/source/deployment_guide.html`](docs/source/deployment_guide.html) | Install, build, run, serve, retrain, troubleshoot, Docker |
-| [`docs/source/user_manual.html`](docs/source/user_manual.html) | How to use the dashboard, as a race engineer, not a developer |
-| [`docs/source/srs.html`](docs/source/srs.html) | Software Requirements Specification — every functional/non-functional requirement, traced to code |
-| [`docs/source/sdd.html`](docs/source/sdd.html) | Software Design Document — architecture, component design, the strategy pipeline's stage sequence |
-| [`docs/source/task1_knowledge_representation.html`](docs/source/task1_knowledge_representation.html) … [`task4_data_engineering.html`](docs/source/task4_data_engineering.html) | One note per early task |
-| [`docs/notebooks/task5_feature_engineering.ipynb`](docs/notebooks/task5_feature_engineering.ipynb) | Task 5 walkthrough over the functions in `app/intelligence/features/build.py` |
-| `artifacts/**/*.md`, `artifacts/evaluation/*.json` | The generated reports and Task 10 evaluation results — every table in them was computed, not written |
-| [`artifacts/reports/Task9_Task10_Report.docx`](artifacts/reports/Task9_Task10_Report.docx) | The Task 9/10 report: architecture, dashboard screenshots, testing, performance, domain validation, responsible AI |
+| [`user_manual.html`](docs/source/user_manual.html) | How to use the dashboard |
+| [`architecture.html`](docs/source/architecture.html) | Modules, the feature contract, leakage prevention, end-to-end flow |
+| [`srs.html`](docs/source/srs.html), [`sdd.html`](docs/source/sdd.html) | Requirements traced to code, and the design |
+| [`DELIVERABLES_CHECKLIST.html`](docs/source/DELIVERABLES_CHECKLIST.html) | Every lab deliverable, its path and status |
+| [`TESTING_REPORT.html`](docs/source/TESTING_REPORT.html) | A dated clean build and test run |
+| [`deployment_guide.html`](docs/source/deployment_guide.html), [`DEPLOYMENT.html`](docs/source/DEPLOYMENT.html) | Install, run, retrain, troubleshoot, Docker |
+| [`task7_task8.html`](docs/source/task7_task8.html), [`QML_README.html`](docs/source/QML_README.html) | Deep learning, XAI and quantum ML explained |
+| [`task1`](docs/source/task1_knowledge_representation.html), [`task2`](docs/source/task2_expert_system.html), [`task3`](docs/source/task3_state_space_search.html), [`task4`](docs/source/task4_data_engineering.html) | One note per early task |
+| [`task5_feature_engineering.ipynb`](docs/notebooks/task5_feature_engineering.ipynb) | Task 5 walkthrough |
+| [`Task9_Task10_Report.docx`](artifacts/reports/Task9_Task10_Report.docx) | The Task 9/10 report, including Task 10's evaluation results from `scripts/evaluate_system.py` |
+| `artifacts/**/*.md`, `artifacts/evaluation/*.json` | Generated reports and evaluation results |
 
 ## License
 
