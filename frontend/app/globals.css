@@ -35,7 +35,7 @@
   /* The one glass surface in the app, and the only place blur is allowed.
      78% of the page ground: content stays legible sliding underneath, and
      nav text still clears AA over the lightest thing that can pass behind it
-     (paper-900 text composites to #2e394f, where paper-700 measures 7.2:1).
+     (paper-900 text composites to #2e394f, where paper-700 measures 7.9:1).
      This is why the nav's idle links are paper-700 and not paper-500 -
      paper-500 would measure 4.1:1 there and fail. */
   --nav-surface: rgba(8, 21, 48, 0.84);
