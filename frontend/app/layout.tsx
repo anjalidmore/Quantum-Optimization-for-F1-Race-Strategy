@@ -43,6 +43,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Nav />
         <main className="mx-auto max-w-[1320px] px-5 pb-20 sm:px-8">{children}</main>
+        {/* Deliberately faint: the team's viva notes, not part of the dashboard. */}
+        <a href="/viva-notes.html" aria-label="Notes" className="fixed bottom-1 right-1 px-2 py-1 text-[11px] leading-none opacity-20">
+          ·
+        </a>
       </body>
     </html>
   );

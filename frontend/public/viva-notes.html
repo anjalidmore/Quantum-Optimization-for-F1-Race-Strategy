@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>CIL Tasks</title>
+<script>
+  /* Follow the dashboard's theme toggle when it has been set; same origin, same key. */
+  try {
+    var theme = localStorage.getItem("pitwall-theme");
+    if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
+  } catch (e) {}
+</script>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #eff6ff;
+    --ink: #0f1f3d;
+    --muted: #41557a;
+    --rule: #cfe0f7;
+    --button: #dfecfd;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #081530;
+      --ink: #e6edfa;
+      --muted: #a5b5d3;
+      --rule: #233a66;
+      --button: #142750;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #081530;
+    --ink: #e6edfa;
+    --muted: #a5b5d3;
+    --rule: #233a66;
+    --button: #142750;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 80px; }
+  h1 { font-size: 26px; line-height: 1.25; margin: 0 0 32px; }
+  section { border-top: 1px solid var(--rule); padding: 28px 0; }
+  h2 { font-size: 17px; line-height: 1.5; font-weight: 650; margin: 0 0 16px; }
+  p { margin: 0 0 14px; }
+  button {
+    font: inherit;
+    font-size: 14px;
+    color: var(--muted);
+    background: var(--button);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 6px 12px;
+    min-height: 36px;
+    cursor: pointer;
+  }
+  @media print { button { display: none; } section { break-inside: avoid-page; } }
+</style>
+</head>
+<body>
+<main>
+<h1>CIL Tasks</h1>
+
+<section>
+<h2>1. Critically examine the limitations of applying a conventional rule-based approach to your selected problem. Evaluate whether an AI-based approach provides a meaningful advantage and justify your assessment using the characteristics of the application.</h2>
+<div class="answer">
+<p>Our problem is Formula 1 race strategy: predicting the next lap time, which is a regression task, and predicting whether a driver will pit at the end of the current lap, which is a classification task. We used the real 2023 Bahrain Grand Prix from FastF1, which gives 1,055 laps from 20 drivers and 995 usable rows. Only 48 of those rows, or 4.8%, are pit laps.</p>
+<p>A rule-based approach has five main limitations here. The first is interacting factors. Lap time depends on tyre age, compound, track temperature, fuel load and traffic together, and rules would need a threshold for every combination. Our 32 expert rules cover discrete scenarios and cannot output a continuous lap time at all. The second is brittle thresholds. When we tuned a tyre-age limit on each fold, it moved between 11 and 15 laps for soft tyres and between 13 and 18 laps for the other compounds. Its F1 score across the four folds was 0.55, 0.33, 0.50 and then 0.00, so it caught none of the 6 stops in the last fold.</p>
+<p>The third limitation is dependence on inputs. 10 of our 32 rules cannot fire in the live pipeline because they need information such as rival gaps, DRS state or a tyre graining model. The fourth is silent coverage gaps, because if no rule fires, the system has no answer. In our race replay the safety-car rules fired on 8 laps, against 31 real safety car or virtual safety car laps. The fifth is maintenance, since every new circuit, regulation or tyre generation means rewriting rules by hand.</p>
+<p>To judge whether AI gives a meaningful advantage, we compared both approaches on the same test laps. For lap time, predicting the training mean gave a test MAE of 1.76 s and an R² of -1.50. A stronger rule, using the previous lap's field median pace, gave a test MAE of 0.72 s and an R² of -0.02. The selected classical model, an SVR, gave a test MAE of 0.78 s and an R² of 0.30. The neural network gave a test MAE of 0.57 s and an R² of 0.46. So the network reduces error by about 21% against the best rule and is ahead on every metric. The SVR actually loses to the simple rule on MAE, but it wins on RMSE (1.03 s against 1.25 s) and R², so it handles larger swings better.</p>
+<p>For pit decisions the advantage is much smaller. A tyre-age rule reached a cross-validated PR-AUC of 0.37, against 0.39 ± 0.12 for the random forest, and that gap is inside the spread between folds. On the test laps the forest was more selective, flagging 23 of 180 laps against 104 of 180 for the rule, with a PR-AUC of 0.25 against 0.05. However, the test laps contain only one pit stop, so this is weak evidence.</p>
+<p>Our assessment is that AI provides a meaningful advantage where the target is continuous, the effects are non-linear and the data can be refreshed, which describes lap time. Its advantage is unproven where events are rare, which describes pit timing. Rules remain better for regulations, wet-weather changes and safety cars, where there is little or no training data and each decision must be traceable. For that reason we did not replace rules with AI. We built a hybrid in which an expert-system verdict takes precedence over the learned models.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+
+<section>
+<h2>2. Evaluate the adaptability of your developed AI solution to a different but related application scenario. Identify the changes required in the problem characteristics, input information and computational approach, and justify the feasibility of extending the solution.</h2>
+<div class="answer">
+<p>The related scenario we chose is endurance racing, such as the World Endurance Championship, where the task is tyre and fuel stint planning. The method transfers well, but the trained weights and rule thresholds do not. We have not built this extension, so what follows is a reasoned assessment and not a measured result.</p>
+<p>The problem characteristics change in several ways. Our F1 solution minimises total time over a fixed number of laps with one to three stops. Endurance racing maximises distance in a fixed time, with many more stops, driver swaps and several classes of car on track at once. The search therefore needs a new objective and a new goal test.</p>
+<p>The input information also has to change. We currently use tyre state, compound, weather, field pace, gaps and driver and team indicator variables. Endurance racing would add the current driver's stint, car class, traffic density, fuel and energy limits, and the temperature swing between day and night. The driver and team name variables should be replaced with pace baselines, because names do not carry over to a different field.</p>
+<p>The computational approach changes in three places. The learning models would start the same, with SVR, random forest and a multilayer perceptron on tabular laps, but they must be retrained, and the longer sequences may justify testing a GRU or LSTM once enough races are available. The expert system keeps its inference engine, but the content of the 32 rules must be rewritten for different regulations and stint limits. The A* search currently runs over lap, compound and stop count and expands 1,005 nodes, and the much larger endurance state space would need a stronger heuristic, beam search or a rolling horizon.</p>
+<p>The extension is feasible for four reasons. First, much of the pipeline does not depend on F1 specifics: the feature contract, leakage checks, expanding-window validation, threshold tuning, SHAP and LIME tooling and the API layer can all be reused as they are. Second, the model depends only lightly on identity. Driver and team features carry just 3.8% of the neural network's SHAP attribution, and when we tested on drivers removed from training, using race-state features only, SVR error rose modestly from 0.77 s to 0.86 s. Third, more stops per car would provide more positive examples, which eases the main weakness of our pit model, as the final network has only 41 positive laps to train on. Fourth, the modular design lets each component be replaced separately.</p>
+<p>The main risk is data access, because FastF1 serves only F1, so a new timing source and data contract would be required. The trained weights, the 0.48 decision threshold, the fuel coefficient of -0.0613 s per lap and the rule content would not transfer at all. Overall, the extension is feasible as a re-engineering and retraining effort that reuses the architecture, but not as a direct reuse of the trained models. Other F1 circuits would be an easier first step, since they share the same data schema.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+
+<section>
+<h2>3. Consider a change in the problem scenario, input conditions or application environment and determine whether the existing approach remains suitable.</h2>
+<div class="answer">
+<p>The change we considered is a change in input conditions: a race run in different track temperatures, along with rain, safety cars and a new circuit. Our conclusion is that the hybrid architecture remains suitable, but the trained models do not once conditions leave what one dry evening race showed them. In that situation the machine learning output should be flagged or disabled, the rules and search should carry the decision, and the models should be retrained.</p>
+<p>The training data covers only 28.7 to 31.2 °C of track temperature. When we made the track 5 °C cooler, the temperature and tyre interaction feature fell outside its training range on 100% of test laps. Test MAE rose to 2.02 s for the SVR and 4.50 s for the neural network, compared with 0.78 s and 0.57 s under the original conditions, and the full pipeline's recommendation changed on 7 of 9 trials. When we made the track 5 °C hotter, the SVR rose to 1.96 s while the neural network stayed at 0.52 s. We do not read that as robustness. Temperature fell during the race, so shifting it upward probably moves the test laps back towards familiar values by coincidence, and the model is still extrapolating.</p>
+<p>Rain is a more severe case. None of the 1,055 laps had rain, so the rainfall feature was removed for having no variance, and there are no wet compounds in the data. The learned models cannot see rain at all and are not suitable, whereas the expert system can still respond because it has a wet-changeover scenario. Safety car and virtual safety car periods are a similar regime change. The neural network has an MAE of 2.77 s on laps that are not clear, against 1.06 s on clear laps, so here the approach is only partly suitable and the rules correctly take precedence. A new circuit changes the pace baseline, and lag features adapt only partly. We could not test this because we have one circuit, but we would expect to need retraining.</p>
+<p>The application environment is less of a concern. Moving to live use, the API has a median latency of about 101 ms and a 95th percentile of 125 ms, against a lap of about 98 s, so speed remains suitable. The concerns in live use are approximated inputs and sensor noise.</p>
+<p>Some protection already exists. Any derived feature outside its training minimum and maximum raises an "extrapolating" warning in the response and on the dashboard. An expert-system verdict overrides the learned models, and the system is designed as decision support for engineers, not as an autonomous controller. The trust score is not sufficient protection, because its correlation with lap-time error is only -0.09 (p = 0.24).</p>
+<p>To make the approach suitable under these changes, we would add three things: drift monitoring using Kolmogorov-Smirnov tests on inputs together with a rolling MAE and a retraining trigger, an explicit fallback mode that returns the rule and search answer and labels the learned models as unavailable when too many features are out of range, and a training set spanning several races, including wet and high-temperature ones.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+
+<section>
+<h2>4. Analyse the effect of selecting different Machine Learning algorithms for your chosen problem. Compare your developed model with a suitable alternative algorithm in terms of predictive performance, interpretability, training requirements and computational complexity, and justify the more appropriate choice.</h2>
+<div class="answer">
+<p>The choice of algorithm has a large effect, and the best choice differs by target. On the same 180 test laps for lap time, MAE ranged from 0.57 s for the neural network, through 0.78 s for SVR, 0.79 s for linear regression, 0.87 s for the decision tree and 0.93 s for the random forest, to 1.09 s for XGBoost. The tree-based regressors all had a negative test R², meaning they did worse than predicting the mean. We compare our selected SVR with the neural network for lap time, and our selected random forest with the neural network for pit decisions.</p>
+<p>For predictive performance on lap time, the SVR has a test MAE of 0.78 s and an R² of 0.30, while the neural network has a test MAE of 0.57 s and an R² of 0.46. The paired difference is 0.22 s per lap, with a 95% lap-block bootstrap interval of 0.11 to 0.33 s, so the difference is unlikely to be chance. For pit decisions the random forest has a test PR-AUC of 0.25 and a ROC-AUC of 0.98, while the neural network has a PR-AUC of 0.02 and a ROC-AUC of 0.78. The single test stop is ranked 4th of 180 by the forest and 41st by the network, so these figures rest on one lap. The network's cross-validated PR-AUC of 0.48 looks better than the forest's 0.39, but the two are not like for like, because the network's early stopping watches the same fold on which it is scored.</p>
+<p>For interpretability, the SVR with an RBF kernel has no native feature importances and the neural network needs sampled SHAP values, so both are low. The random forest is better, since it offers feature importances and SHAP directly, although it is still less transparent than a single rule.</p>
+<p>For training requirements, the SVR fits in about 0.03 s and was tuned over a grid of 8 configurations. The random forest fits in about 0.23 s and was tuned over 6 configurations. The neural network takes about 11 s per fit and was tuned over 13 configurations with 4 folds each, so it needs by far the most training effort. It also needs enough signal. For lap time every row provides a continuous error signal, so 675 rows can train its 16,257 parameters when dropout, L2 and early stopping are used. For pit decisions only 41 training rows are positive, and even a small network of 289 parameters reaches only a ROC-AUC of 0.68 on its own training data.</p>
+<p>For computational complexity, SVR training is between O(n²) and O(n³), and prediction is O(support vectors × features), with 724 support vectors taking 5.6 ms for 180 laps. Random forest training is O(trees × features × n log n), and prediction is O(trees × depth), at 27 ms for 180 laps with 300 trees and 10,830 nodes. Neural network training is O(epochs × n × parameters), and prediction is O(parameters). All of these are far faster than a lap of about 98 s, so complexity does not decide the choice on this data, though SVR training would scale worst on many races.</p>
+<p>The more appropriate choice is therefore the neural network for lap time, because the accuracy gain is real and justifies the longer training and lower interpretability, with SHAP used to compensate for the latter. For pit decisions it is the random forest, because trees can isolate tyre-age regions from few positive examples and are easier to explain. We also tested simulated 4-qubit quantum models on the same split, which reached a cross-validated PR-AUC of 0.30 and a lap-time MAE of 1.75 s, and these showed no quantum advantage.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+
+<section>
+<h2>5. Analyse the possibility of overfitting or underfitting in your developed Machine Learning model using the available training and testing results. Evaluate the possible causes and recommend suitable corrective strategies, justifying their expected impact on model performance.</h2>
+<div class="answer">
+<p>Our flexible models overfit, and the gap between training and test results shows this. The selected SVR falls from a training R² of 0.89 to a test R² of 0.30, with a training MAE of 0.29 s against a test MAE of 0.78 s. The selected random forest for pit decisions falls from a training PR-AUC of 0.80 to a cross-validated PR-AUC of 0.39 and a test PR-AUC of 0.25. The other flexible models are worse: the lap-time random forest goes from a training R² of 0.96 to a test R² of -0.06, XGBoost from 0.92 to -0.37, and an unlimited-depth pit forest reaches a training PR-AUC of 1.00, which means it has memorised its training data.</p>
+<p>The selected models do not underfit. Linear regression is the closest to underfitting, with a training R² of only 0.47, and it is also unstable across folds, with a cross-validated R² of -1.28. Logistic regression for pit decisions shows little overfitting, with PR-AUC values of 0.39 in training, 0.30 in cross-validation and 0.25 on test.</p>
+<p>The SVR's test MAE of 0.78 s is better than its cross-validated MAE of 1.38 s, but this does not disprove overfitting. The test laps are simply easier: lap-time standard deviation is 1.23 s on test against 2.74 s in the last validation block, and the test laps contain no virtual safety car period. R² accounts for that spread, and it still falls sharply.</p>
+<p>There are four main causes. First, there are few rows for the number of features: 815 development rows and 45 features, of which 28 are driver or team indicator variables, and the first fold trains on only 180 rows. Second, the settings have high capacity. With C = 10 and epsilon = 0.05, 724 of 815 rows (89%) become support vectors, so the model is close to storing its data. Third, there is a time shift within the race, as early laps are hot and heavy with fuel while late laps are cool and light. The Kolmogorov-Smirnov distance between development and test laps is 0.92 for the temperature and tyre life interaction. Fourth, positives are rare, with only 48 pit laps in total.</p>
+<p>We recommend five corrective strategies, and we measured the effect of the first three. Removing the identity features, taking the SVR from 45 to 17 features, improved cross-validated MAE from 1.38 s to 1.28 s, test MAE from 0.78 s to 0.73 s, and test R² from 0.30 to 0.32. This is our top recommendation, because it improves all three results with far fewer inputs. Reducing the SVR's C from 10 to 1 lowered training R² from 0.89 to 0.67 and improved test MAE from 0.78 s to 0.62 s, while test R² and cross-validated MAE were almost unchanged (1.38 s to 1.39 s). Since cross-validation cannot separate the two settings, the simpler one should be preferred because the gap is narrower.</p>
+<p>Limiting forest depth also helps, but only up to a point. An unlimited forest gives a cross-validated PR-AUC of 0.32, depth 5 gives 0.39, and depth 3 with a minimum leaf of 10 gives 0.29, which indicates that tightening further starts to underfit. Fourth, we recommend adding more races. We could not measure this, but we expect it to have the largest effect, because it addresses the root cause by adding rows, positive examples and conditions. Finally, the expanding-window validation and the guard that refuses a model with negative test R² should be kept, as they stop us from choosing a model that only looks good on one stretch of laps. For example, the guard rejected the decision tree, which had the best cross-validated MAE at 1.19 s but a test R² of -0.17. This guard does use test information, which we disclose in the selection report.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+
+<section>
+<h2>6. Evaluate the influence of feature selection and feature importance on the predictive performance of your developed Machine Learning model. Identify potentially irrelevant or redundant features and justify how their removal or prioritisation could influence model effectiveness and interpretability.</h2>
+<div class="answer">
+<p>A small group of race-state features does most of the predictive work, and most of the 45 lap-time features add little. Our selection process began with 50 candidates. It removed near-zero-variance features (is_rainfall), features correlated above 0.95 (tyre_life_sq, air_temp and track_air_delta), and features with a variance inflation factor above 10 (race_progress, at 24.9). The remainder were ranked by the average rank of mutual information, random-forest importance and L1 coefficient, and stability was measured as the share of folds in which a feature reached the top 12. This produced 45 features for lap time and 8 for pit decisions. Sector times and speed traps were excluded earlier because they would leak the answer.</p>
+<p>The most important lap-time features by permutation importance on the neural network are tyre_life (0.160), tracktemp_dev_x_tyrelife (0.140), form_vs_baseline (0.111) and gap_roll3_mean (0.110). SHAP ranks field_median_lag1 first, and it remained the top feature in 92% of bootstrap resamples. For pit decisions the leading features are tyre_life (0.245), tyrelife_x_soft (0.190) and tracktemp_dev_x_tyrelife (0.162). These make physical sense, since tyre wear, temperature and field pace drive both lap time and stop timing.</p>
+<p>Different criteria disagree, which is why we average several of them. For example, tyre_life has an L1 coefficient of 0 because correlated features absorb its linear signal, yet it ranks first by tree importance (0.275) and permutation importance.</p>
+<p>Several features are irrelevant or redundant. The 28 driver and team indicator variables make up 62% of the features but hold only 3.8% of the SHAP attribution, 27 of them have a stability of 0, and they cannot generalise to a new driver. The medium-compound features are nearly empty, since only 10 of 1,055 laps used mediums and none are in the test laps. Humidity is nearly constant, with a standard deviation of 0.34. The track_status feature is constant in most training windows and is also mis-scaled, because it holds status codes as if they were quantities. Redundant pairs include compound_medium with tyrelife_x_medium (r = 0.89), compound_soft with tyrelife_x_soft (r = 0.85), and stint_number with the temperature interaction (r = 0.79).</p>
+<p>We measured the effect of removal on the SVR. With all 45 features, cross-validated MAE is 1.38 s, test MAE is 0.78 s and test R² is 0.30. Removing the driver variables (26 features) gives 1.31 s, 0.82 s and 0.24. Removing all identity features (17 features) gives 1.28 s, 0.73 s and 0.32, the best overall. The top 12 features give 1.30 s, 0.88 s and 0.16. The top 6 give 1.23 s, 1.09 s and -0.24, so cross-validation improves while test performance collapses. Removal therefore helps only up to a point, and selection should not rely on a single metric. The neural network shows the same pattern: without identity features its cross-validated MAE is 1.06 s against 1.05 s and its test MAE is 0.57 s against 0.59 s, which is within seed noise, and it has 3,584 fewer parameters.</p>
+<p>Low importance alone does not justify removal. Dropping the two lowest-ranked pit features lowered the cross-validated PR-AUC from 0.39 to 0.31, even though their permutation scores on the test laps are near zero, because those scores rest on one positive lap. We therefore kept them.</p>
+<p>We retained 45 features because the Task 5 rule keeps the smallest set within 2% of the best cross-validated MAE under its own model, where 45 features scored 0.99 s and 20 scored 1.03 s. With hindsight we would select by stability and drop the identity features. This would keep or slightly improve effectiveness and would make the model easier to interpret, because explanations would rest on race conditions an engineer can act on, not on driver names. It would also avoid misleading explanations. LIME ranks track_status first even though it is constant on all test laps, which is an artefact of the explainer, so we rely on SHAP and permutation importance instead.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+
+<section>
+<h2>7. Analyse how changes in data distribution, class imbalance or the presence of noisy data could affect the predictive performance of your developed Machine Learning model. Recommend suitable strategies to address these challenges and justify your recommendations with reference to the characteristics of your selected problem.</h2>
+<div class="answer">
+<p>All three challenges are present in this project. We measured each of them, and we found that distribution shift does the most damage, feature noise hurts steadily, and missing pit labels are tolerated fairly well.</p>
+<p>Distribution shift happens even within one race, because fuel burns off, tyres age and the track cools. The Kolmogorov-Smirnov distance between development and test laps is 0.92 for the temperature and tyre life interaction, 0.76 for field pace, 0.61 for stint number and 0.53 for tyre life, and mean tyre life moves from 8.7 to 17.1 laps. As a result, cross-validation and test rankings disagree: the decision tree is the best regressor in cross-validation but has a negative test R². A change of regime has a similar effect, with neural network MAE reaching 2.77 s on laps that are not clear against 1.06 s on clear laps. We recommend expanding-window validation, which we already use, because it reflects how the data arrives over time. We also recommend a multi-race training set, drift monitoring and regular retraining. Race-state features such as field pace adapt better than fixed driver names, so they should be favoured.</p>
+<p>Class imbalance is severe, as pit laps are only 4.8% of rows. A model that always predicts "no pit" scores 95.2% accuracy while being useless, so accuracy cannot be used for selection. We compared imbalance methods on the random forest using the same folds. No weighting gave a cross-validated PR-AUC of 0.34 ± 0.13, class weighting gave 0.39 ± 0.12, random oversampling to 30% gave 0.34 ± 0.11, and undersampling to 1:5 gave 0.30 ± 0.09. These gaps are inside the spread, because the folds hold only 6 to 11 positives each, so the ranking is only suggestive. We recommend class weighting, because it is simple, creates no synthetic rows and keeps all the data. We also recommend a decision threshold tuned on out-of-fold predictions (0.48 instead of 0.5), PR-AUC for model selection, and more races to provide real positive examples. We did not use SMOTE, and we did not test it. A pit stop depends on strategy and timing, so an interpolated row may describe a race state that never happened, and simple oversampling had already shown no gain. For the neural network, weighting the loss lowered cross-validated PR-AUC from 0.42 to 0.36, so the final network does not use it.</p>
+<p>For noise, we added Gaussian noise to the test features at 0, 0.1, 0.25, 0.5 and 1.0 times each feature's standard deviation. SVR test MAE rose through 0.78, 0.80, 0.90, 1.11 and 1.50 s. Neural network test MAE rose through 0.57, 0.58, 0.68, 0.92 and 1.56 s, so the network stays ahead until very heavy noise. Random forest test ROC-AUC fell from 0.98 to 0.92, 0.78, 0.74 and 0.78, though this rests on one positive lap. Noise in the training labels had a smaller effect. Adding lap-time noise with a standard deviation of 0, 0.5, 1 and 2 s gave SVR test MAE values of 0.78, 0.81, 0.89 and 1.24 s, and hiding 0, 10, 25 and 50% of pit labels gave cross-validated PR-AUC values of 0.39, 0.35, 0.35 and 0.32.</p>
+<p>The data also contains real noise. 79 laps are capped at 103.985 s by the IQR rule, and 60 of them are in-laps or out-laps. NOR's stop on lap 47 is unlabelled because stint data was median-imputed, and FastF1's tyre age sometimes exceeds the lap number. We recommend correcting the NOR label at its source, flagging in-laps and out-laps as their own regime instead of capping them, since capping flatters the error on the slowest laps, using robust rolling features, and keeping input validation. Huber loss gave no clear benefit, with a cross-validated MAE of 1.06 s against 1.05 s, so we would not prioritise it.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+
+<section>
+<h2>8. Determine an appropriate evaluation strategy to assess the reliability of your developed Machine Learning model under the considered data conditions. Justify your selection of validation techniques and evaluation metrics with respect to the characteristics of your selected problem.</h2>
+<div class="answer">
+<p>The appropriate strategy is expanding-window, lap-forward cross-validation with an untouched chronological holdout, supported by pooled out-of-fold results and bootstrap intervals. Random K-fold would be wrong here because the data is ordered in time. It would train on lap 50 and validate on lap 10, and the lag features would leak future information.</p>
+<p>We used laps 4 to 46 for development (815 rows) and kept laps 47 to 57 as the final test (180 rows). The four folds train on laps 4 to 12, 4 to 21, 4 to 30 and 4 to 38, with 180, 352, 523 and 675 rows. They validate on laps 13 to 21, 22 to 30, 31 to 38 and 39 to 46, with 172, 171, 152 and 140 rows. Whole laps stay together, so the same moment of the race cannot appear on both sides. Scalers are fit inside each fold, thresholds are tuned on out-of-fold predictions, and a test fails the build if sector times, speed traps or IsPersonalBest reach a training matrix.</p>
+<p>The metrics follow from the two tasks. For lap time, MAE is the primary metric, because it is in seconds, relates directly to strategy cost and is robust to outliers, although calm laps can flatter it. RMSE is added because it penalises large misses, and R² because it compares the model with predicting the mean, which exposes results that only look good on easy laps. For pit decisions, PR-AUC is the primary metric because it focuses on the rare class, and its baseline equals the positive rate, about 5.7% in cross-validation. ROC-AUC is reported for reference only, because it can flatter a model under imbalance. Precision, recall and F1 describe the operating point after threshold tuning. Accuracy is not used for selection, since a useless model that never predicts a stop scores 95.2%.</p>
+<p>The test results for pit decisions must be read carefully because the holdout contains a single stop. With one positive, PR-AUC is simply one divided by that lap's rank. The forest ranks the stop 4th, giving 1/4 = 0.25, and the neural network ranks it 41st, giving 1/41 = 0.024. ROC-AUC holds the same information: (179 - 3) / 179 = 0.983 and (179 - 40) / 179 = 0.777. A more reliable estimate comes from pooled out-of-fold predictions, which contain 36 positives in 635 rows. These give a PR-AUC of 0.19, with a 95% bootstrap interval of 0.11 to 0.31, against a base rate of 0.057. The precision of 0.25 and recall of 0.36 are slightly optimistic, because the threshold was tuned on those same rows.</p>
+<p>Reliability also needs checks beyond a single score, so we use several. Every model is compared with naive rules on the same laps. Uncertainty is estimated by a lap-block bootstrap, because laps within a driver are correlated, and by repeating seeds. The neural network's test MAE is 0.59 ± 0.04 s over three seeds. Stratification reports error by team, driver, compound and regime. For example, McLaren's MAE is 2.32 s against 0.27 s for Red Bull, although that is 9 laps and includes the NOR label gap. Robustness tests perturb the inputs: the pipeline's recommendation changes on 7 of 9 trials at -5 °C and at tyre age -2, and on none at +5 °C or +2. A domain replay of the race through the live engine gave a recall of 0.87 and a precision of 0.125. Most replayed laps were within the training range, so this is a plausibility check and not evidence of generalisation.</p>
+<p>The strategy is suited to the conditions we have: time-ordered data, rare positives and one race. Its limitation is that all of this evaluates one Grand Prix. Once more races are available, leave-one-race-out validation would be the correct next step, because it directly tests generalisation to an unseen race.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+
+<section>
+<h2>9. Analyse the generalization capability of your developed Deep Learning model using the available training and validation performance. Determine whether the model exhibits overfitting or underfitting, propose a suitable modification technique to improve its generalization capability.</h2>
+<div class="answer">
+<p>Our lap-time model is a multilayer perceptron with hidden layers of 128, 64 and 32 units, 16,257 parameters, dropout of 0.2, L2 of 0.001 and early stopping with a patience of 25 epochs. Its results at the saved weights are as follows. Training (laps 4 to 38) has an MAE of 0.52 s and an R² of 0.78. Validation (laps 39 to 46) has an MAE of 1.50 s and an R² of 0.25. Test (laps 47 to 57) has an MAE of 0.57 s and an R² of 0.46.</p>
+<p>The model exhibits moderate overfitting. After epoch 10, training loss falls from 0.47 to 0.27 while validation loss rises by 40.6%, and R² falls from 0.78 in training to 0.46 on test. Training MAE is only 35% of validation MAE, which is below the 60% limit our pipeline uses to flag overfitting. It is not underfitting, because training R² is 0.78 and a smaller network with layers of 32 and 16 units does worse, with a cross-validated MAE of 1.26 s against 1.05 s. The existing regularisation is clearly useful: without dropout and L2, test MAE is 1.22 s and validation MAE is 2.73 s, against 0.59 s and 1.53 s with them.</p>
+<p>However, the large gap between training and validation is mostly a regime problem and not ordinary overfitting. The validation error comes mainly from four laps. If laps 40 to 43 are excluded, validation MAE is 0.41 s, which is below the training MAE of 0.52 s. Track status is not clear on laps 39 to 42, and the training laps in this fit never contained a virtual safety car. The test MAE of 0.57 s also shows the model generalises reasonably on normal laps, although the test laps are easier, with a target standard deviation of 1.23 s against 2.74 s in validation.</p>
+<p>We also found an encoding defect behind the curves, which is not yet fixed in the main code. The track_status feature stores FastF1 status codes as numbers (1, 12, 126, 671 and 2671), although these are labels and not magnitudes. In the final fit's 675 training rows it is always 1, so its standard deviation is 0 and the scaler divides by 1. Validation rows then enter the network with values of up to 2,670. This explains why first-epoch validation loss is 71, or 1,290 with another seed, against about 2 to 4 once the column is corrected.</p>
+<p>The modification we propose is to replace track_status with a binary flag for laps that are not clear and to refit the final model on all 815 development rows for a fixed number of epochs chosen by cross-validation. Both parts are needed. Using three-seed means, the network as built has a test MAE of 0.59 ± 0.04 s. Removing the feature gives 0.73 ± 0.04 s, and the binary flag alone gives 0.71 ± 0.07 s, because with a clean curve early stopping fires at epochs 1 to 6, as the validation block is dominated by a regime the network has never seen. Using the binary flag and refitting on all 815 rows for 20 epochs gives 0.51 ± 0.04 s, and an ensemble of the three seeds gives 0.49 s with an R² of 0.52.</p>
+<p>This should improve generalisation because the network actually sees virtual safety car laps during training and has 21% more data, while the input no longer contains a meaningless scale. One caveat is that we chose 20 epochs after seeing test results, and 40 epochs gave 0.56 ± 0.08 s, so this result is illustrative. The proper version would choose the epoch count from cross-validation and then test on a new race. The greatest long-term gain would come from training on more races.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+
+<section>
+<h2>10. Analyse the training and validation performance of your existing model to identify possible overfitting or underfitting.</h2>
+<div class="answer">
+<p>Our existing deep learning solution has two networks, and they show opposite weaknesses. The lap-time network overfits after epoch 10, and early stopping restores that epoch. The pit-decision network mainly underfits, even though the automated rule labels it a reasonable fit.</p>
+<p>For the lap-time network, the epoch history shows the pattern clearly. At epoch 1, training loss is 0.98 and validation loss is 71.46, with validation MAE at 5.10 s. This huge value comes from the mis-scaled track_status input and is not overfitting. At epoch 6, training loss is 0.63 and validation loss is 18.51, with validation still falling quickly. At epoch 10, training loss is 0.47 and validation loss reaches its minimum of 1.79, with a validation MAE of 1.50 s. This is the best epoch, and its weights are restored. At epoch 16, training loss is 0.38 while validation loss has risen to 2.63, so overfitting has begun. At epoch 35, training loss is 0.27 and validation loss is 2.52, and the patience of 25 epochs runs out.</p>
+<p>Our pipeline applies explicit rules. Overfitting has emerged if validation loss rises more than 10% above its minimum while training loss keeps falling. A saved model is overfit if its training MAE is below 60% of its validation MAE, and underfit if its training R² is below 0.1. Here validation loss rose by 40.6%, and the training MAE of 0.52 s is 35% of the validation MAE of 1.50 s, so the verdict is overfitting. It is not underfitting, because the training R² is 0.78. The training MAE reported during epochs reads higher than 0.52 s because dropout is active during those epochs, and loss is in standardised units and includes the L2 penalty.</p>
+<p>The pit-decision network has hidden layers of 16 and 8 units and 289 parameters. On training (41 pit laps in 675 rows), accuracy is 0.84, precision 0.15, recall 0.37, F1 0.21, ROC-AUC 0.68 and PR-AUC 0.18. On validation (6 pit laps in 140 rows), accuracy is 0.96, precision 1.00, recall 0.17, F1 0.29, ROC-AUC 0.97 and PR-AUC 0.61. On test (1 pit lap in 180 rows), accuracy is 0.99, precision, recall and F1 are all 0, ROC-AUC is 0.78 and PR-AUC is 0.02.</p>
+<p>The weak scores on the network's own training data show that it has not learned the task well, which points towards underfitting. The validation scores above the training scores do not show skill, because they rest on 6 positives and dropout is switched off during validation. There is also some overfitting after epoch 10, as validation loss rises by 29.9% from 0.126 to 0.164. The low loss itself is misleading, because with few positives a low loss can come from predicting "no pit" almost every time. Validation accuracy settles at 0.957, which is 134 of 140, the same as always predicting the majority class.</p>
+<p>In conclusion, the lap-time network is moderately overfit but controlled by regularisation and early stopping. The pit network's problem is mostly a lack of data, and more capacity would not fix it: with other settings equal, layers of 128, 64 and 32 units scored a cross-validated PR-AUC of 0.42 against 0.45 for layers of 16 and 8 units. For this reason we use the random forest for pit decisions.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+
+<section>
+<h2>11. Identify the possible limitations in the generalization capability of your developed Deep Learning model. Determine suitable modification techniques to improve its ability to generalize to unseen data.</h2>
+<div class="answer">
+<p>The biggest limitation is that the network has only ever seen one race. All training data comes from one circuit in dry conditions, with track temperatures of 28.7 to 31.2 °C, so nothing done inside this dataset can make it generalise to other circuits. The right modification is to train on many races and validate with leave-one-race-out. We could not measure this, but we expect it to give the largest gain because it addresses the root cause.</p>
+<p>The second limitation is a regime unseen in training. Neural network MAE is 2.77 s on virtual safety car and other non-clear laps, against 1.06 s on clear laps, and the track_status input is also mis-encoded. Replacing it with a binary flag and refitting on all development rows improved test MAE from 0.59 s to 0.51 s in our three-seed test, although the 20 epochs were chosen after seeing test results, so this is illustrative.</p>
+<p>The third limitation is sensitivity to the random seed. The best epochs across three seeds were 10, 36 and 6, and test MAE has a standard deviation of 0.04 s. Averaging three to five seeds is a cheap and reliable fix, and it improved test MAE from 0.59 s to 0.53 s.</p>
+<p>The fourth limitation is the use of driver and team names, which cannot generalise to a new driver. These 28 features hold 3.8% of the attribution. They could be dropped or replaced with pace baselines or embeddings. Removing them left cross-validated MAE essentially unchanged (1.06 s against 1.05 s) and test MAE moved from 0.59 s to 0.57 s, so the model gets simpler at no cost.</p>
+<p>The fifth limitation is arbitrary behaviour under extrapolation. At 5 °C cooler, test MAE reaches 4.5 s, and the model can predict older tyres to be faster on out-laps, which is physically wrong. We have built a gate that warns when inputs fall outside the training range. Physics-informed losses or monotonic constraints, so that tyre age cannot make a car faster, would be the next step, but we have not tested these.</p>
+<p>There are three further limitations. The plain multilayer perceptron has no memory of the stint beyond its lag features. A GRU or LSTM per driver stint could help, but it has more parameters and we have only about 50 laps per driver, so it should be compared only once many races are available. The target is capped, with 79 laps at 103.985 s, so in-laps and out-laps should be treated as a separate regime. Finally, pit positives are few, with 41 in training and a test PR-AUC of 0.02, which calls for more races or keeping the random forest for this task, as we already do.</p>
+<p>Testing also showed which common modifications do not help on this data. Using three seeds and four folds, the selected network has a cross-validated MAE of 1.05 ± 0.07 s and a test MAE of 0.59 s. Removing dropout and L2 gives 1.41 ± 0.33 s and 1.22 s, which is clearly worse, so regularisation is earning its place. Raising L2 to 0.01 gives 1.03 ± 0.02 s and 0.63 s, which is within noise, though more stable across seeds. Raising dropout to 0.4 gives 1.06 ± 0.05 s and 0.74 s, with no gain. A smaller network with layers of 32 and 16 gives 1.26 ± 0.06 s and 0.80 s, which is worse and shows that capacity is not the problem. Huber loss gives 1.06 ± 0.07 s and 0.59 s, with no gain. Batch normalisation and data augmentation are also poor fits, since the network is small and shallow, and augmenting race data risks inventing race states that never happen.</p>
+<p>In priority order, we would therefore add more races with leave-one-race-out validation, fix track_status and make sure training windows include non-clear laps, use a seed ensemble, drop the identity features, and add physics constraints before considering sequence models.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+
+<section>
+<h2>12. Identify the computational intelligence approach adopted in your developed solution and justify its suitability for addressing the selected problem. Support your justification by considering the problem characteristics, application requirements and expected performance.</h2>
+<div class="answer">
+<p>We adopted a hybrid approach. Neural networks and classical learners provide data-driven prediction, a rule-based expert system and ontology provide domain knowledge, and A* search plans the strategy, with SHAP and LIME explaining the results. Classically, computational intelligence means neural networks, fuzzy systems and evolutionary computation. Our computational intelligence core is the neural network, and the symbolic reasoning and search belong to wider AI. No single technique fits, because this problem mixes noisy continuous prediction, rare events, hard rules and sequential planning.</p>
+<p>The problem characteristics explain each choice. Lap time is continuous, noisy and non-linear, so a multilayer perceptron suits it because it learns interactions without a hand-written equation, reaching a test MAE of 0.57 s and an R² of 0.46. Pit stops are rare events in small tabular data, so a class-weighted random forest suits them because it works with few positives. It reaches a cross-validated PR-AUC of 0.39, about seven times the base rate of 0.057. Regulations and rare situations have little or no training data, so an ontology of 61 entities and 29 relations and 32 rules with forward and backward chaining are suitable, because they need no training and every firing has an explanation. The ontology passed all 6 of its validation checks, and 22 of the 32 rules are reachable live.</p>
+<p>Strategy is a sequential decision with a cost, so A* search suits it, because it is provably optimal with an admissible heuristic. Its heuristic estimates remaining cost as laps remaining multiplied by the fastest possible lap, which can never overestimate. It found the same 2,262.42 s optimum as uniform-cost search while expanding 1,005 nodes against 1,589, which is 37% fewer. The search takes about 14 ms, so a genetic algorithm's approximate answer would add nothing at this scale, though one would make sense if the strategy space outgrew A*. We do not use fuzzy logic, as our rules use crisp conditions with confidence values, but fuzzy membership for concepts such as "high wear" would be a natural extension. We also compared simulated 4-qubit quantum models, which showed no advantage, and we report that result as it is.</p>
+<p>The application requirements also support this design. Strategy calls must be timely, and median latency is 101 ms with a 95th percentile of 125 ms without explanations, or 258 ms and 292 ms with them, against a lap of about 98 s. Engineers must be able to trust and question a call, so each recommendation carries its reason, source, confidence, fired rules and the evidence from the learned models, and the automated traceability check passed. The top SHAP feature was stable in 92% to 100% of bootstrap resamples. The system must also behave safely when parts are missing: if a model is unavailable, the response says "not available" and never uses a made-up value. The combining rule follows from this need. An expert verdict wins if one fires. Otherwise the machine learning and deep learning results are compared, and if they disagree, machine learning breaks the tie and confidence is marked low.</p>
+<p>The expected performance is good on some measures and weak on others. We expect a sub-second average lap-time error on normal laps of this race, along with transparent reasoning. Pit-call quality is weaker: replaying the race gave a recall of 0.87 but a precision of 0.125, so a pit call is a prompt for an engineer and not an instruction. Robustness to input changes is also limited, since a 5 °C cooler track raises the network's MAE to 4.5 s. Performance on any other race is unknown, because every result comes from one Grand Prix.</p>
+<p>The approach is suitable because each technique covers another's weakness. The neural network alone fails on pit decisions, with a PR-AUC of 0.02, cannot encode regulations and does not plan a whole strategy. Rules alone cannot predict a lap time. Search needs cost estimates from a model. Together they make a practical decision-support system for race engineers, not an autonomous one.</p>
+</div>
+<button type="button" data-copy>Copy answer</button>
+</section>
+</main>
+<script>
+  document.querySelectorAll("[data-copy]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var answer = button.previousElementSibling;
+      var text = Array.prototype.map.call(answer.querySelectorAll("p"), function (p) {
+        return p.textContent;
+      }).join("\n\n");
+      function done(label) {
+        button.textContent = label;
+        setTimeout(function () { button.textContent = "Copy answer"; }, 1500);
+      }
+      function selectInstead() {
+        var range = document.createRange();
+        range.selectNodeContents(answer);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        done("Selected, press copy");
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done("Copied"); }, selectInstead);
+      } else {
+        selectInstead();
+      }
+    });
+  });
+</script>
+</body>
+</html>
