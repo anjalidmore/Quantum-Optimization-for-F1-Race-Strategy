@@ -9,6 +9,10 @@ are built on the same models the rest of the dashboard reports.
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
+import textwrap
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -25,6 +29,29 @@ _built = pytest.mark.skipif(not (DL_METRICS_JSON.exists() and DL_COMPARISON_JSON
 def _committed(target: str) -> dict:
     blob = json.loads(DL_COMPARISON_JSON.read_text())["targets"][target]
     return {row["model"]: row["metrics"] for row in blob["comparison"]}, blob["task6_best_model"]
+
+
+@_built
+def test_summaries_requested_at_the_same_time_do_not_crash_the_process():
+    """The /rai page asks for both targets at once. On Metal that was a segfault
+    which took the API down, so this runs in a subprocess and repeats the race
+    with cold caches: a failure must not kill the test runner too."""
+    code = textwrap.dedent("""
+        from concurrent.futures import ThreadPoolExecutor
+        from app.services import rai_service
+
+        targets = ["target_laptime", "target_pit_next_lap"]
+        for _ in range(5):
+            rai_service.summary.cache_clear()
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                bodies = list(pool.map(rai_service.summary, targets))
+            assert all(bodies)
+        print("OK")
+    """)
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=300,
+                            cwd=str(Path(__file__).resolve().parents[1]))
+    assert result.returncode == 0, f"exit {result.returncode}:\n{result.stderr[-2000:]}"
+    assert "OK" in result.stdout
 
 
 @_built

@@ -252,6 +252,17 @@ done
 echo
 ok "Frontend ready (pid $FRONTEND_PID, log: $FRONTEND_LOG)"
 
+# Compiling those pages sends the backend its first real traffic. A native crash
+# leaves no line in its log, so say here that it died rather than let the next
+# step fail with a connection traceback that points at the wrong script.
+if ! curl -sf "$BACKEND_URL/api/health" >/dev/null 2>&1; then
+  echo "The backend stopped while the dashboard pages were compiling." >&2
+  echo "Its last log lines are below. If they show no error it crashed natively;" >&2
+  echo "macOS keeps a report in ~/Library/Logs/DiagnosticReports." >&2
+  tail -n 15 "$BACKEND_LOG" >&2
+  exit 1
+fi
+
 # ---------------------------------------------------------------------------
 # 6. Prove the ML models actually work: run a few real predictions
 #

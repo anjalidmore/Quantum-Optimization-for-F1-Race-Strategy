@@ -34,6 +34,18 @@ ordering holds no matter which test file pytest happens to load first.
 
 If XGBoost is not installed, this is a no-op - Task 6 already treats XGBoost
 as optional and reports "XGBoost unavailable" rather than failing.
+
+A second segfault lives in the same place. On Apple Silicon Keras defaults to
+PyTorch's Metal (MPS) device, and MPS kernels are not safe to call from two
+threads at once. FastAPI runs each request on a worker thread, so two
+simultaneous requests that touch a network kill the whole API, with nothing in
+its log. The Responsible AI page does exactly this when it renders:
+
+    GET /api/rai/summary?target=target_laptime       -> Segmentation fault
+    GET /api/rai/summary?target=target_pit_next_lap     (at the same moment)
+
+So Keras is kept on the CPU. The networks here are small enough that nothing
+needs a GPU, and the CPU device has no such race.
 """
 from __future__ import annotations
 
@@ -43,7 +55,7 @@ _PREPARED = False
 
 
 def prepare_dl_runtime() -> dict:
-    """Claim the OpenMP runtime for XGBoost, then select the Keras backend.
+    """Claim the OpenMP runtime for XGBoost, then select the Keras backend and device.
 
     Idempotent and safe to call from anywhere. Returns a small dict describing
     what happened, so a caller (or a test) can assert on it rather than trust
@@ -55,6 +67,7 @@ def prepare_dl_runtime() -> dict:
     # Python version this project targets, so the torch backend is selected
     # unless the environment explicitly asks for something else.
     os.environ.setdefault("KERAS_BACKEND", "torch")
+    os.environ.setdefault("KERAS_TORCH_DEVICE", "cpu")
 
     if _PREPARED:
         return {"prepared": True, "already": True, "backend": os.environ["KERAS_BACKEND"]}
