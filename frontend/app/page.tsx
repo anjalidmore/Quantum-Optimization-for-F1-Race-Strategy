@@ -55,7 +55,7 @@ export default async function OverviewPage() {
     { label: "Optimal strategy cost (A*)", value: plan ? `${fmt(plan.final_cost_seconds, 2)} s` : "—" },
     { label: "Lap-time error (DNN, MAE)", value: laptimeDnn !== undefined ? `${fmt(laptimeDnn, 3)} s` : "—" },
     { label: "Expert rules", value: expert?.available ? String(expert.n_rules) : "—" },
-    { label: "Models trained", value: health?.model_count !== undefined ? String(health.model_count) : "—" },
+    { label: "Models trained (ML + DL)", value: health?.model_count !== undefined ? String(health.model_count) : "—" },
     { label: "Tasks built", value: `${evidence.completed_count} / ${evidence.total_count}` },
   ];
 

@@ -1,6 +1,7 @@
 import { api, ApiError } from "@/lib/api";
 import { DatasetBadge } from "@/components/DatasetBadge";
 import { PageHero } from "@/components/PageHero";
+import { PageTabs } from "@/components/PageTabs";
 import { ClassicalRegression } from "@/components/models/ClassicalRegression";
 import { ClassicalClassification } from "@/components/models/ClassicalClassification";
 import { DeepNetworks } from "@/components/models/DeepNetworks";
@@ -57,13 +58,13 @@ export default async function ModelsPage() {
   const clfBest = mlMetrics?.classification?.models?.[mlMetrics?.classification?.best_model];
 
   return (
-    <div className="space-y-10 pb-10">
+    <div className="pb-10">
       <PageHero
         eyebrow="Tasks 6 & 7"
         title="Models"
         blurb="Lap-time regression and pit-decision classification, trained twice: with classical models (Task 6) and with Keras neural networks (Task 7). Both use the same Task 5 feature contract, the same expanding-window folds and the same untouched chronological holdout, so any difference is the model rather than the harness."
       />
-      <section>
+      <section className="mt-6">
         <div className="flex items-center gap-3 flex-wrap">
           <DatasetBadge source={manifest.dataset_source} />
         </div>
@@ -84,7 +85,7 @@ export default async function ModelsPage() {
         </p>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-5">
           <div className="card">
-            <div className="stat-label">Models trained</div>
+            <div className="stat-label">Classical models trained</div>
             <div className="stat-value">{registry.models.length}</div>
           </div>
           <div className="card">
@@ -108,57 +109,63 @@ export default async function ModelsPage() {
         </div>
       </section>
 
-      <h2 className="text-sm uppercase tracking-wider text-paper-400 border-b border-track-300 pb-2">
-        Task 6 — classical models
-      </h2>
-
-      <ClassicalRegression
-        comparison={comparison}
-        manifest={manifest}
-        features={registry.models.find((m) => m.target === "target_laptime")?.features ?? []}
+      <PageTabs
+        label="Model families"
+        tabs={[
+          {
+            id: "lap-time",
+            label: "Lap time (Task 6)",
+            content: (
+              <ClassicalRegression
+                comparison={comparison}
+                manifest={manifest}
+                features={registry.models.find((m) => m.target === "target_laptime")?.features ?? []}
+              />
+            ),
+          },
+          {
+            id: "pit-decision",
+            label: "Pit decision (Task 6)",
+            content: (
+              <ClassicalClassification
+                comparison={comparison}
+                manifest={manifest}
+                features={registry.models.find((m) => m.target === "target_pit_next_lap")?.features ?? []}
+                holdout={{
+                  positives: clfBest?.test_metrics?.n_positive,
+                  laps: clfBest?.test_metrics?.n,
+                  oofPositives: clfBest?.threshold?.n_positive,
+                  oofSamples: clfBest?.threshold?.n_samples,
+                }}
+              />
+            ),
+          },
+          {
+            id: "deep",
+            label: "Deep learning (Task 7)",
+            content:
+              dlModels && dlComparison && dlHistory && dlArtifacts ? (
+                <>
+                  <DeepNetworks
+                    models={dlModels.models}
+                    comparison={dlComparison}
+                    history={dlHistory}
+                    artifacts={dlArtifacts}
+                    metrics={dlMetrics}
+                  />
+                  <DeepEvaluation comparison={dlComparison} artifacts={dlArtifacts} metrics={dlMetrics} />
+                </>
+              ) : (
+                <div className="card text-sm text-paper-500">
+                  No deep model available yet. Run <code className="text-paper-700">python scripts/build_all.py</code>.
+                </div>
+              ),
+          },
+          ...(qml
+            ? [{ id: "quantum", label: "Quantum (simulated)", content: <QuantumSection summary={qml} /> }]
+            : []),
+        ]}
       />
-
-      <ClassicalClassification
-        comparison={comparison}
-        manifest={manifest}
-        features={registry.models.find((m) => m.target === "target_pit_next_lap")?.features ?? []}
-        holdout={{
-          positives: clfBest?.test_metrics?.n_positive,
-          laps: clfBest?.test_metrics?.n,
-          oofPositives: clfBest?.threshold?.n_positive,
-          oofSamples: clfBest?.threshold?.n_samples,
-        }}
-      />
-
-      <h2 className="text-sm uppercase tracking-wider text-paper-400 border-b border-track-300 pb-2">
-        Task 7 — deep learning
-      </h2>
-
-      {dlModels && dlComparison && dlHistory && dlArtifacts ? (
-        <>
-          <DeepNetworks
-            models={dlModels.models}
-            comparison={dlComparison}
-            history={dlHistory}
-            artifacts={dlArtifacts}
-            metrics={dlMetrics}
-          />
-          <DeepEvaluation comparison={dlComparison} artifacts={dlArtifacts} metrics={dlMetrics} />
-        </>
-      ) : (
-        <div className="card text-sm text-paper-500">
-          No deep model available yet. Run <code className="text-paper-700">python scripts/build_all.py</code>.
-        </div>
-      )}
-
-      {qml && (
-        <>
-          <h2 className="text-sm uppercase tracking-wider text-paper-400 border-b border-track-300 pb-2">
-            Quantum — simulated circuits on the same split
-          </h2>
-          <QuantumSection summary={qml} />
-        </>
-      )}
     </div>
   );
 }

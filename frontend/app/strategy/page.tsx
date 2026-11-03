@@ -5,9 +5,9 @@ import { api, ApiError, DataOptions, Registry } from "@/lib/api";
 import { FullScenarioTab } from "@/components/strategy/FullScenarioTab";
 import { TopFeaturesTab } from "@/components/strategy/TopFeaturesTab";
 import { PageHero } from "@/components/PageHero";
+import { PageTabs } from "@/components/PageTabs";
 
 export default function StrategyPage() {
-  const [tab, setTab] = useState<"full" | "top">("full");
   const [options, setOptions] = useState<DataOptions | null>(null);
   const [registry, setRegistry] = useState<Registry | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,29 +51,13 @@ export default function StrategyPage() {
       )}
 
       {options && registry && (
-        <>
-          <div role="tablist" aria-label="Simulator mode" className="mt-10 flex gap-1 border-b border-track-300">
-            {([["full", "Full race scenario"], ["top", "Top features"]] as const).map(([id, label]) => (
-              <button
-                key={id}
-                role="tab"
-                id={`tab-${id}`}
-                aria-selected={tab === id}
-                aria-controls={`panel-${id}`}
-                onClick={() => setTab(id)}
-                className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors duration-[120ms] ${
-                  tab === id ? "border-accent text-paper-900" : "border-transparent text-paper-500 hover:text-paper-900"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="mt-8">
-            {tab === "full" ? <FullScenarioTab options={options} registry={registry} /> : <TopFeaturesTab registry={registry} />}
-          </div>
-        </>
+        <PageTabs
+          label="Simulator mode"
+          tabs={[
+            { id: "full", label: "Full race scenario", content: <FullScenarioTab options={options} registry={registry} /> },
+            { id: "top", label: "Top features", content: <TopFeaturesTab registry={registry} /> },
+          ]}
+        />
       )}
     </div>
   );

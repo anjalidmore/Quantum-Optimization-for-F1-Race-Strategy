@@ -39,9 +39,9 @@ export function buildScenarios(options: DataOptions): Scenario[] {
     { name: "Late-race pit call", description: `Lap ${late} of ${laps}, hard, 25 laps old`,
       values: { current_lap: late, total_laps: laps, tyre_compound: "HARD", tyre_age: Math.min(late, 25), track_temperature: tNormal, weather: "dry", track_status: "GREEN" } },
     { name: "Safety car", description: `Lap ${mid}, medium, safety car deployed`,
-      values: { current_lap: mid, total_laps: laps, tyre_compound: "MEDIUM", tyre_age: 12, track_temperature: tNormal, track_status: "SC" } },
+      values: { current_lap: mid, total_laps: laps, tyre_compound: "MEDIUM", tyre_age: 12, track_temperature: tNormal, weather: "dry", track_status: "SC" } },
     { name: "Fresh tyres", description: `Lap ${Math.min(mid + 1, laps)}, soft, 1 lap old — just pitted`,
-      values: { current_lap: Math.min(mid + 1, laps), total_laps: laps, tyre_compound: "SOFT", tyre_age: 1, track_temperature: tNormal } },
+      values: { current_lap: Math.min(mid + 1, laps), total_laps: laps, tyre_compound: "SOFT", tyre_age: 1, track_temperature: tNormal, weather: "dry", track_status: "GREEN" } },
   ];
 }
 

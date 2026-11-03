@@ -2,7 +2,9 @@ import { api, ApiError, artifactUrl } from "@/lib/api";
 import { DatasetBadge } from "@/components/DatasetBadge";
 import { ArtifactImage } from "@/components/ArtifactImage";
 import { PageHero } from "@/components/PageHero";
+import { PageTabs } from "@/components/PageTabs";
 import LapInspector from "@/components/xai/LapInspector";
+import { DriverErrorTable } from "@/components/xai/DriverErrorTable";
 import { StratificationTable } from "@/components/xai/StratificationTable";
 import { FairnessCards } from "@/components/xai/FairnessCards";
 import { ExplainedPredictions } from "@/components/xai/ExplainedPredictions";
@@ -42,48 +44,73 @@ export default async function ExplainabilityPage() {
   ]);
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="pb-10">
       <PageHero
         eyebrow="Task 8"
         title="Explainability"
         blurb="Explains the trained Task 7 DNN on the chronological test laps: which race-state factors moved each prediction (SHAP, LIME), what change would flip it (counterfactual), how far to trust it, and whether it performs evenly across drivers, teams and compounds. These describe the model's behaviour — not causes, and not strategy instructions."
       />
-      <section>
+      <div className="mt-6">
         <DatasetBadge source={summary.dataset_source} />
-      </section>
+      </div>
 
-      <section>
-        <h2 className="text-lg font-semibold text-paper-900 mb-1">Inspect a race scenario</h2>
-        <p className="text-sm text-paper-500 mb-3">
-          Pick any test lap. SHAP and trust come from the committed Task 8 run; the tyre-age counterfactual is
-          computed live by the saved network.
-        </p>
-        <LapInspector />
-      </section>
-
-      {summary.feature_importance_figure && (
-        <section className="card">
-          <h2 className="font-semibold text-paper-900 mb-1">Global feature importance</h2>
-          <p className="text-sm text-paper-500 mb-3">
-            Permutation importance of the Task 7 DNN on the test laps: how much performance is lost when one
-            feature is shuffled. This is a <em>global</em> summary; the cards below are <em>local</em>{" "}
-            explanations of single predictions.
-          </p>
-          <ArtifactImage
-            src={artifactUrl(summary.feature_importance_figure)}
-            alt="Global feature importance"
-            className="w-full rounded"
-          />
-        </section>
-      )}
-
-      {strat && <StratificationTable strat={strat} />}
-
-      <FairnessCards fairness={fairness} />
-
-      <ExplainedPredictions targets={targets} explanations={explanations} trust={trust} />
-
-      <GlobalShapAndTrust targets={targets} shap={shap} trust={trust} />
+      <PageTabs
+        label="Explainability sections"
+        tabs={[
+          {
+            id: "inspect",
+            label: "Inspect a lap",
+            content: (
+              <section>
+                <p className="mb-3 text-sm text-paper-500">
+                  Pick any test lap. SHAP and trust come from the committed Task 8 run; the tyre-age counterfactual is
+                  computed live by the saved network.
+                </p>
+                <LapInspector />
+              </section>
+            ),
+          },
+          {
+            id: "predictions",
+            label: "Explained predictions",
+            content: <ExplainedPredictions targets={targets} explanations={explanations} trust={trust} />,
+          },
+          {
+            id: "global",
+            label: "Global importance & trust",
+            content: (
+              <>
+                {summary.feature_importance_figure && (
+                  <section className="card">
+                    <h2 className="mb-1 font-semibold text-paper-900">Global feature importance</h2>
+                    <p className="mb-3 text-sm text-paper-500">
+                      Permutation importance of the Task 7 DNN on the test laps: how much performance is lost when one
+                      feature is shuffled. This is a <em>global</em> summary; the other tabs explain single predictions.
+                    </p>
+                    <ArtifactImage
+                      src={artifactUrl(summary.feature_importance_figure)}
+                      alt="Global feature importance"
+                      className="w-full rounded"
+                    />
+                  </section>
+                )}
+                <GlobalShapAndTrust targets={targets} shap={shap} trust={trust} />
+              </>
+            ),
+          },
+          {
+            id: "fairness",
+            label: "Performance by group",
+            content: (
+              <>
+                {strat && <StratificationTable strat={strat} />}
+                {strat && <DriverErrorTable strat={strat} />}
+                <FairnessCards fairness={fairness} />
+              </>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }

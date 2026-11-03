@@ -170,7 +170,7 @@ export function StrategyResult({
 
       {validation && (
         <div className="card">
-          <h3 className="t-title text-[15px]">1 · Input validation</h3>
+          <h3 className="t-title text-[15px]">Input validation</h3>
           <p className="t-body mt-2 text-[13px] text-paper-500">
             Lap {validation.current_lap} of {validation.total_laps} — {validation.laps_remaining} remaining, on{" "}
             {validation.tyre_compound}. {validation.note}
@@ -186,7 +186,7 @@ export function StrategyResult({
           aria-controls="feature-rows"
           className="text-[13px] font-medium text-paper-900 underline decoration-edge underline-offset-[3px] hover:decoration-paper-900"
         >
-          2 · Feature construction — {showInputs ? "hide" : "show"} the features sent to each model
+          Feature construction — {showInputs ? "hide" : "show"} the features sent to each model
         </button>
         {showInputs && (
           <div id="feature-rows" className="mt-3.5 space-y-3.5">
@@ -211,7 +211,7 @@ export function StrategyResult({
       </div>
 
       <div className="card">
-        <h3 className="t-title text-[15px]">3 · Expert system</h3>
+        <h3 className="t-title text-[15px]">Expert system</h3>
         {result.triggered_expert_rules.length === 0 ? (
           <p className="t-body mt-2 text-[13px] text-paper-500">No rules fired for this race state.</p>
         ) : (
@@ -226,7 +226,7 @@ export function StrategyResult({
       </div>
 
       <div className="card">
-        <h3 className="t-title text-[15px]">6 · Explainability (Task 8)</h3>
+        <h3 className="t-title text-[15px]">Explainability (Task 8)</h3>
         {explanationTargets.length === 0 ? (
           <p className="t-body mt-2 text-[13px] text-paper-500">
             {explanation.reason ?? "Not requested for this run."}
