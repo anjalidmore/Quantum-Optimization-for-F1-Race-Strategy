@@ -385,7 +385,7 @@ def discover_reports() -> list[Doc]:
 
 
 def _markdown_doc_body(d: Doc) -> str:
-    slugger = (lambda prefix: lambda value, sep: f"{prefix}--{gh_slug(value)}")(d.slug)
+    slugger = (lambda prefix: lambda value, _sep: f"{prefix}--{gh_slug(value)}")(d.slug)
     md = markdown.Markdown(
         extensions=["tables", "fenced_code", "codehilite", "toc", "sane_lists"],
         extension_configs={"codehilite": {"css_class": "hl", "guess_lang": False},

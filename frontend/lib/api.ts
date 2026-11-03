@@ -493,7 +493,6 @@ export const api = {
   comparison: () => getJson<Comparison>("/api/ml/comparison"),
   artifacts: () => getJson<Manifest>("/api/ml/artifacts"),
   metrics: () => getJson<Record<string, any>>("/api/ml/metrics"),
-  featureImportance: () => getJson<Record<string, any>>("/api/ml/feature-importance"),
   dataOptions: () => getJson<DataOptions>("/api/data/options"),
   topFeatures: (target: string, n = 8) => getJson<TopFeaturesResponse>(`/api/ml/top-features?target=${target}&n=${n}`),
   taskEvidence: () => getJson<TaskEvidenceResponse>("/api/tasks/evidence"),
@@ -515,11 +514,6 @@ export const api = {
   dlComparison: () => getJson<DlComparison>("/api/dl/comparison"),
   dlHistory: () => getJson<DlHistory>("/api/dl/history"),
   dlArtifacts: () => getJson<DlArtifacts>("/api/dl/artifacts"),
-  dlPredictLaptime: (features: Record<string, number>) =>
-    postJson<{ model: string; target: string; prediction: number; model_format: string; data_source: string }>(
-      "/api/dl/predict/laptime",
-      features
-    ),
 
   // Task 8 — Explainable AI
   xaiSummary: () => getJson<XaiSummary>("/api/xai/summary"),
@@ -527,9 +521,6 @@ export const api = {
   xaiShap: (target: string) => getJson<XaiShap>(`/api/xai/shap?target=${target}`),
   xaiTrust: (target: string) => getJson<XaiTrust>(`/api/xai/trust-score?target=${target}`),
   xaiFairness: () => getJson<XaiFairness>("/api/xai/fairness"),
-  xaiFeatureImportance: (target: string) =>
-    getJson<Record<string, any>>(`/api/xai/feature-importance?target=${target}`),
-  xaiCounterfactual: (target: string) => getJson<Record<string, any>>(`/api/xai/counterfactual?target=${target}`),
   xaiStratification: () => getJson<XaiStratification>("/api/xai/stratification"),
   xaiLaps: (target: string) => getJson<XaiLaps>(`/api/xai/laps?target=${target}`),
   xaiLap: (target: string, rowIndex: number) =>
