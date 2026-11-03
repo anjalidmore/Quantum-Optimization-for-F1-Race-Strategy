@@ -77,7 +77,11 @@ def test_every_other_document_is_an_extras_subtab(built):
         slug = guide.doc_slug(rel)
         assert f'id="{slug}"' in extras and f'class="subtab" href="#{slug}"' in extras, rel
         assert f'id="{slug}"' not in page[:page.index('id="tab-extras"')], rel
-    assert "<del>" in extras and "~~" not in extras  # GitHub strikethrough rendered
+    assert "~~" not in extras  # GitHub strikethrough rendered
+    # Only TODO.html uses strikethrough, and it is deliberately not on main, so
+    # a clean checkout (and CI) has no <del> to find.
+    if (REPO_ROOT / "docs" / "source" / "TODO.html").exists():
+        assert "<del>" in extras
 
 def test_report_listing_is_discovered_not_hard_coded(tmp_path, monkeypatch):
     """A report folder the categories table has never heard of still appears."""
