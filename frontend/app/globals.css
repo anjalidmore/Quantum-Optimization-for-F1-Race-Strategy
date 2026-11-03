@@ -7,38 +7,38 @@
    Every value here was contrast-measured against the surface it is used on.
    ========================================================================== */
 :root {
-  /* Base: the track surface, four steps of near-black. */
-  --track-000: #0b0b10;
-  --track-050: #15151e;
-  --track-100: #1c1c26;
-  --track-200: #262632;
-  --track-300: #34343f;
+  /* Base: the track surface, four steps of deep navy. */
+  --track-000: #050d20;
+  --track-050: #081530;
+  --track-100: #0e1e40;
+  --track-200: #162a55;
+  --track-300: #233a66;
 
-  /* Text: warm off-white, so the dark never reads blue-grey. */
-  --paper-900: #f7f4f1; /* 15.8:1 on track-100 */
-  --paper-700: #d6d5d9; /* 12.0:1 */
-  --paper-500: #a9a9b6; /*  7.2:1 */
-  --paper-400: #8e8e9c; /*  5.0:1 */
+  /* Text: warm off-white, which stays crisp against the navy. */
+  --paper-900: #f7f4f1; /* 15.0:1 on track-100 */
+  --paper-700: #d6d5d9; /* 11.2:1 */
+  --paper-500: #a9a9b6; /*  7.1:1 */
+  --paper-400: #8e8e9c; /*  5.1:1 */
 
   /* One accent. Bright enough to pass AA as text, not only as a fill.
      The detector reports this as SD2 and we let it: red on near-black is
      Formula One's own livery language here, not a decorative escape from
      purple. It is the one exception we keep, justified in DESIGN.md under
      Constraints. Suppressing it would hide the trade-off rather than own it. */
-  --accent: #ff3b2f; /* 5.1:1 on track-050 */
+  --accent: #ff3b2f; /* 5.1:1 on track-050, 4.6:1 on track-100 */
   --accent-ink: #15151e; /* 5.3:1 on accent */
 
   /* Non-text UI: control boundaries and focus need >= 3.0. */
-  --edge: #727283; /* 3.3:1 on track-050 */
+  --edge: #727283; /* 3.8:1 on track-050 */
   --focus: #f7f4f1; /* 16.9:1 */
 
   /* The one glass surface in the app, and the only place blur is allowed.
      78% of the page ground: content stays legible sliding underneath, and
      nav text still clears AA over the lightest thing that can pass behind it
-     (paper-900 text composites to #414242, where paper-700 measures 6.8:1).
+     (paper-900 text composites to #2e394f, where paper-700 measures 7.2:1).
      This is why the nav's idle links are paper-700 and not paper-500 -
      paper-500 would measure 4.1:1 there and fail. */
-  --nav-surface: rgba(21, 21, 30, 0.84);
+  --nav-surface: rgba(8, 21, 48, 0.84);
 
   /* The letter inside a compound chip. Dark ink on the bright dark-mode
      chips; see the light block for its counterpart. */
@@ -47,19 +47,19 @@
   /* Sign of a contribution (SHAP, LIME). Not the accent by coincidence:
      "pushed the prediction up" is the same emphasis the accent carries
      elsewhere. Both clear 4.5 on the card in both themes. */
-  --data-pos: #ff3b2f; /* 4.8:1 on track-100 */
-  --data-neg: #6fb6f2; /* 8.2:1 on track-100 */
+  --data-pos: #ff3b2f; /* 4.6:1 on track-100 */
+  --data-neg: #6fb6f2; /* 7.5:1 on track-100 */
 
   /* Chart series. Every one clears 3.0 against the card, so a line or bar is
      an identifiable graphical object and not just a pretty colour. They are
      ordered by how often a first series matters, not by hue. */
-  --chart-1: #ff3b2f; /*  4.8:1 */
-  --chart-2: #5ec8f2; /*  8.2:1 */
-  --chart-3: #ff8000; /*  8.5:1 */
-  --chart-4: #4ec98a; /* 11.8:1 */
-  --chart-5: #f2d13c; /*  7.1:1 */
-  --chart-6: #a9a9b6; /*  7.2:1 */
-  --grid: #34343f;
+  --chart-1: #ff3b2f; /*  4.6:1 */
+  --chart-2: #5ec8f2; /*  8.6:1 */
+  --chart-3: #ff8000; /*  6.5:1 */
+  --chart-4: #4ec98a; /*  7.9:1 */
+  --chart-5: #f2d13c; /* 10.9:1 */
+  --chart-6: #a9a9b6; /*  7.1:1 */
+  --grid: #233a66;
 
   /* Tyre compounds carry data meaning only: never chrome, never decoration,
      and never the sole carrier of meaning (the chip also shows its letter). */
@@ -93,20 +93,20 @@
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     --track-000: #ffffff;
-    --track-050: #f6f6f8;
-    --track-100: #eeeef2;
-    --track-200: #e3e3e9;
-    --track-300: #d0d0d9;
+    --track-050: #eff6ff;
+    --track-100: #e4effd;
+    --track-200: #d7e6fa;
+    --track-300: #c2d6f3;
 
-    --paper-900: #15151e; /* 16.3:1 on track-050 */
-    --paper-700: #38384a; /*  9.7:1 */
-    --paper-500: #555566; /*  5.6:1 */
-    --paper-400: #5f5f70; /*  5.1:1 on page, 4.7:1 on card */
+    --paper-900: #15151e; /* 16.7:1 on track-050 */
+    --paper-700: #38384a; /* 10.5:1 */
+    --paper-500: #555566; /*  6.7:1 */
+    --paper-400: #5f5f70; /*  5.7:1 on page, 5.4:1 on card */
 
-    --accent: #d10f00;     /* 5.6:1 on track-050, 5.2:1 on card */
+    --accent: #d10f00;     /* 5.1:1 on track-050, 4.8:1 on card */
     --accent-ink: #ffffff; /* 6.1:1 on the accent fill */
 
-    --edge: #7a7a8a; /* 3.3:1, matching the dark edge's role exactly */
+    --edge: #7a7a8a; /* 3.9:1, matching the dark edge's role exactly */
     --focus: #15151e;
 
     /* Darkened so each chip clears 3.0 against the pale card and carries
@@ -120,26 +120,26 @@
     --compound-wet: #1059b8;    /* chip 5.7:1, ink 6.7:1 */
     --compound-ink: #ffffff;
 
-    --chart-1: #d10f00; /* 5.2:1 */
-    --chart-2: #0e5fb0; /* 6.8:1 */
-    --chart-3: #a84300; /* 4.3:1 */
-    --chart-4: #1a7f37; /* 4.3:1 */
-    --chart-5: #856a00; /* 6.3:1 */
-    --chart-6: #555566; /* 5.2:1 */
-    --grid: #d0d0d9;
-    --data-pos: #d10f00; /* 5.2:1 on track-100 */
-    --data-neg: #0e5fb0; /* 6.8:1 on track-100 */
-    --nav-surface: rgba(246, 246, 248, 0.84);
+    --chart-1: #d10f00; /* 4.8:1 */
+    --chart-2: #0e5fb0; /* 5.5:1 */
+    --chart-3: #a84300; /* 5.2:1 */
+    --chart-4: #1a7f37; /* 4.4:1 */
+    --chart-5: #856a00; /* 4.5:1 */
+    --chart-6: #555566; /* 6.3:1 */
+    --grid: #c2d6f3;
+    --data-pos: #d10f00; /* 4.8:1 on track-100 */
+    --data-neg: #0e5fb0; /* 5.5:1 on track-100 */
+    --nav-surface: rgba(239, 246, 255, 0.84);
   }
 }
 
 /* The explicit choice, which must work regardless of the OS preference. */
 :root[data-theme="light"] {
   --track-000: #ffffff;
-  --track-050: #f6f6f8;
-  --track-100: #eeeef2;
-  --track-200: #e3e3e9;
-  --track-300: #d0d0d9;
+  --track-050: #eff6ff;
+  --track-100: #e4effd;
+  --track-200: #d7e6fa;
+  --track-300: #c2d6f3;
   --paper-900: #15151e;
   --paper-700: #38384a;
   --paper-500: #555566;
@@ -154,16 +154,16 @@
   --compound-inter: #1a7f37;
   --compound-wet: #1059b8;
   --compound-ink: #ffffff;
-  --data-pos: #d10f00; /* 5.2:1 on track-100 */
-  --data-neg: #0e5fb0; /* 6.8:1 on track-100 */
-  --chart-1: #d10f00; /* 5.2:1 */
-  --chart-2: #0e5fb0; /* 6.8:1 */
-  --chart-3: #a84300; /* 4.3:1 */
-  --chart-4: #1a7f37; /* 4.3:1 */
-  --chart-5: #856a00; /* 6.3:1 */
-  --chart-6: #555566; /* 5.2:1 */
-  --grid: #d0d0d9;
-  --nav-surface: rgba(246, 246, 248, 0.84);
+  --data-pos: #d10f00; /* 4.8:1 on track-100 */
+  --data-neg: #0e5fb0; /* 5.5:1 on track-100 */
+  --chart-1: #d10f00; /* 4.8:1 */
+  --chart-2: #0e5fb0; /* 5.5:1 */
+  --chart-3: #a84300; /* 5.2:1 */
+  --chart-4: #1a7f37; /* 4.4:1 */
+  --chart-5: #856a00; /* 4.5:1 */
+  --chart-6: #555566; /* 6.3:1 */
+  --grid: #c2d6f3;
+  --nav-surface: rgba(239, 246, 255, 0.84);
 }
 
 /* ==========================================================================
