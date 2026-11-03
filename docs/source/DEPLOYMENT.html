@@ -136,7 +136,6 @@ dashboard on <code>:3000</code>, prints a few live predictions to prove the mode
 and opens the browser.</p>
 <p>Useful flags and variables:</p>
 <div class="hl"><pre><span></span><code>./run.sh<span class="w"> </span>--force-retrain<span class="w">               </span><span class="c1"># rebuild everything first</span>
-./run.sh<span class="w"> </span>--force-ports<span class="w">                 </span><span class="c1"># kill whatever holds :8000 / :3000</span>
 <span class="nv">BACKEND_PORT</span><span class="o">=</span><span class="m">8001</span><span class="w"> </span><span class="nv">FRONTEND_PORT</span><span class="o">=</span><span class="m">3001</span><span class="w"> </span>./run.sh
 </code></pre></div>
 
@@ -277,7 +276,7 @@ it is. Nothing needs editing by hand.</p>
 </tr>
 <tr>
 <td>Port already in use</td>
-<td><code>./run.sh --force-ports</code>, or set <code>BACKEND_PORT</code> / <code>FRONTEND_PORT</code>.</td>
+<td><code>./run.sh</code> moves to the next free port by itself, or set <code>BACKEND_PORT</code> / <code>FRONTEND_PORT</code>.</td>
 </tr>
 </tbody>
 </table></div>

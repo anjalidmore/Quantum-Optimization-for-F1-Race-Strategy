@@ -22,7 +22,7 @@ instructions, module layout, or the API contract, see <a href="deployment_guide.
 <ul>
 <li><a href="#what-this-system-is--and-is-not">What this system is — and is not</a></li>
 <li><a href="#starting-it">Starting it</a></li>
-<li><a href="#the-six-pages">The six pages</a></li>
+<li><a href="#the-eight-pages">The eight pages</a></li>
 <li><a href="#using-the-race-strategy-simulator">Using the Race Strategy Simulator</a></li>
 <li><a href="#downloading-a-report">Downloading a report</a></li>
 <li><a href="#what-not-available-means-when-it-appears">What "Not available" means when it appears</a></li>
@@ -63,24 +63,22 @@ numbers instead of a cold error, and opens your browser. Default addresses:</p>
 <li>Dashboard: <code>http://localhost:3000</code></li>
 <li>API: <code>http://localhost:8000</code></li>
 </ul>
-<p>Useful flags: <code>./run.sh --force-retrain</code> rebuilds every stage first; <code>./run.sh --force-ports</code> frees
-<code>:8000</code>/<code>:3000</code> if something else is holding them, without asking. <code>BACKEND_PORT=8001
-FRONTEND_PORT=3001 ./run.sh</code> moves the whole thing to different ports instead. <code>./run.sh --help</code>
+<p>Useful flags: <code>./run.sh --force-retrain</code> rebuilds every stage first; if something else holds <code>:8000</code> or <code>:3000</code> the script moves to the next free port
+and leaves that program running. <code>BACKEND_PORT=8001
+FRONTEND_PORT=3001 ./run.sh</code> chooses the ports yourself. <code>./run.sh --help</code>
 prints all of this from the terminal.</p>
 <p>If the dashboard loads but shows "Backend unreachable," the API process either isn't running or the
 dashboard is pointed at the wrong URL — see the <a href="deployment_guide.html#7-health-checks">deployment guide</a>
 for the checks to run.</p>
-<h2 id="the-six-pages">The six pages</h2>
-<p>The dashboard's navigation bar (<code>frontend/components/Nav.tsx</code>) has six pages, in this order:</p>
+<h2 id="the-eight-pages">The eight pages</h2>
+<p>The dashboard's navigation bar (<code>frontend/components/Nav.tsx</code>) has eight pages. The order below follows the demo path on the Overview page, except that Overview itself comes first.</p>
 <h3 id="overview-">Overview (<code>/</code>)</h3>
-<p>The front page. One large figure dominates it: the A* search's optimal remaining-race cost in
-seconds — "the one number this whole platform exists to produce," as the page's own code comment
-puts it. Beside it, a task ledger shows how many of the ten lab tasks have real generated output
-behind them. Below that: lap-time model error (MAE), how many expert rules are available, how many
-trained models are registered, and a table of lap-time error broken down by driver (read from
-Task 8's per-driver stratification). If a component's artifact doesn't exist yet, that tile reads
-"Not generated yet" with the command that would produce it — never a blank or a zero standing in
-for a real number.</p>
+<p>The front page. It states the project's question and shows the headline results: the A* search's
+optimal remaining-race cost, the neural network's lap-time error (MAE), how many expert rules exist, how many
+models are trained and how many of the ten lab tasks are built. Below those are a <strong>demo path</strong>
+linking each page in presenting order, the ten tasks with a link to where each can be seen, and pipeline health
+(which models could answer a prediction right now). If a result's artifact doesn't exist yet, its tile shows
+"—", never a blank or a zero standing in for a real number.</p>
 <h3 id="strategy-strategy">Strategy (<code>/strategy</code>)</h3>
 <p>The Race Strategy Simulator — described in detail in its own section below. This is the page you
 use to ask "what would the models say about this specific race situation?"</p>
@@ -106,6 +104,9 @@ difference you see on this page is the model, not a different test set. It shows
 tables, ROC/PR curves, confusion matrices, feature importance, the networks' architectures and
 training curves, and — when the quantum stage has been run — the simulated quantum models measured
 against parameter-matched classical baselines on the same split.</p>
+<h3 id="model-comparison">Model Comparison (<code>/model-comparison</code>)</h3>
+<p>A simple baseline, the selected ML model and the DNN side by side on the same holdout laps, for each
+prediction task.</p>
 <h3 id="explainability-explainability">Explainability (<code>/explainability</code>)</h3>
 <p>Task 8. This page explains the trained Task 7 neural network on the chronological test laps: which
 race-state factors moved each prediction (SHAP and LIME, compared against each other), what would
@@ -115,10 +116,13 @@ and tyre compounds. A <strong>lap inspector</strong> lets you pick any of the 18
 full explanation; its tyre-age counterfactual is computed live by the saved network rather than read
 from a stored file, everything else on this page is read from the committed Task 8 artifacts.</p>
 <h3 id="data-data">Data (<code>/data</code>)</h3>
-<p>Task 4's cleaning and EDA figures and reports, followed by the same evidence index shown on the
-Overview page's task ledger, but expanded per task: every artifact this project has actually
+<p>Task 4's cleaning and EDA figures and reports, each on its own tab, then a third tab listing evidence
+per task: every artifact this project has actually
 generated, scanned live from <code>artifacts/</code> at request time. Nothing here is a hard-coded filename —
 if a task's output directory has nothing in it, that task's section says so.</p>
+<h3 id="responsible-ai">Responsible AI (<code>/rai</code>)</h3>
+<p>Performance gaps across drivers, teams and tyre compounds, how far model confidence can be trusted, and
+model cards built from the project's own records.</p>
 <h2 id="using-the-race-strategy-simulator">Using the Race Strategy Simulator</h2>
 <p>The Strategy page (<code>/strategy</code>) has two tabs: <strong>Full race scenario</strong> (described below) and <strong>Top
 features</strong>, a simplified demo that lets you see the ranked features behind whichever model is

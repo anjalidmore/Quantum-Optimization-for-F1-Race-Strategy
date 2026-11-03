@@ -6,7 +6,7 @@
 # instead of a cold error, starts the frontend, prints a few real predictions
 # to the terminal, and opens the dashboard in your browser.
 #
-# Usage: ./run.sh [--force-retrain] [--force-ports] [--skip-qml]
+# Usage: ./run.sh [--force-retrain] [--skip-qml]
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,7 +17,7 @@ cd "$ROOT_DIR"
 #   BACKEND_PORT=8001 FRONTEND_PORT=3001 ./run.sh
 # Whether the caller picked these, which decides what happens when the port
 # turns out to be taken: a port you asked for is honoured or the script stops,
-# a default is just a starting point and may move.
+# a default moves to the next free one.
 BACKEND_PORT_EXPLICIT=${BACKEND_PORT:+1}
 FRONTEND_PORT_EXPLICIT=${FRONTEND_PORT:+1}
 BACKEND_PORT="${BACKEND_PORT:-8000}"
@@ -26,21 +26,16 @@ BACKEND_LOG="/tmp/f1_backend.log"
 FRONTEND_LOG="/tmp/f1_frontend.log"
 
 FORCE_RETRAIN=0
-FORCE_PORTS=0
 SKIP_QML=0
 for arg in "$@"; do
   case "$arg" in
     --force-retrain) FORCE_RETRAIN=1 ;;
-    --force-ports)   FORCE_PORTS=1 ;;
     --skip-qml)      SKIP_QML=1 ;;
     -h|--help)
       cat <<'USAGE'
-Usage: ./run.sh [--force-retrain] [--force-ports] [--skip-qml]
+Usage: ./run.sh [--force-retrain] [--skip-qml]
 
   --force-retrain  Rebuild every stage from scratch before starting.
-  --force-ports    Kill whatever is listening on BACKEND_PORT/FRONTEND_PORT
-                   without asking. Without this flag the script asks first,
-                   and refuses in a non-interactive shell.
   --skip-qml       Skip the quantum stage (it needs pennylane, and it is the
                    slowest thing in a cold build).
 
@@ -76,30 +71,15 @@ pip show f1-quantum-strategy >/dev/null 2>&1 || pip install -q -e . >/dev/null
 ok "Python environment ready ($(python --version))"
 
 # ---------------------------------------------------------------------------
-# 2. Free the ports this script needs
+# 2. Choose ports
 #
-# This used to kill whatever was listening, with no prompt and no check that
-# the process belonged to this project - a contributor running an unrelated
-# dev server on :3000 lost it silently, with unsaved state. Now the script
-# shows what it found and asks; --force-ports restores the old behaviour, and
-# BACKEND_PORT/FRONTEND_PORT let you avoid the collision entirely.
+# This project's own servers from an earlier ./run.sh are restarted. Anything
+# else holding a port is left running: the script never kills a process it
+# does not own.
 # ---------------------------------------------------------------------------
-warn() { printf "\033[1;33mNOTE\033[0m  %s\n" "$1"; }
-
-# A port can have more than one listener - a stale dev server and Docker's
-# port proxy, say - so this walks them one at a time. It used to hold them
-# all in one variable and pass that to `ps`, which failed on the embedded
-# newline and, under `set -e`, killed the script with no message at all.
-other_port_advice() {
-  echo "Set BACKEND_PORT/FRONTEND_PORT to use different ports:" >&2
-  echo "  BACKEND_PORT=8001 FRONTEND_PORT=3001 ./run.sh" >&2
-}
-
-# Is this pid one of our own servers from an earlier ./run.sh?
-#
 # The backend is recognised by its uvicorn target and the frontend by its
-# working directory, which lsof reports even though `next-server` rewrites
-# its own argv to something that says nothing about which project it serves.
+# working directory, because `next-server` rewrites its argv to something that
+# does not name the project.
 is_own_server() {
   local pid="$1" args cwd
   args=$(ps -p "$pid" -o args= 2>/dev/null || true)
@@ -109,88 +89,32 @@ is_own_server() {
   return 1
 }
 
-# Return a port we can actually bind, starting from the one asked for.
-#
-# Everything it says goes to stderr, because stdout is the resolved port.
+# Everything this says goes to stderr, because stdout is the resolved port.
 resolve_port() {
-  local label="$1" port="$2" explicit="$3"
-  local pids pid args blocked
+  local label="$1" port="$2" explicit="$3" pid
 
   while :; do
-    pids=$(lsof -ti:"$port" -sTCP:LISTEN 2>/dev/null || true)
-    if [[ -z "$pids" ]]; then
-      echo "$port"
-      return 0
-    fi
-
-    blocked=0
-    # A plain for-loop, not `while read ... <<< "$pids"`: a here-string is the
-    # loop body's stdin, so the tty check below would see a pipe and the
-    # prompt would read a pid instead of the answer. Pids are
-    # whitespace-separated integers, so word splitting is exactly right.
-    for pid in $pids; do
-      args=$(ps -p "$pid" -o args= 2>/dev/null | head -1 | cut -c1-100 || true)
-
-      # Our own leftovers get restarted without asking. Re-running ./run.sh is
-      # a request for a fresh pair of servers, and making you confirm the
-      # death of the server the last ./run.sh started is noise, not safety.
+    for pid in $(lsof -ti:"$port" -sTCP:LISTEN 2>/dev/null || true); do
       if is_own_server "$pid"; then
-        info "Restarting this project's own $label server on port $port (pid $pid)..." >&2
+        info "Restarting this project's $label server on port $port..." >&2
         kill "$pid" 2>/dev/null || true
         sleep 1
-        continue
-      fi
-
-      warn "Port $port is in use by pid $pid: ${args:-unknown process}" >&2
-
-      # Shared infrastructure that happens to hold the port. Killing Docker's
-      # proxy to free :3000 breaks every other container the user has
-      # running, which is never a fair trade for a demo script.
-      if [[ "$args" == *docker* || "$args" == *Docker* ]]; then
-        warn "That is Docker, so this script will not kill it." >&2
-        blocked=1
-        break
-      fi
-
-      if [[ $FORCE_PORTS -eq 1 ]]; then
-        info "Stopping it (--force-ports)..." >&2
-        kill "$pid" 2>/dev/null || true
-        sleep 1
-        continue
-      fi
-
-      if [[ ! -t 0 ]]; then
-        echo "Refusing to kill pid $pid on port $port in a non-interactive shell." >&2
-        echo "Re-run with --force-ports, or set the port variable for the $label to a free port." >&2
-        exit 1
-      fi
-
-      read -r -p "Kill pid $pid to free port $port? [y/N] " reply
-      if [[ "$reply" =~ ^[Yy]$ ]]; then
-        kill "$pid" 2>/dev/null || true
-        sleep 1
-      else
-        blocked=1
-        break
       fi
     done
 
-    if [[ $blocked -eq 0 ]]; then
+    if [[ -z "$(lsof -ti:"$port" -sTCP:LISTEN 2>/dev/null || true)" ]]; then
       echo "$port"
       return 0
     fi
 
-    # You named this port, so the script does not quietly serve a different
-    # one. An untouched default is only a starting point, and moving on beats
-    # refusing to run at all.
     if [[ -n "$explicit" ]]; then
-      echo "Port $port was requested but cannot be freed." >&2
-      other_port_advice
+      echo "Port $port is held by another program. Choose a free one, for example:" >&2
+      echo "  BACKEND_PORT=8001 FRONTEND_PORT=3001 ./run.sh" >&2
       exit 1
     fi
 
+    info "Port $port is held by another program; trying $((port + 1)) for the $label." >&2
     port=$((port + 1))
-    info "Moving the $label to port $port instead." >&2
   done
 }
 
@@ -317,6 +241,15 @@ if ! curl -sf "$FRONTEND_URL" >/dev/null 2>&1; then
   tail -n 30 "$FRONTEND_LOG" >&2
   exit 1
 fi
+# `next dev` compiles a page on its first visit, which is several seconds in
+# front of an audience unless it has already happened.
+info "Compiling the dashboard pages..."
+PAGES=(strategy data reasoning models model-comparison explainability rai)
+for page in "${PAGES[@]}"; do
+  curl -s -o /dev/null -m 180 "$FRONTEND_URL/$page" || true
+  printf "."
+done
+echo
 ok "Frontend ready (pid $FRONTEND_PID, log: $FRONTEND_LOG)"
 
 # ---------------------------------------------------------------------------
@@ -332,15 +265,6 @@ python scripts/demo_predict.py --base-url "$BACKEND_URL"
 # ---------------------------------------------------------------------------
 # 7. Open the dashboard
 # ---------------------------------------------------------------------------
-echo
-info "The dashboard has six pages:"
-printf "     %-18s %s\n" \
-  "Overview"       "$FRONTEND_URL/" \
-  "Strategy"       "$FRONTEND_URL/strategy" \
-  "Reasoning"      "$FRONTEND_URL/reasoning" \
-  "Models"         "$FRONTEND_URL/models" \
-  "Explainability" "$FRONTEND_URL/explainability" \
-  "Data"           "$FRONTEND_URL/data"
 echo
 info "Opening $FRONTEND_URL in your browser..."
 if command -v open >/dev/null 2>&1; then

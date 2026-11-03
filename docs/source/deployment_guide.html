@@ -189,7 +189,6 @@ order (<code>run.sh</code>'s own comment block):</p>
 </ol>
 <p>Useful flags and variables:</p>
 <div class="hl"><pre><span></span><code>./run.sh<span class="w"> </span>--force-retrain<span class="w">               </span><span class="c1"># rebuild everything first</span>
-./run.sh<span class="w"> </span>--force-ports<span class="w">                 </span><span class="c1"># kill whatever holds :8000 / :3000 without asking</span>
 ./run.sh<span class="w"> </span>--skip-qml<span class="w">                    </span><span class="c1"># skip the quantum stage (needs pennylane; slowest cold-build stage)</span>
 <span class="nv">BACKEND_PORT</span><span class="o">=</span><span class="m">8001</span><span class="w"> </span><span class="nv">FRONTEND_PORT</span><span class="o">=</span><span class="m">3001</span><span class="w"> </span>./run.sh
 </code></pre></div>
@@ -434,7 +433,7 @@ rather than fabricating predictions — run the build step first, on the host or
 </tr>
 <tr>
 <td>Port already in use</td>
-<td><code>./run.sh --force-ports</code>, or set <code>BACKEND_PORT</code>/<code>FRONTEND_PORT</code> to move out of the way instead. Under Docker, set <code>BACKEND_HOST_PORT</code>/<code>FRONTEND_HOST_PORT</code> (§9) — the frontend already defaults to 3001, not 3000, for exactly this reason.</td>
+<td><code>./run.sh</code> moves to the next free port by itself, or set <code>BACKEND_PORT</code>/<code>FRONTEND_PORT</code> to choose. Under Docker, set <code>BACKEND_HOST_PORT</code>/<code>FRONTEND_HOST_PORT</code> (§9) — the frontend already defaults to 3001, not 3000, for exactly this reason.</td>
 </tr>
 <tr>
 <td>CORS error in the browser console</td>
