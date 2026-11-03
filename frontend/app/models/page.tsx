@@ -59,8 +59,6 @@ export default async function ModelsPage() {
   return (
     <div className="space-y-10 pb-10">
       <PageHero
-        photo="/images/photo-driver-portrait.jpg"
-        focus="50% 20%"
         eyebrow="Tasks 6 & 7"
         title="Models"
         blurb="Lap-time regression and pit-decision classification, trained twice: with classical models (Task 6) and with Keras neural networks (Task 7). Both use the same Task 5 feature contract, the same expanding-window folds and the same untouched chronological holdout, so any difference is the model rather than the harness."

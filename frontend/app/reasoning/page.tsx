@@ -40,8 +40,6 @@ export default async function ReasoningPage() {
   return (
     <div className="space-y-10 pb-10">
       <PageHero
-        photo="/images/photo-aerial-circuit.jpg"
-        focus="50% 70%"
         eyebrow="Tasks 1 – 3 · the symbolic half"
         title="Reasoning"
         blurb="What the system knows (an ontology and knowledge graph), what it concludes (a forward-chaining rule base), and what it plans (a state-space search over pit strategies). Two of these feed the live strategy recommendation alongside the models."

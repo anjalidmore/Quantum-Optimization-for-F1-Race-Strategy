@@ -32,8 +32,6 @@ export default async function ModelComparisonPage() {
   return (
     <div className="space-y-10 pb-10">
       <PageHero
-        photo="/images/photo-car-silhouette.jpg"
-        focus="70% 45%"
         eyebrow="Tasks 6 & 7 · head to head"
         title="Model Comparison"
         blurb="Three ways to predict the same race: a Simple linear baseline, the machine-learning model Task 6 selected, and Task 7's deep neural network. Same features, same training laps, same untouched test laps, so any difference comes from the model."

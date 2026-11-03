@@ -26,8 +26,6 @@ export default function StrategyPage() {
   return (
     <div>
       <PageHero
-        photo="/images/photo-pitlane.jpg"
-        focus="55% 65%"
         eyebrow="Tasks 2, 3, 6, 7 & 8 — live"
         title="Race strategy"
         blurb="Describe a race situation. The trained Task 6 and Task 7 models predict lap time and pit probability, the Task 2 rules fire over the same state, and the Task 3 search plans the rest of the race — combined into one recommendation."

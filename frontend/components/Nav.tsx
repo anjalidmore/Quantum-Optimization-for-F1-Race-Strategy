@@ -9,12 +9,12 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 const LINKS: { href: string; label: string; short?: string }[] = [
   { href: "/", label: "Overview" },
   { href: "/strategy", label: "Strategy" },
+  { href: "/data", label: "Data" },
   { href: "/reasoning", label: "Reasoning" },
   { href: "/models", label: "Models" },
+  { href: "/model-comparison", label: "Model Comparison", short: "Compare" },
   { href: "/explainability", label: "Explainability" },
-  { href: "/data", label: "Data" },
-  { href: "/model-comparison", label: "Model Comparison" },
-  { href: "/rai", label: "Responsible AI (RAI)", short: "RAI" },
+  { href: "/rai", label: "Responsible AI", short: "RAI" },
 ];
 
 export default function Nav() {
@@ -35,7 +35,7 @@ export default function Nav() {
             <span className="bg-[var(--papaya-fill)]" />
           </span>
           <span className="font-display text-[19px] font-black italic leading-none tracking-[0.02em] text-paper-900">
-            PIT WALL
+            F1 STRATEGY
           </span>
         </Link>
 

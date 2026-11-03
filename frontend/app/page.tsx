@@ -1,21 +1,16 @@
-import Image from "next/image";
+import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { DatasetBadge } from "@/components/DatasetBadge";
 import { TyreBadge } from "@/components/TyreBadge";
+import { DemoPath } from "@/components/overview/DemoPath";
 import { TaskLedger } from "@/components/overview/TaskLedger";
 import { PipelineHealth } from "@/components/overview/PipelineHealth";
-import { DriverErrorTable } from "@/components/overview/DriverErrorTable";
 import { fmt } from "@/lib/format";
 
 /**
- * Overview — a photographic hero stage carrying the one focal readout, then
- * the task ledger and pipeline health as glass cards over the same image,
- * then the dense evidence (driver error table) below on a plain surface.
- *
- * The focal figure is still the A* optimal strategy cost — that has not
- * changed, only its stage has. The hero photo is real, licensed photography
- * (credited below it), not decoration standing in for data: every number
- * layered over it is still read live from the API, exactly as before.
+ * Overview: what the project is, its headline results, a route through the
+ * dashboard for a demonstration, and which tasks and models are live. Every
+ * figure is read from the API; a missing artifact shows "—", never a zero.
  */
 export default async function OverviewPage() {
   let health = null;
@@ -33,12 +28,10 @@ export default async function OverviewPage() {
     error = e instanceof ApiError ? e.message : "Could not reach the backend API.";
   }
 
-  // Optional sections: a missing artifact renders "Not generated yet", never a zero.
-  const [search, expert, dlMetrics, strat] = await Promise.all([
+  const [search, expert, dlMetrics] = await Promise.all([
     api.searchComparison().catch(() => null),
     api.expertSystem().catch(() => null),
     api.dlMetrics().catch(() => null),
-    api.xaiStratification().catch(() => null),
   ]);
 
   if (error || !evidence) {
@@ -58,126 +51,61 @@ export default async function OverviewPage() {
   const stop = plan?.pit_stops?.[0] ?? null;
   const laptimeDnn = dlMetrics?.models?.target_laptime?.test_metrics?.mae;
 
+  const stats = [
+    { label: "Optimal strategy cost (A*)", value: plan ? `${fmt(plan.final_cost_seconds, 2)} s` : "—" },
+    { label: "Lap-time error (DNN, MAE)", value: laptimeDnn !== undefined ? `${fmt(laptimeDnn, 3)} s` : "—" },
+    { label: "Expert rules", value: expert?.available ? String(expert.n_rules) : "—" },
+    { label: "Models trained", value: health?.model_count !== undefined ? String(health.model_count) : "—" },
+    { label: "Tasks built", value: `${evidence.completed_count} / ${evidence.total_count}` },
+  ];
+
   return (
     <div>
-      {/* ---- hero stage: real photography, the focal readout, glass cards --- */}
-      <section className="hero-stage mt-8 min-h-[560px]" style={{ ["--hero-focus" as string]: "32% 42%" }}>
-        <Image
-          src="/images/photo-car-silhouette.jpg"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="hero-stage__photo"
-        />
-        <div className="hero-stage__ember" aria-hidden />
-        <div className="hero-stage__veil" aria-hidden />
-
-        <div className="hero-stage__content flex min-h-[560px] flex-col justify-between p-7 md:p-12">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            {manifest && <DatasetBadge source={manifest.dataset_source} />}
-          </div>
-
-          <div className="max-w-2xl">
-            {plan ? (
-              <>
-                <p className="stat-label text-paper-400">Optimal strategy cost, remaining race — A* search</p>
-                <p className="t-display-hero mt-1.5 text-paper-900">
-                  {fmt(plan.final_cost_seconds, 2)}
-                  <span className="ml-2 font-display text-[22px] font-semibold not-italic text-accent">s</span>
-                </p>
-                <p className="t-body mt-3.5 max-w-[48ch] text-[13px] text-paper-700">
-                  {stop ? (
-                    <>
-                      One stop, lap {stop.lap}, onto <TyreBadge compound={stop.compound} />.{" "}
-                    </>
-                  ) : (
-                    <>No stop on this instance. </>
-                  )}
-                  A* and uniform-cost search agree to four decimals, which is the admissibility check — A* reached
-                  it expanding{" "}
-                  <span className="tabular-nums text-paper-900">
-                    {plan.algorithms.find((a) => a.algorithm === "A*")?.nodes_expanded}
-                  </span>{" "}
-                  nodes against UCS&rsquo;s{" "}
-                  <span className="tabular-nums text-paper-900">
-                    {plan.algorithms.find((a) => a.algorithm === "UCS")?.nodes_expanded}
-                  </span>
-                  .
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="stat-label text-paper-400">Optimal strategy cost, remaining race</p>
-                <p className="t-display-md mt-1.5 text-paper-500">Not generated yet</p>
-                <p className="t-micro mt-2">
-                  Run <span className="text-paper-400">python scripts/run_search.py</span> to produce it.
-                </p>
-              </>
-            )}
-
-            <div className="mt-7 flex flex-wrap gap-3">
-              <div className="glass-card readout px-4 py-3">
-                <p className="readout__value">{laptimeDnn !== undefined ? fmt(laptimeDnn, 3) : "—"}</p>
-                <p className="readout__label">Lap error, s</p>
-              </div>
-              <div className="glass-card readout px-4 py-3">
-                <p className="readout__value">{expert?.available ? expert.n_rules : "—"}</p>
-                <p className="readout__label">Expert rules</p>
-              </div>
-              <div className="glass-card readout px-4 py-3">
-                <p className="readout__value">{health?.model_count ?? "—"}</p>
-                <p className="readout__label">Models trained</p>
-              </div>
-              <div className="glass-card readout px-4 py-3">
-                <p className="readout__value">
-                  {evidence.completed_count}
-                  <span className="text-[16px] text-paper-500">/{evidence.total_count}</span>
-                </p>
-                <p className="readout__label">Tasks built</p>
-              </div>
-            </div>
-          </div>
+      <section className="pt-10">
+        {manifest && <DatasetBadge source={manifest.dataset_source} />}
+        <h1 className="t-page-title mt-4 !text-[clamp(28px,3.4vw,40px)]">When should a Formula 1 driver pit, and what will the next lap cost?</h1>
+        <p className="t-body mt-3 max-w-measure">
+          One real Grand Prix, answered three ways: an ontology, a rule base and a search that reason symbolically,
+          models that learn from its laps, and explainability tools that say why each call was made and where it stops
+          being trustworthy. Every figure on every page is read from a generated artifact.
+        </p>
+        <div className="mt-5">
+          <Link href="/strategy" className="btn-primary inline-block">
+            Try the strategy simulator
+          </Link>
         </div>
       </section>
-      <p className="t-micro mt-2 text-right">
-        Photo: Circuit Paul Ricard, via Unsplash — licensed stock, not this project&rsquo;s own session.
-      </p>
 
-      {/* ---- ledger + pipeline health, now beside the hero on wide screens -- */}
-      <div className="mt-10 grid gap-x-14 gap-y-10 border-b border-track-300 pb-10 lg:grid-cols-2">
+      <dl className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-5">
+        {stats.map((s) => (
+          <div key={s.label} className="card">
+            <dt className="stat-label">{s.label}</dt>
+            <dd className="stat-value mt-1">{s.value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {plan && (
+        <p className="t-body mt-4 max-w-measure text-paper-500">
+          {stop ? (
+            <>
+              Best plan: one stop, lap {stop.lap}, onto <TyreBadge compound={stop.compound} />.{" "}
+            </>
+          ) : (
+            <>Best plan: no stop on this instance. </>
+          )}
+          A* and uniform-cost search agree, which is the admissibility check; A* got there expanding{" "}
+          <span className="tabular-nums">{plan.algorithms.find((a) => a.algorithm === "A*")?.nodes_expanded}</span> nodes
+          against UCS&rsquo;s{" "}
+          <span className="tabular-nums">{plan.algorithms.find((a) => a.algorithm === "UCS")?.nodes_expanded}</span>.
+        </p>
+      )}
+
+      <DemoPath />
+
+      <div className="mt-10 grid gap-x-14 gap-y-10 lg:grid-cols-2">
         <TaskLedger evidence={evidence} />
         {health && <PipelineHealth health={health} />}
-      </div>
-
-      {/* ---- supporting evidence ------------------------------------------- */}
-      <div className="grid gap-x-14 gap-y-12 pt-10 lg:grid-cols-[1.55fr_1fr] [&>*]:min-w-0">
-        {strat ? (
-          <DriverErrorTable strat={strat} />
-        ) : (
-          <section>
-            <h2 className="t-title">Lap-time error by driver</h2>
-            <p className="t-body mt-2 text-paper-500">Not generated yet.</p>
-            <p className="t-micro mt-1">
-              Run <span className="text-paper-500">python scripts/build_all.py</span> to produce it.
-            </p>
-          </section>
-        )}
-
-        <section aria-labelledby="what-h" className="lg:sticky lg:top-[76px] lg:self-start">
-          <h2 id="what-h" className="t-title">
-            What this is
-          </h2>
-          <p className="t-body mt-3 max-w-measure">
-            One Grand Prix, answered three ways: an ontology and a rule base that reason symbolically, models that
-            learn from its laps, and explainability tools that say
-            why each call was made — and where it stops being trustworthy.
-          </p>
-          <p className="t-body mt-3 max-w-measure text-paper-500">
-            Every figure on every page is read from a generated artifact at request time. Where a figure would
-            mislead, the interface says so in words instead of dressing it up.
-          </p>
-        </section>
       </div>
     </div>
   );

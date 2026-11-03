@@ -48,8 +48,6 @@ export default async function DataPage() {
   return (
     <div className="space-y-10 pb-10">
       <PageHero
-        photo="/images/photo-pitlane.jpg"
-        focus="80% 60%"
         eyebrow="Task 4"
         title="Data & Evidence"
         blurb={task4.purpose}

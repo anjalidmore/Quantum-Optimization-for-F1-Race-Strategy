@@ -48,8 +48,6 @@ export default async function RaiPage() {
   return (
     <div className="space-y-10 pb-10">
       <PageHero
-        photo="/images/photo-pitlane.jpg"
-        focus="50% 60%"
         eyebrow="Responsible AI"
         title="Responsible AI (RAI)"
         blurb="Who each model serves well, how sure it is, and what it is for. The Simple, ML and DNN models checked for performance gaps across teams, tyres and drivers, for how far their confidence can be trusted, and documented in model cards built from the project's own records."

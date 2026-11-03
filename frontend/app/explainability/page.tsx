@@ -44,8 +44,6 @@ export default async function ExplainabilityPage() {
   return (
     <div className="space-y-8 pb-10">
       <PageHero
-        photo="/images/photo-action-blur.jpg"
-        focus="60% 45%"
         eyebrow="Task 8"
         title="Explainability"
         blurb="Explains the trained Task 7 DNN on the chronological test laps: which race-state factors moved each prediction (SHAP, LIME), what change would flip it (counterfactual), how far to trust it, and whether it performs evenly across drivers, teams and compounds. These describe the model's behaviour — not causes, and not strategy instructions."
